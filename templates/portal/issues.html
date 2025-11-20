@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-8">
+        <h2>Site Issues</h2>
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    {% for field in filter.form %}
+                        <div class="col-md-6">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                        </div>
+                    {% endfor %}
+                    <div class="col-12">
+                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th>Issue</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Raised</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for issue in filter.qs %}
+                        <tr>
+                            <td>{{ issue.title }}</td>
+                            <td>{{ issue.project.name }}</td>
+                            <td>{{ issue.get_status_display }}</td>
+                            <td>{{ issue.raised_on|date:"d-m-Y" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center">No issues logged.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>Log issue</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-primary w-100">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

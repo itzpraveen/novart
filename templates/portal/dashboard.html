@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total Projects</p>
+                <h3>{{ total_projects }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Active</p>
+                <h3>{{ active_projects }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Site visits (this month)</p>
+                <h3>{{ site_visits_this_month }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Unpaid invoices (₹)</p>
+                <h3>{{ total_invoiced_month|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Projects by stage</div>
+            <ul class="list-group list-group-flush">
+                {% for item in stage_counts %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ item.current_stage }}</span>
+                        <span class="badge bg-primary">{{ item.total }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No projects yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Upcoming tasks</div>
+            <div class="list-group list-group-flush">
+                {% for task in upcoming_tasks %}
+                    <a class="list-group-item list-group-item-action" href="{% url 'task_edit' task.pk %}">
+                        <div class="d-flex justify-content-between">
+                            <div>{{ task.title }} <small class="text-muted">({{ task.project.code }})</small></div>
+                            <small>{{ task.due_date|date:"d-m-Y" }}</small>
+                        </div>
+                    </a>
+                {% empty %}
+                    <div class="list-group-item">No pending tasks.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Upcoming handovers</div>
+            <div class="list-group list-group-flush">
+                {% for project in upcoming_handover %}
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span>{{ project.code }} - {{ project.name }}</span>
+                        <span>{{ project.expected_handover|date:"d-m-Y" }}</span>
+                    </div>
+                {% empty %}
+                    <div class="list-group-item">No upcoming handovers.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Financial snapshot (this month)</div>
+            <div class="card-body">
+                <p class="mb-2">Invoiced: {{ total_invoiced_month|rupee }}</p>
+                <p class="mb-2">Received: {{ total_received_month|rupee }}</p>
+                <div class="border-top pt-2">
+                    <p class="mb-0 text-muted">Difference: {{ cash_gap|rupee }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Top projects by revenue</div>
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Client</th>
+                    <th>Invoiced</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for project in top_projects %}
+                    <tr>
+                        <td><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
+                        <td>{{ project.client.name }}</td>
+                        <td>{{ project.revenue|rupee }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3">No invoices yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

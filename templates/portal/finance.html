@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Finance Overview</h2>
+    <div>
+        <a class="btn btn-outline-primary btn-sm me-2" href="{% url 'invoice_list' %}">Invoices</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'transaction_list' %}">Cashbook</a>
+    </div>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total invoiced</p>
+                <h3>{{ totals.invoiced|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Total received</p>
+                <h3>{{ totals.received|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Expenses</p>
+                <h3>{{ totals.expenses|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+            <tr>
+                <th>Project</th>
+                <th>Invoiced</th>
+                <th>Received</th>
+                <th>Expenses</th>
+                <th>Net</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for project in projects %}
+                <tr>
+                    <td>{{ project.code }} - {{ project.name }}</td>
+                    <td>{{ project.total_invoiced|rupee }}</td>
+                    <td>{{ project.total_received|rupee }}</td>
+                    <td>{{ project.total_expenses|rupee }}</td>
+                    <td>{{ project.net_position|rupee }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="text-center">No projects.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

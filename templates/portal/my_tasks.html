@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<h2 class="mb-3">My Tasks</h2>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            {% for field in filter.form %}
+                <div class="col-md-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                </div>
+            {% endfor %}
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+            <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Due</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for task in filter.qs %}
+                <tr>
+                    <td>{{ task.title }}</td>
+                    <td>{{ task.project.name }}</td>
+                    <td><span class="badge bg-info">{{ task.get_status_display }}</span></td>
+                    <td>{{ task.get_priority_display }}</td>
+                    <td>{{ task.due_date|date:"d-m-Y" }}</td>
+                    <td><a href="{% url 'task_edit' task.pk %}">Update</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="text-center">Nothing assigned!</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

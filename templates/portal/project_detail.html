@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2>{{ project.code }} · {{ project.name }}</h2>
+        <p class="text-muted mb-0">{{ project.client.name }} · {{ project.location }}</p>
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+        <a class="btn btn-primary" href="{% url 'project_tasks' project.pk %}">Kanban</a>
+    </div>
+ </div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted">Stage</p>
+                <h4>{{ project.current_stage }}</h4>
+                <form method="post" action="{% url 'project_stage_update' project.pk %}">
+                    {% csrf_token %}
+                    {{ stage_form.stage|add_class:"form-select mb-2" }}
+                    {{ stage_form.notes|add_class:"form-control mb-2" }}
+                    <button class="btn btn-sm btn-primary">Update Stage</button>
+                </form>
+                <hr/>
+                <p class="text-muted mb-1">Health</p>
+                <span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
+                    {{ project.get_health_status_display }}
+                </span>
+                <p class="text-muted mt-3 mb-1">Handover</p>
+                <strong>{{ project.expected_handover|date:"d-m-Y" }}</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted">Tasks</p>
+                <h3>{{ project.open_tasks }} open of {{ project.total_tasks }}</h3>
+                <div><small>Manager: {{ project.project_manager }}</small></div>
+                <hr/>
+                <p class="text-muted mb-1">Stage history</p>
+                <div class="small" style="max-height: 200px; overflow-y: auto;">
+                    {% for change in stage_history %}
+                        <div class="mb-1">{{ change.changed_on|date:"d-m-Y" }} · {{ change.stage }} · {{ change.changed_by }}</div>
+                    {% empty %}
+                        <p>No history yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted">Financial summary</p>
+                <p class="mb-1">Invoiced: {{ project.total_invoiced|rupee }}</p>
+                <p class="mb-1">Received: {{ project.total_received|rupee }}</p>
+                <p class="mb-1">Expenses: {{ project.total_expenses|rupee }}</p>
+                <div class="fw-semibold">Net: {{ project.net_position|rupee }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">Open tasks</div>
+            <ul class="list-group list-group-flush">
+                {% for task in tasks %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <div>
+                            <strong>{{ task.title }}</strong>
+                            <div class="text-muted small">{{ task.get_status_display }} · {{ task.assigned_to }}</div>
+                        </div>
+                        <div>
+                            <a href="{% url 'task_edit' task.pk %}">Edit</a>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No tasks yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Recent documents</div>
+            <ul class="list-group list-group-flush">
+                {% for doc in documents %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ doc.file_name }} ({{ doc.get_file_type_display }})</span>
+                        <span>{{ doc.created_at|date:"d-m-Y" }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No documents uploaded.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">Site visits</div>
+            <ul class="list-group list-group-flush">
+                {% for visit in site_visits %}
+                    <li class="list-group-item">
+                        {{ visit.visit_date|date:"d-m-Y" }} by {{ visit.visited_by }} — {{ visit.notes|truncatewords:12 }}
+                        <div><a href="{% url 'site_visit_detail' visit.pk %}">View</a></div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No visits logged.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Issues</div>
+            <ul class="list-group list-group-flush">
+                {% for issue in issues %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ issue.title }}</span>
+                        <span class="badge bg-{% if issue.status == 'resolved' %}success{% elif issue.status == 'in_progress' %}warning{% else %}danger{% endif %}">
+                            {{ issue.get_status_display }}
+                        </span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No issues!</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

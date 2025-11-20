@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Projects</h2>
+    <div>
+        <a class="btn btn-primary" href="{% url 'project_create' %}">New Project</a>
+    </div>
+</div>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            {% for field in filter.form %}
+                <div class="col-md-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field|add_class:"form-select" }}
+                </div>
+            {% endfor %}
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Client</th>
+                <th>Stage</th>
+                <th>Health</th>
+                <th>Start</th>
+                <th>Handover</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for project in filter.qs %}
+                <tr>
+                    <td><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
+                    <td>{{ project.name }}</td>
+                    <td>{{ project.client.name }}</td>
+                    <td>{{ project.current_stage }}</td>
+                    <td><span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
+                        {{ project.get_health_status_display }}
+                    </span></td>
+                    <td>{{ project.start_date|date:"d-m-Y" }}</td>
+                    <td>{{ project.expected_handover|date:"d-m-Y" }}</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center">No projects found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

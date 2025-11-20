@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h3>{{ visit.project.name }} · {{ visit.visit_date|date:"d-m-Y" }}</h3>
+        <p class="text-muted">Visited by {{ visit.visited_by }} · {{ visit.location }}</p>
+        <p>{{ visit.notes }}</p>
+        <p>Expenses: {{ visit.expenses|rupee }}</p>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'site_visit_edit' visit.pk %}">Edit</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Attachments</div>
+            <ul class="list-group list-group-flush">
+                {% for attachment in attachments %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ attachment.caption|default:attachment.file.name }}</span>
+                        {% if attachment.file %}<a href="{{ attachment.file.url }}" target="_blank">Open</a>{% endif %}
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No attachments.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">Add attachment</div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in attachment_form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

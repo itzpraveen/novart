@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{{ project.name }} · Tasks</h2>
+    <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back</a>
+</div>
+<div class="row g-3">
+    {% for code,label in statuses %}
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white fw-semibold">{{ label }}</div>
+                <div class="card-body" style="min-height: 250px;">
+                    {% with column=columns|get_item:code %}
+                        {% if column %}
+                            {% for task in column %}
+                                <div class="border rounded p-2 mb-2 bg-light">
+                                    <div class="fw-semibold">{{ task.title }}</div>
+                                    <div class="small text-muted">{{ task.assigned_to }} · due {{ task.due_date|date:"d-m-Y" }}</div>
+                                    <div class="mt-2">
+                                        <a href="{% url 'task_edit' task.pk %}" class="btn btn-sm btn-outline-secondary">Update</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">No tasks here.</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5>Add Task</h5>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                    <div class="col-md-4">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary">Add Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+name: studioflow
+region: blr
+
+databases:
+  - engine: PG
+    name: studioflow-db
+    version: "15"
+    production: false
+
+services:
+  - name: web
+    environment_slug: python
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 8080
+    git:
+      repo_clone_url: https://github.com/REPLACE_WITH_YOUR_REPO.git
+      branch: main
+      deploy_on_push: true
+    source_dir: .
+    build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    run_command: gunicorn studioflow.wsgi:application --bind 0.0.0.0:${PORT:-8080}
+    routes:
+      - path: /
+    envs:
+      - key: DJANGO_SECRET_KEY
+        type: SECRET
+        value: change-me
+        scope: RUN_AND_BUILD
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ${APP_DOMAIN}
+        scope: RUN_AND_BUILD
+      - key: DJANGO_DEBUG
+        value: "0"
+        scope: RUN_AND_BUILD
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: https://${APP_DOMAIN}
+        scope: RUN_AND_BUILD
+      - key: DATABASE_URL
+        value: ${studioflow-db.DATABASE_URL}
+        scope: RUN_AND_BUILD
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    environment_slug: python
+    git:
+      repo_clone_url: https://github.com/REPLACE_WITH_YOUR_REPO.git
+      branch: main
+    source_dir: .
+    run_command: python manage.py migrate --noinput
+    envs:
+      - key: DJANGO_SECRET_KEY
+        type: SECRET
+        value: change-me
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ${APP_DOMAIN}
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: https://${APP_DOMAIN}
+      - key: DATABASE_URL
+        value: ${studioflow-db.DATABASE_URL}

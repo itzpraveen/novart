@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h3>Convert lead: {{ lead.title }}</h3>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            {% endfor %}
+            <button class="btn btn-success">Create Project</button>
+            <a class="btn btn-link" href="{% url 'lead_list' %}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

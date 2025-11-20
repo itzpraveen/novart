@@ -1,0 +1,36 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.dashboard, name='dashboard'),
+    path('clients/', views.client_list, name='client_list'),
+    path('clients/<int:pk>/edit/', views.client_edit, name='client_edit'),
+    path('leads/', views.lead_list, name='lead_list'),
+    path('leads/new/', views.lead_create, name='lead_create'),
+    path('leads/<int:pk>/edit/', views.lead_edit, name='lead_edit'),
+    path('leads/<int:pk>/convert/', views.lead_convert, name='lead_convert'),
+    path('projects/', views.project_list, name='project_list'),
+    path('projects/new/', views.project_create, name='project_create'),
+    path('projects/<int:pk>/', views.project_detail, name='project_detail'),
+    path('projects/<int:pk>/edit/', views.project_edit, name='project_edit'),
+    path('projects/<int:pk>/tasks/', views.project_tasks, name='project_tasks'),
+    path('projects/<int:pk>/stage/', views.project_stage_update, name='project_stage_update'),
+    path('tasks/new/', views.task_create, name='task_create'),
+    path('tasks/<int:pk>/edit/', views.task_edit, name='task_edit'),
+    path('tasks/my/', views.my_tasks, name='my_tasks'),
+    path('site-visits/', views.site_visit_list, name='site_visit_list'),
+    path('site-visits/new/', views.site_visit_create, name='site_visit_create'),
+    path('site-visits/<int:pk>/edit/', views.site_visit_edit, name='site_visit_edit'),
+    path('site-visits/<int:pk>/', views.site_visit_detail, name='site_visit_detail'),
+    path('issues/', views.issue_list, name='issue_list'),
+    path('invoices/', views.invoice_list, name='invoice_list'),
+    path('invoices/new/', views.invoice_create, name='invoice_create'),
+    path('invoices/<int:invoice_pk>/payments/new/', views.payment_create, name='payment_create'),
+    path('transactions/', views.transaction_list, name='transaction_list'),
+    path('documents/', views.document_list, name='document_list'),
+    path('finance/', views.finance_dashboard, name='finance_dashboard'),
+    path('reminders/', views.reminder_settings, name='reminder_settings'),
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/<int:pk>/read/', views.notification_mark_read, name='notification_mark_read'),
+]

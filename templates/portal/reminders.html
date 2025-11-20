@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="row g-3">
+    <div class="col-md-8">
+        <h2>Reminder settings</h2>
+        <div class="row g-3">
+            {% for reminder_form in forms %}
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="instance_id" value="{{ reminder_form.instance.id }}"/>
+                                {% for field in reminder_form %}
+                                    <div class="mb-2">
+                                        {% if field.field.widget.input_type == 'checkbox' %}
+                                            <div class="form-check form-switch">
+                                                {{ field }}
+                                                <label class="form-check-label">{{ field.label }}</label>
+                                            </div>
+                                        {% else %}
+                                            <label class="form-label">{{ field.label }}</label>
+                                            {{ field|add_class:"form-control" }}
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                <button class="btn btn-primary btn-sm w-100">Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No reminder rules configured yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>New reminder rule</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            {% if field.field.widget.input_type == 'checkbox' %}
+                                <div class="form-check form-switch">
+                                    {{ field }}
+                                    <label class="form-check-label">{{ field.label }}</label>
+                                </div>
+                            {% else %}
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field|add_class:"form-control" }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-success w-100">Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
