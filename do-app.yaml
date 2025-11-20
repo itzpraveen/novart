@@ -14,7 +14,7 @@ services:
     instance_count: 1
     http_port: 8080
     git:
-      repo_clone_url: https://github.com/REPLACE_WITH_YOUR_REPO.git
+      repo_clone_url: https://github.com/itzpraveen/novart.git
       branch: main
       deploy_on_push: true
     source_dir: .
@@ -45,7 +45,7 @@ jobs:
     kind: PRE_DEPLOY
     environment_slug: python
     git:
-      repo_clone_url: https://github.com/REPLACE_WITH_YOUR_REPO.git
+      repo_clone_url: https://github.com/itzpraveen/novart.git
       branch: main
     source_dir: .
     run_command: python manage.py migrate --noinput
