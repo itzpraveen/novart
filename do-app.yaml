@@ -1,12 +1,6 @@
 name: studioflow
 region: blr
 
-databases:
-  - engine: PG
-    name: studioflow-db
-    version: "15"
-    production: false
-
 services:
   - name: web
     environment_slug: python
@@ -36,7 +30,8 @@ services:
         value: https://${APP_DOMAIN}
         scope: RUN_TIME
       - key: DATABASE_URL
-        value: ${studioflow-db.DATABASE_URL}
+        type: SECRET
+        value: postgresql://replace-with-connection-string
         scope: RUN_TIME
 
 jobs:
@@ -59,4 +54,5 @@ jobs:
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: https://${APP_DOMAIN}
       - key: DATABASE_URL
-        value: ${studioflow-db.DATABASE_URL}
+        type: SECRET
+        value: postgresql://replace-with-connection-string
