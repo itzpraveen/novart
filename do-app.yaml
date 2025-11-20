@@ -16,7 +16,6 @@ services:
     git:
       repo_clone_url: https://github.com/itzpraveen/novart.git
       branch: main
-      deploy_on_push: true
     source_dir: .
     build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
     run_command: gunicorn studioflow.wsgi:application --bind 0.0.0.0:${PORT:-8080}
@@ -26,19 +25,19 @@ services:
       - key: DJANGO_SECRET_KEY
         type: SECRET
         value: change-me
-        scope: RUN_AND_BUILD
+        scope: RUN_TIME
       - key: DJANGO_ALLOWED_HOSTS
         value: ${APP_DOMAIN}
-        scope: RUN_AND_BUILD
+        scope: RUN_TIME
       - key: DJANGO_DEBUG
         value: "0"
-        scope: RUN_AND_BUILD
+        scope: RUN_TIME
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: https://${APP_DOMAIN}
-        scope: RUN_AND_BUILD
+        scope: RUN_TIME
       - key: DATABASE_URL
         value: ${studioflow-db.DATABASE_URL}
-        scope: RUN_AND_BUILD
+        scope: RUN_TIME
 
 jobs:
   - name: migrate
