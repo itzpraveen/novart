@@ -81,7 +81,10 @@ WSGI_APPLICATION = 'studioflow.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-db_url = os.environ.get('DATABASE_URL') or f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+db_url = os.environ.get('DATABASE_URL')
+if not db_url or '://' not in db_url:
+    # Fall back to local sqlite when DATABASE_URL is missing or not a valid URL (e.g. empty placeholder during build)
+    db_url = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 DATABASES = {
     'default': dj_database_url.parse(db_url, conn_max_age=600),
 }
