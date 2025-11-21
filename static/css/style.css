@@ -199,17 +199,13 @@ a:hover {
     min-height: calc(100vh - 80px);
     display: flex;
     align-items: center;
-    background: radial-gradient(circle at 20% 20%, rgba(104, 117, 245, 0.15), transparent 25%),
-                radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.12), transparent 20%),
-                radial-gradient(circle at 10% 80%, rgba(236, 72, 153, 0.10), transparent 25%),
-                linear-gradient(160deg, #0b1021 0%, #0e1428 50%, #0b1021 100%);
+    background: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.06), transparent 28%),
+                radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.06), transparent 25%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
 }
 
 .auth-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 40%);
-    pointer-events: none;
+    display: none;
 }
 
 .modern-auth .container {
@@ -223,9 +219,10 @@ a:hover {
     margin: 0 auto;
     border-radius: 20px;
     padding: 32px;
-    background: rgba(12, 17, 34, 0.8);
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .auth-hero {
@@ -284,25 +281,25 @@ a:hover {
 }
 
 .auth-form .form-control {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
-    color: #e5e7eb;
+    border: 1px solid #d9ddeb;
+    background: #f7f8fd;
+    color: #111827;
     border-radius: 12px;
     transition: var(--transition);
 }
 
 .auth-form .form-control:focus {
-    background: rgba(255, 255, 255, 0.08);
+    background: #ffffff;
     border-color: rgba(79, 70, 229, 0.7);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.12);
 }
 
 .auth-form .input-group-text {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #d9ddeb;
     border-right: 0;
-    background: rgba(255, 255, 255, 0.04);
+    background: #f7f8fd;
     border-radius: 12px 0 0 12px;
-    color: #cbd5f5;
+    color: var(--text-secondary);
 }
 
 .ls-2 { letter-spacing: 0.08em; }
