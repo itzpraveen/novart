@@ -80,11 +80,13 @@
                     </li>
                 </ul>
                 {% else %}
+                {% if request.resolver_match.url_name != 'login' %}
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link btn btn-primary text-white px-4"
                             href="{% url 'login' %}">Login</a></li>
                 </ul>
                 {% endif %}
+            {% endif %}
             </div>
         </div>
     </nav>
