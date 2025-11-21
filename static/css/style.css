@@ -58,6 +58,13 @@ a:hover {
     letter-spacing: -0.025em;
 }
 
+.brand-logo {
+    height: 34px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
 .nav-link {
     color: var(--text-secondary) !important;
     font-weight: 500;
@@ -234,6 +241,13 @@ a:hover {
     align-items: center;
     justify-content: center;
     color: var(--primary-color);
+    overflow: hidden;
+}
+
+.brand-mark-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .auth-card {
@@ -247,6 +261,13 @@ a:hover {
     display: grid;
     place-items: center;
     box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.auth-icon-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .auth-form .form-control {
