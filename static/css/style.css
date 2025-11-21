@@ -197,9 +197,35 @@ a:hover {
 /* Auth page */
 .auth-wrapper {
     min-height: calc(100vh - 80px);
-    background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #0b1021 100%);
     display: flex;
     align-items: center;
+    background: radial-gradient(circle at 20% 20%, rgba(104, 117, 245, 0.15), transparent 25%),
+                radial-gradient(circle at 80% 10%, rgba(16, 185, 129, 0.12), transparent 20%),
+                radial-gradient(circle at 10% 80%, rgba(236, 72, 153, 0.10), transparent 25%),
+                linear-gradient(160deg, #0b1021 0%, #0e1428 50%, #0b1021 100%);
+}
+
+.auth-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 40%);
+    pointer-events: none;
+}
+
+.modern-auth .container {
+    position: relative;
+    z-index: 2;
+}
+
+.auth-panel {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    border-radius: 20px;
+    padding: 32px;
+    background: rgba(12, 17, 34, 0.8);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .auth-hero {
