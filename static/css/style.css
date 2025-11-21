@@ -197,32 +197,9 @@ a:hover {
 /* Auth page */
 .auth-wrapper {
     min-height: calc(100vh - 80px);
-    background: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.12), transparent 30%),
-                radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.12), transparent 30%),
-                linear-gradient(135deg, #f6f7fb 0%, #eef1f8 100%);
-}
-
-.auth-blob {
-    position: absolute;
-    filter: blur(60px);
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.auth-blob-1 {
-    width: 240px;
-    height: 240px;
-    background: rgba(79, 70, 229, 0.25);
-    top: 12%;
-    left: 4%;
-}
-
-.auth-blob-2 {
-    width: 260px;
-    height: 260px;
-    background: rgba(16, 185, 129, 0.22);
-    bottom: 8%;
-    right: 6%;
+    background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #0b1021 100%);
+    display: flex;
+    align-items: center;
 }
 
 .auth-hero {
@@ -252,6 +229,10 @@ a:hover {
 
 .auth-card {
     border-radius: 18px;
+    background: #0b1021;
+    color: #e5e7eb;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
 .auth-icon {
@@ -270,25 +251,32 @@ a:hover {
     object-fit: contain;
 }
 
+.auth-logo {
+    max-height: 46px;
+    width: auto;
+    filter: brightness(1.1);
+}
+
 .auth-form .form-control {
-    border: 1px solid var(--border-color);
-    background: #f4f5fb;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
     border-radius: 12px;
     transition: var(--transition);
 }
 
 .auth-form .form-control:focus {
-    background: #fff;
-    border-color: rgba(79, 70, 229, 0.4);
-    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(79, 70, 229, 0.7);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .auth-form .input-group-text {
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-right: 0;
-    background: #f4f5fb;
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 12px 0 0 12px;
-    color: var(--text-secondary);
+    color: #cbd5f5;
 }
 
 .ls-2 { letter-spacing: 0.08em; }
