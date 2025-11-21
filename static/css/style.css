@@ -186,3 +186,108 @@ a:hover {
 .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
 }
+
+/* Auth page */
+.auth-wrapper {
+    min-height: calc(100vh - 80px);
+    background: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.12), transparent 30%),
+                radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.12), transparent 30%),
+                linear-gradient(135deg, #f6f7fb 0%, #eef1f8 100%);
+}
+
+.auth-blob {
+    position: absolute;
+    filter: blur(60px);
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.auth-blob-1 {
+    width: 240px;
+    height: 240px;
+    background: rgba(79, 70, 229, 0.25);
+    top: 12%;
+    left: 4%;
+}
+
+.auth-blob-2 {
+    width: 260px;
+    height: 260px;
+    background: rgba(16, 185, 129, 0.22);
+    bottom: 8%;
+    right: 6%;
+}
+
+.auth-hero {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+}
+
+.brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.08);
+    border: 1px solid rgba(79, 70, 229, 0.15);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.auth-card {
+    border-radius: 18px;
+}
+
+.auth-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-md);
+}
+
+.auth-form .form-control {
+    border: 1px solid var(--border-color);
+    background: #f4f5fb;
+    border-radius: 12px;
+    transition: var(--transition);
+}
+
+.auth-form .form-control:focus {
+    background: #fff;
+    border-color: rgba(79, 70, 229, 0.4);
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.08);
+}
+
+.auth-form .input-group-text {
+    border: 1px solid var(--border-color);
+    border-right: 0;
+    background: #f4f5fb;
+    border-radius: 12px 0 0 12px;
+    color: var(--text-secondary);
+}
+
+.ls-2 { letter-spacing: 0.08em; }
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+}
+
+.pill-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
