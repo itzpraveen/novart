@@ -3,10 +3,12 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from .decorators import role_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
 from .forms import (
     ClientForm,
@@ -125,6 +127,7 @@ def lead_list(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def lead_create(request):
     if request.method == 'POST':
         form = LeadForm(request.POST)
@@ -140,6 +143,7 @@ def lead_create(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def lead_edit(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     if request.method == 'POST':
@@ -154,6 +158,7 @@ def lead_edit(request, pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def lead_convert(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     if request.method == 'POST':
@@ -177,12 +182,15 @@ def lead_convert(request, pk):
 
 @login_required
 def project_list(request):
-    project_filter = ProjectFilter(request.GET, queryset=Project.objects.select_related('client', 'project_manager'))
+    project_filter = ProjectFilter(
+        request.GET, queryset=Project.objects.select_related('client', 'project_manager', 'site_engineer')
+    )
     context = {'filter': project_filter}
     return render(request, 'portal/projects.html', context)
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -197,6 +205,7 @@ def project_create(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def project_edit(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
@@ -236,6 +245,7 @@ def project_detail(request, pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def project_stage_update(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
@@ -260,6 +270,8 @@ def project_tasks(request, pk):
         columns.setdefault(task.status, []).append(task)
     form = TaskForm(initial={'project': project})
     if request.method == 'POST':
+        if request.user.role not in [User.Roles.ADMIN, User.Roles.ARCHITECT]:
+            return HttpResponseForbidden("You do not have permission to add tasks.")
         form = TaskForm(request.POST)
         if form.is_valid():
             task = form.save()
@@ -273,6 +285,7 @@ def project_tasks(request, pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def task_create(request):
     project_id = request.GET.get('project')
     project = None
@@ -291,6 +304,7 @@ def task_create(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def task_edit(request, pk):
     task = get_object_or_404(Task, pk=pk)
     if request.method == 'POST':
@@ -317,6 +331,7 @@ def site_visit_list(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
 def site_visit_create(request):
     if request.method == 'POST':
         form = SiteVisitForm(request.POST, request.FILES)
@@ -330,6 +345,7 @@ def site_visit_create(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
 def site_visit_edit(request, pk):
     visit = get_object_or_404(SiteVisit, pk=pk)
     if request.method == 'POST':
@@ -344,6 +360,7 @@ def site_visit_edit(request, pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
 def site_visit_detail(request, pk):
     visit = get_object_or_404(SiteVisit, pk=pk)
     attachment_form = SiteVisitAttachmentForm()
@@ -363,6 +380,7 @@ def site_visit_detail(request, pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
 def issue_list(request):
     issue_filter = SiteIssueFilter(request.GET, queryset=SiteIssue.objects.select_related('project', 'site_visit'))
     if request.method == 'POST':
@@ -377,12 +395,14 @@ def issue_list(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_list(request):
     invoice_filter = InvoiceFilter(request.GET, queryset=Invoice.objects.select_related('project'))
     return render(request, 'portal/invoices.html', {'filter': invoice_filter})
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_create(request):
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
@@ -396,6 +416,7 @@ def invoice_create(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def payment_create(request, invoice_pk):
     invoice = get_object_or_404(Invoice, pk=invoice_pk)
     if request.method == 'POST':
@@ -415,6 +436,7 @@ def payment_create(request, invoice_pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def transaction_list(request):
     txn_filter = TransactionFilter(request.GET, queryset=Transaction.objects.select_related('related_project'))
     if request.method == 'POST':
@@ -456,6 +478,7 @@ def document_list(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def finance_dashboard(request):
     projects = Project.objects.all()
     total_invoiced = Invoice.objects.aggregate(total=Sum('amount'))['total'] or 0
@@ -479,6 +502,7 @@ def finance_dashboard(request):
 
 
 @login_required
+@role_required(User.Roles.ADMIN)
 def reminder_settings(request):
     if request.method == 'POST':
         instance_id = request.POST.get('instance_id')

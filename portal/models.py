@@ -96,6 +96,9 @@ class Project(TimeStampedModel):
     project_manager = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_projects'
     )
+    site_engineer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='engineered_projects'
+    )
 
     def __str__(self) -> str:
         return f"{self.code} - {self.name}"

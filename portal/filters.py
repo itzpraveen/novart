@@ -10,10 +10,12 @@ class ProjectFilter(django_filters.FilterSet):
     current_stage = django_filters.ChoiceFilter(choices=Project.Stage.choices)
     health_status = django_filters.ChoiceFilter(choices=Project.Health.choices)
     project_type = django_filters.ChoiceFilter(choices=Project.ProjectType.choices)
+    project_manager = django_filters.ModelChoiceFilter(queryset=User.objects.all(), label='Manager')
+    site_engineer = django_filters.ModelChoiceFilter(queryset=User.objects.all(), label='Site engineer')
 
     class Meta:
         model = Project
-        fields = ['client', 'project_type', 'current_stage', 'health_status']
+        fields = ['client', 'project_manager', 'site_engineer', 'project_type', 'current_stage', 'health_status']
 
 
 class TaskFilter(django_filters.FilterSet):

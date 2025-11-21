@@ -51,6 +51,7 @@ class ProjectForm(forms.ModelForm):
             'current_stage',
             'health_status',
             'project_manager',
+            'site_engineer',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
