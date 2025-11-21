@@ -539,9 +539,11 @@ def team_list(request):
     team = (
         User.objects.order_by('role', 'first_name', 'last_name')
         .annotate(
-            open_tasks=Count('tasks', filter=Q(tasks__status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]), distinct=True),
-            managed_projects=Count('managed_projects', distinct=True),
-            visits=Count('site_visits', distinct=True),
+            open_tasks_count=Count(
+                'tasks', filter=Q(tasks__status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]), distinct=True
+            ),
+            managed_projects_count=Count('managed_projects', distinct=True),
+            visits_count=Count('site_visits', distinct=True),
         )
     )
     return render(request, 'portal/team_list.html', {'team': team})
