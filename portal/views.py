@@ -37,6 +37,7 @@ from .models import (
     SiteVisit,
     Task,
     Transaction,
+    User,
 )
 
 
@@ -507,3 +508,16 @@ def notification_mark_read(request, pk):
     if notification.related_url:
         return redirect(notification.related_url)
     return redirect('notification_list')
+
+
+@login_required
+def team_list(request):
+    team = (
+        User.objects.order_by('role', 'first_name', 'last_name')
+        .annotate(
+            open_tasks=Count('tasks', filter=Q(tasks__status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]), distinct=True),
+            managed_projects=Count('managed_projects', distinct=True),
+            visits=Count('site_visits', distinct=True),
+        )
+    )
+    return render(request, 'portal/team_list.html', {'team': team})

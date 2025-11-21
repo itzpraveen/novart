@@ -33,4 +33,5 @@ urlpatterns = [
     path('reminders/', views.reminder_settings, name='reminder_settings'),
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:pk>/read/', views.notification_mark_read, name='notification_mark_read'),
+    path('team/', views.team_list, name='team_list'),
 ]

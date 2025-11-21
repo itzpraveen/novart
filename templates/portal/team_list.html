@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Team</h2>
+        <p class="text-muted mb-0">Roles, duties, and current load for your staff.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for member in team %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ member.get_full_name|default:member.username }}</h5>
+                        <span class="badge bg-secondary text-uppercase">{{ member.get_role_display }}</span>
+                    </div>
+                    {% if member.phone %}
+                        <span class="text-muted small">📞 {{ member.phone }}</span>
+                    {% endif %}
+                </div>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><span class="text-muted">Open tasks:</span> <strong>{{ member.open_tasks }}</strong></li>
+                    <li class="mb-2"><span class="text-muted">Projects managed:</span> <strong>{{ member.managed_projects }}</strong></li>
+                    <li><span class="text-muted">Recent site visits:</span> <strong>{{ member.visits }}</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">No team members found.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
