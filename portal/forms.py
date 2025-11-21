@@ -14,6 +14,7 @@ from .models import (
     SiteVisitAttachment,
     Task,
     Transaction,
+    User,
 )
 
 class DateInput(forms.DateInput):
@@ -82,6 +83,43 @@ class TaskForm(forms.ModelForm):
             'actual_hours',
         ]
         widgets = {'due_date': DateInput(), 'description': forms.Textarea(attrs={'rows': 3})}
+
+
+class UserForm(forms.ModelForm):
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput, required=False)
+    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_staff', 'is_active']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['password1'].required = True
+            self.fields['password2'].required = True
+            self.initial['is_staff'] = True
+
+    def clean(self):
+        cleaned = super().clean()
+        pw1 = cleaned.get('password1')
+        pw2 = cleaned.get('password2')
+        if pw1 or pw2:
+            if pw1 != pw2:
+                self.add_error('password2', 'Passwords do not match.')
+        elif not self.instance.pk:
+            self.add_error('password1', 'Password is required.')
+            self.add_error('password2', 'Password is required.')
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        pw1 = self.cleaned_data.get('password1')
+        if pw1:
+            user.set_password(pw1)
+        if commit:
+            user.save()
+        return user
 
 
 class SiteVisitForm(forms.ModelForm):

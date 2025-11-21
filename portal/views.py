@@ -24,6 +24,7 @@ from .forms import (
     TaskForm,
     TransactionForm,
     ReminderSettingForm,
+    UserForm,
 )
 from .models import (
     Client,
@@ -547,3 +548,33 @@ def team_list(request):
         )
     )
     return render(request, 'portal/team_list.html', {'team': team})
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+def user_admin_list(request):
+    users = User.objects.order_by('role', 'first_name', 'last_name')
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'User created.')
+            return redirect('user_admin_list')
+    else:
+        form = UserForm()
+    return render(request, 'portal/user_admin.html', {'users': users, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+def user_admin_edit(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'User updated.')
+            return redirect('user_admin_list')
+    else:
+        form = UserForm(instance=user)
+    return render(request, 'portal/user_admin.html', {'users': User.objects.order_by('role', 'first_name'), 'form': form, 'editing': user})
