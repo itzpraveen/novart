@@ -21,13 +21,13 @@ services:
         value: change-me
         scope: RUN_TIME
       - key: DJANGO_ALLOWED_HOSTS
-        value: ${APP_DOMAIN}
+        value: ${APP_DOMAIN},*.ondigitalocean.app
         scope: RUN_TIME
       - key: DJANGO_DEBUG
         value: "0"
         scope: RUN_TIME
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: https://${APP_DOMAIN}
+        value: https://${APP_DOMAIN},https://*.ondigitalocean.app
         scope: RUN_TIME
       - key: DATABASE_URL
         type: SECRET
