@@ -2,6 +2,7 @@ from base64 import b64encode
 from datetime import timedelta
 from decimal import Decimal
 import logging
+import pydyf
 import mimetypes
 import os
 from django.contrib.staticfiles import finders
@@ -450,6 +451,7 @@ def invoice_pdf(request, invoice_pk):
         logo_data = _encode_image(fallback_logo)
 
     font_path = finders.find('fonts/NotoSans-Regular.ttf') or finders.find('fonts/DejaVuSans.ttf')
+    logger.info("WeasyPrint/pydyf versions: weasy=%s pydyf=%s path=%s", HTML.__module__, getattr(pydyf, '__version__', 'unknown'), getattr(pydyf, '__file__', 'unknown'))
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
