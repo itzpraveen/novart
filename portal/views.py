@@ -1,19 +1,25 @@
 from datetime import timedelta
+from decimal import Decimal
+from io import BytesIO
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.template.loader import render_to_string
 from django.utils import timezone
+from xhtml2pdf import pisa
 
 from .decorators import role_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
 from .forms import (
     ClientForm,
     DocumentForm,
+    FirmProfileForm,
     InvoiceForm,
+    InvoiceLineFormSet,
     LeadForm,
     PaymentForm,
     ProjectForm,
@@ -29,6 +35,7 @@ from .forms import (
 from .models import (
     Client,
     Document,
+    FirmProfile,
     Invoice,
     Lead,
     Notification,
@@ -60,8 +67,8 @@ def dashboard(request):
     upcoming_tasks = Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]).order_by('due_date')[:5]
     upcoming_handover = projects.filter(expected_handover__gte=today, expected_handover__lte=today + timedelta(days=30))
 
-    invoices_this_month = Invoice.objects.filter(invoice_date__gte=start_month)
-    total_invoiced = invoices_this_month.aggregate(total=Sum('amount'))['total'] or 0
+    invoices_this_month = Invoice.objects.filter(invoice_date__gte=start_month).prefetch_related('lines')
+    total_invoiced = sum((invoice.total_with_tax for invoice in invoices_this_month), Decimal('0'))
     payments_this_month = Payment.objects.filter(payment_date__gte=start_month)
     total_received = payments_this_month.aggregate(total=Sum('amount'))['total'] or 0
 
@@ -398,8 +405,45 @@ def issue_list(request):
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_list(request):
-    invoice_filter = InvoiceFilter(request.GET, queryset=Invoice.objects.select_related('project'))
+    invoice_filter = InvoiceFilter(
+        request.GET, queryset=Invoice.objects.select_related('project', 'project__client').prefetch_related('lines')
+    )
     return render(request, 'portal/invoices.html', {'filter': invoice_filter})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+def invoice_pdf(request, invoice_pk):
+    invoice = get_object_or_404(
+        Invoice.objects.select_related('project__client', 'project__project_manager').prefetch_related('lines', 'payments'),
+        pk=invoice_pk,
+    )
+    lines = list(invoice.lines.all())
+    tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
+    firm = FirmProfile.objects.first()
+    logo_path = firm.logo.path if firm and firm.logo else None
+    html = render_to_string(
+        'portal/invoice_pdf.html',
+        {
+            'invoice': invoice,
+            'project': invoice.project,
+            'client': invoice.project.client,
+            'lines': lines,
+            'payments': invoice.payments.all(),
+            'tax_amount': tax_value,
+            'firm': firm,
+            'firm_logo_path': logo_path,
+        },
+    )
+    pdf_file = BytesIO()
+    pdf_status = pisa.CreatePDF(html, dest=pdf_file, encoding='UTF-8')
+    if pdf_status.err:
+        messages.error(request, 'Unable to generate PDF right now. Please try again.')
+        return redirect('invoice_list')
+    pdf_file.seek(0)
+    response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
+    return response
 
 
 @login_required
@@ -407,13 +451,51 @@ def invoice_list(request):
 def invoice_create(request):
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
-        if form.is_valid():
+        formset = InvoiceLineFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
             invoice = form.save()
+            formset.instance = invoice
+            formset.save()
             messages.success(request, 'Invoice created.')
             return redirect('invoice_list')
     else:
         form = InvoiceForm()
-    return render(request, 'portal/invoice_form.html', {'form': form})
+        formset = InvoiceLineFormSet()
+    return render(request, 'portal/invoice_form.html', {'form': form, 'formset': formset})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+def invoice_aging(request):
+    today = timezone.localdate()
+    invoices = (
+        Invoice.objects.exclude(status=Invoice.Status.PAID)
+        .select_related('project__client')
+        .prefetch_related('lines', 'payments')
+    )
+    buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}
+    totals = {key: Decimal('0') for key in buckets}
+    for invoice in invoices:
+        outstanding = invoice.outstanding
+        if outstanding <= 0:
+            continue
+        days_overdue = max((today - invoice.due_date).days, 0)
+        if days_overdue <= 30:
+            bucket_key = '0-30'
+        elif days_overdue <= 60:
+            bucket_key = '31-60'
+        elif days_overdue <= 90:
+            bucket_key = '61-90'
+        else:
+            bucket_key = '90+'
+        buckets[bucket_key].append({'invoice': invoice, 'days_overdue': days_overdue, 'outstanding': outstanding})
+        totals[bucket_key] += outstanding
+    grand_total = sum(totals.values(), Decimal('0'))
+    return render(
+        request,
+        'portal/invoice_aging.html',
+        {'buckets': buckets, 'totals': totals, 'grand_total': grand_total, 'today': today},
+    )
 
 
 @login_required
@@ -482,7 +564,7 @@ def document_list(request):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def finance_dashboard(request):
     projects = Project.objects.all()
-    total_invoiced = Invoice.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_invoiced = sum((invoice.total_with_tax for invoice in Invoice.objects.prefetch_related('lines')), Decimal('0'))
     total_received = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
     ledger_expenses = Transaction.objects.aggregate(total=Sum('debit'))['total'] or 0
     site_expenses = SiteVisit.objects.aggregate(total=Sum('expenses'))['total'] or 0
@@ -500,6 +582,21 @@ def finance_dashboard(request):
             'currency': '₹',
         },
     )
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+def firm_profile(request):
+    profile, _ = FirmProfile.objects.get_or_create(singleton=True, defaults={'name': 'Your Architecture Studio'})
+    if request.method == 'POST':
+        form = FirmProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Firm profile updated.')
+            return redirect('firm_profile')
+    else:
+        form = FirmProfileForm(instance=profile)
+    return render(request, 'portal/firm_profile.html', {'form': form, 'profile': profile})
 
 
 @login_required

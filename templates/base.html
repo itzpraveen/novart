@@ -71,6 +71,9 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
                             <li><a class="dropdown-item" href="{% url 'my_tasks' %}">My Tasks</a></li>
                             <li><a class="dropdown-item" href="{% url 'reminder_settings' %}">Settings</a></li>
+                            {% if request.user.role == 'admin' or request.user.is_superuser %}
+                            <li><a class="dropdown-item" href="{% url 'firm_profile' %}">Firm Profile</a></li>
+                            {% endif %}
                             <li>
                                 <hr class="dropdown-divider">
                             </li>

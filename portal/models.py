@@ -113,7 +113,8 @@ class Project(TimeStampedModel):
 
     @property
     def total_invoiced(self) -> Decimal:
-        return self.invoices.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        invoices = self.invoices.prefetch_related('lines')
+        return sum((invoice.total_with_tax for invoice in invoices), Decimal('0'))
 
     @property
     def total_received(self) -> Decimal:
@@ -239,6 +240,7 @@ class Invoice(TimeStampedModel):
     due_date = models.DateField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.DRAFT)
     description = models.TextField(blank=True)
 
@@ -249,9 +251,25 @@ class Invoice(TimeStampedModel):
         return f"Invoice {self.invoice_number}"
 
     @property
+    def subtotal(self) -> Decimal:
+        lines_total = sum((line.line_total for line in self.lines.all()), Decimal('0'))
+        return lines_total or self.amount
+
+    @property
+    def discount_amount(self) -> Decimal:
+        base = self.subtotal
+        discount_value = (base * (self.discount_percent or 0)) / Decimal('100')
+        discount_value = max(discount_value, Decimal('0'))
+        return min(discount_value, base)
+
+    @property
+    def taxable_amount(self) -> Decimal:
+        return max(self.subtotal - self.discount_amount, Decimal('0'))
+
+    @property
     def total_with_tax(self) -> Decimal:
-        tax_value = (self.amount * (self.tax_percent or 0)) / Decimal('100')
-        return self.amount + tax_value
+        tax_value = (self.taxable_amount * (self.tax_percent or 0)) / Decimal('100')
+        return self.taxable_amount + tax_value
 
     @property
     def amount_received(self) -> Decimal:
@@ -260,6 +278,23 @@ class Invoice(TimeStampedModel):
     @property
     def outstanding(self) -> Decimal:
         return self.total_with_tax - self.amount_received
+
+
+class InvoiceLine(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='lines')
+    description = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self) -> str:
+        return f"{self.description} x {self.quantity}"
+
+    @property
+    def line_total(self) -> Decimal:
+        return (self.quantity or Decimal('0')) * (self.unit_price or Decimal('0'))
 
 
 class Payment(TimeStampedModel):
@@ -318,6 +353,28 @@ class Document(TimeStampedModel):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class FirmProfile(TimeStampedModel):
+    name = models.CharField(max_length=255, blank=True)
+    address = models.TextField(blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    tax_id = models.CharField(max_length=100, blank=True)
+    bank_name = models.CharField(max_length=255, blank=True)
+    bank_account_name = models.CharField(max_length=255, blank=True)
+    bank_account_number = models.CharField(max_length=100, blank=True)
+    bank_ifsc = models.CharField(max_length=50, blank=True)
+    upi_id = models.CharField(max_length=100, blank=True)
+    terms = models.TextField(blank=True)
+    logo = models.ImageField(upload_to='firm/', blank=True, null=True)
+    singleton = models.BooleanField(default=True, unique=True)
+
+    class Meta:
+        verbose_name = 'Firm Profile'
+
+    def __str__(self) -> str:
+        return self.name or "Firm Profile"
 
     def __str__(self) -> str:
         return self.file_name

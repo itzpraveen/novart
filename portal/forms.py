@@ -1,9 +1,12 @@
 from django import forms
+from django.forms import inlineformset_factory
 
 from .models import (
     Client,
     Document,
+    FirmProfile,
     Invoice,
+    InvoiceLine,
     Lead,
     Payment,
     Project,
@@ -149,12 +152,38 @@ class SiteIssueForm(forms.ModelForm):
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ['project', 'invoice_number', 'invoice_date', 'due_date', 'amount', 'tax_percent', 'status', 'description']
+        fields = [
+            'project',
+            'invoice_number',
+            'invoice_date',
+            'due_date',
+            'amount',
+            'discount_percent',
+            'tax_percent',
+            'status',
+            'description',
+        ]
         widgets = {
             'invoice_date': DateInput(),
             'due_date': DateInput(),
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+
+class InvoiceLineForm(forms.ModelForm):
+    class Meta:
+        model = InvoiceLine
+        fields = ['description', 'quantity', 'unit_price']
+        widgets = {'description': forms.TextInput(attrs={'placeholder': 'Describe work delivered'})}
+
+
+InvoiceLineFormSet = inlineformset_factory(
+    Invoice,
+    InvoiceLine,
+    form=InvoiceLineForm,
+    extra=3,
+    can_delete=False,
+)
 
 
 class PaymentForm(forms.ModelForm):
@@ -198,3 +227,23 @@ class ReminderSettingForm(forms.ModelForm):
         model = ReminderSetting
         fields = ['category', 'days_before', 'send_to_admins', 'send_to_assigned']
         widgets = {'category': forms.Select(attrs={'class': 'form-select'})}
+
+
+class FirmProfileForm(forms.ModelForm):
+    class Meta:
+        model = FirmProfile
+        fields = [
+            'name',
+            'address',
+            'email',
+            'phone',
+            'tax_id',
+            'bank_name',
+            'bank_account_name',
+            'bank_account_number',
+            'bank_ifsc',
+            'upi_id',
+            'terms',
+            'logo',
+        ]
+        widgets = {'address': forms.Textarea(attrs={'rows': 2}), 'terms': forms.Textarea(attrs={'rows': 3})}

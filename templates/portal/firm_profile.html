@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h3>Firm Profile</h3>
+                <p class="text-muted mb-0">Details shown on invoices and receipts.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to invoices</a>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-6">
+                <label class="form-label">Firm Name</label>
+                {{ form.name|add_class:"form-control" }}
+                {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tax ID / GSTIN</label>
+                {{ form.tax_id|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                {{ form.email|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                {{ form.phone|add_class:"form-control" }}
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Address</label>
+                {{ form.address|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Bank name</label>
+                {{ form.bank_name|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Account holder</label>
+                {{ form.bank_account_name|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Account number</label>
+                {{ form.bank_account_number|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">IFSC</label>
+                {{ form.bank_ifsc|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">UPI ID</label>
+                {{ form.upi_id|add_class:"form-control" }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Logo</label>
+                {{ form.logo }}
+                {% if profile.logo %}
+                    <div class="mt-2"><img src="{{ profile.logo.url }}" alt="Logo" style="height: 60px;"></div>
+                {% endif %}
+            </div>
+            <div class="col-12">
+                <label class="form-label">Payment Terms</label>
+                {{ form.terms|add_class:"form-control" }}
+            </div>
+            <div class="col-12 mt-2">
+                <button class="btn btn-primary">Save profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

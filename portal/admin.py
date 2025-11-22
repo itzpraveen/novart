@@ -4,7 +4,9 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import (
     Client,
     Document,
+    FirmProfile,
     Invoice,
+    InvoiceLine,
     Lead,
     Notification,
     Payment,
@@ -77,10 +79,20 @@ class SiteIssueAdmin(admin.ModelAdmin):
     list_filter = ('status',)
 
 
+class InvoiceLineInline(admin.TabularInline):
+    model = InvoiceLine
+    extra = 0
+
+
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('invoice_number', 'project', 'invoice_date', 'status', 'amount')
+    list_display = ('invoice_number', 'project', 'invoice_date', 'status', 'total_display')
     list_filter = ('status',)
+    inlines = [InvoiceLineInline]
+
+    @admin.display(description='Total (with tax)')
+    def total_display(self, obj):
+        return obj.total_with_tax
 
 
 @admin.register(Payment)
@@ -107,3 +119,8 @@ class ReminderSettingAdmin(admin.ModelAdmin):
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'message', 'is_read', 'created_at')
+
+
+@admin.register(FirmProfile)
+class FirmProfileAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'email', 'tax_id')

@@ -4,6 +4,10 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Invoices</h2>
     <div>
+        <a class="btn btn-outline-secondary me-2" href="{% url 'invoice_aging' %}">Aging report</a>
+        {% if request.user.role == 'admin' or request.user.is_superuser %}
+        <a class="btn btn-outline-secondary me-2" href="{% url 'firm_profile' %}">Firm profile</a>
+        {% endif %}
         <a class="btn btn-primary" href="{% url 'invoice_create' %}">New Invoice</a>
     </div>
 </div>
@@ -46,6 +50,7 @@
                     <td>{{ invoice.total_with_tax|rupee }}</td>
                     <td>{{ invoice.get_status_display }}</td>
                     <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary me-2" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
                         <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
                     </td>
                 </tr>
