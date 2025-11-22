@@ -4,6 +4,12 @@
 <head>
     <meta charset="utf-8">
     <style>
+        {% if font_path %}
+        @font-face {
+            font-family: "StudioSans";
+            src: url("file://{{ font_path }}");
+        }
+        {% endif %}
         body { font-family: "StudioSans", "Helvetica", "Arial", sans-serif; color: #222; margin: 32px; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }
         .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
