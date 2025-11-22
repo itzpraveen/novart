@@ -4,7 +4,6 @@ from decimal import Decimal
 import mimetypes
 import os
 from django.contrib.staticfiles import finders
-from io import BytesIO
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from xhtml2pdf import pisa
+from weasyprint import HTML
 
 from .decorators import role_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
@@ -463,13 +462,8 @@ def invoice_pdf(request, invoice_pk):
             'font_path': font_path,
         },
     )
-    pdf_file = BytesIO()
-    pdf_status = pisa.CreatePDF(html, dest=pdf_file, encoding='UTF-8')
-    if pdf_status.err:
-        messages.error(request, 'Unable to generate PDF right now. Please try again.')
-        return redirect('invoice_list')
-    pdf_file.seek(0)
-    response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+    pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
     return response
 
