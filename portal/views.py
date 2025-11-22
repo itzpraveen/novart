@@ -1,5 +1,7 @@
+from base64 import b64encode
 from datetime import timedelta
 from decimal import Decimal
+import mimetypes
 from io import BytesIO
 
 from django.contrib import messages
@@ -422,8 +424,16 @@ def invoice_pdf(request, invoice_pk):
     tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
     firm = FirmProfile.objects.first()
     logo_path = None
+    logo_data = None
     if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
         logo_path = firm.logo.path
+        try:
+            mime, _ = mimetypes.guess_type(firm.logo.name)
+            with firm.logo.open('rb') as f:
+                encoded = b64encode(f.read()).decode('utf-8')
+                logo_data = f"data:{mime or 'image/png'};base64,{encoded}"
+        except Exception:
+            logo_data = None
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
@@ -435,6 +445,7 @@ def invoice_pdf(request, invoice_pk):
             'tax_amount': tax_value,
             'firm': firm,
             'firm_logo_path': logo_path,
+            'firm_logo_data': logo_data,
         },
     )
     pdf_file = BytesIO()

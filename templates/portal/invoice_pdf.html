@@ -4,7 +4,11 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: "Helvetica", "Arial", sans-serif; color: #222; margin: 32px; }
+        @font-face {
+            font-family: "DejaVuSans";
+            src: url("file:///usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+        }
+        body { font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif; color: #222; margin: 32px; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }
         .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
         .brand p { margin: 4px 0 0; font-size: 11px; color: #666; }
@@ -27,7 +31,9 @@
 <body>
     <div class="header">
         <div class="brand">
-            {% if firm_logo_path %}
+            {% if firm_logo_data %}
+                <img src="{{ firm_logo_data }}" alt="Logo" style="height: 50px; margin-bottom: 6px;">
+            {% elif firm_logo_path %}
                 <img src="file://{{ firm_logo_path }}" alt="Logo" style="height: 50px; margin-bottom: 6px;">
             {% endif %}
             <h1>{{ firm.name|default:"StudioFlow" }}</h1>
