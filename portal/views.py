@@ -447,7 +447,7 @@ def invoice_pdf(request, invoice_pk):
         fallback_logo = finders.find('img/novart.png')
         logo_data = _encode_image(fallback_logo)
 
-    font_path = finders.find('fonts/DejaVuSans.ttf')
+    font_path = finders.find('fonts/NotoSans-Regular.ttf') or finders.find('fonts/DejaVuSans.ttf')
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
