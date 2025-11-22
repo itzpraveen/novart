@@ -16,6 +16,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from xhtml2pdf import pisa
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger(__name__)
 
@@ -451,6 +453,12 @@ def invoice_pdf(request, invoice_pk):
         logo_data = _encode_image(fallback_logo)
 
     font_path = finders.find('fonts/NotoSans-Regular.ttf') or finders.find('fonts/DejaVuSans.ttf')
+    if font_path:
+        try:
+            pdfmetrics.registerFont(TTFont('StudioSans', font_path))
+            pdfmetrics.registerFont(TTFont('StudioSans-Bold', font_path))
+        except Exception:
+            logger.exception("Failed to register PDF font at %s", font_path)
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
