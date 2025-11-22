@@ -56,8 +56,8 @@
             <div class="col-md-6">
                 <label class="form-label">Logo</label>
                 {{ form.logo }}
-                {% if profile.logo %}
-                    <div class="mt-2"><img src="{{ profile.logo.url }}" alt="Logo" style="height: 60px;"></div>
+                {% if logo_url %}
+                    <div class="mt-2"><img src="{{ logo_url }}" alt="Logo" style="height: 60px;"></div>
                 {% endif %}
             </div>
             <div class="col-12">

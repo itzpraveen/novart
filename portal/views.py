@@ -421,7 +421,9 @@ def invoice_pdf(request, invoice_pk):
     lines = list(invoice.lines.all())
     tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
     firm = FirmProfile.objects.first()
-    logo_path = firm.logo.path if firm and firm.logo else None
+    logo_path = None
+    if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
+        logo_path = firm.logo.path
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
@@ -596,7 +598,10 @@ def firm_profile(request):
             return redirect('firm_profile')
     else:
         form = FirmProfileForm(instance=profile)
-    return render(request, 'portal/firm_profile.html', {'form': form, 'profile': profile})
+    logo_url = None
+    if profile.logo and profile.logo.storage.exists(profile.logo.name):
+        logo_url = profile.logo.url
+    return render(request, 'portal/firm_profile.html', {'form': form, 'profile': profile, 'logo_url': logo_url})
 
 
 @login_required
