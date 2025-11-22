@@ -1,15 +1,15 @@
 :root {
-    --primary-color: #3952ff;
-    --primary-hover: #2d44e0;
-    --secondary-color: #5b647a;
-    --success-color: #0ea77c;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --background-color: #f6f7fb;
-    --surface-color: #ffffff;
+    --primary-color: #1f7a8c;
+    --primary-hover: #166173;
+    --secondary-color: #5f6a7a;
+    --success-color: #2e8b57;
+    --warning-color: #e6a700;
+    --danger-color: #d14343;
+    --background-color: #f4f2eb;
+    --surface-color: #fdfcf8;
     --text-primary: #0f172a;
     --text-secondary: #4b5563;
-    --border-color: #e4e7f0;
+    --border-color: #d8d5cb;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -23,6 +23,12 @@
 body {
     font-family: var(--font-sans);
     background-color: var(--background-color);
+    background-image:
+        linear-gradient(90deg, rgba(31, 122, 140, 0.03) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(31, 122, 140, 0.02) 1px, transparent 1px),
+        radial-gradient(circle at 20% 20%, rgba(22, 97, 115, 0.06), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(116, 102, 86, 0.08), transparent 24%);
+    background-size: 18px 18px, 18px 18px, 100% 100%, 100% 100%;
     color: var(--text-primary);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -48,10 +54,10 @@ a:hover {
 /* Layout & Navigation */
 .navbar {
     background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     padding: 0.85rem 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .navbar-brand {
@@ -79,7 +85,7 @@ a:hover {
 
 .nav-link:hover, .nav-link.active {
     color: var(--primary-color) !important;
-    background-color: rgba(57, 82, 255, 0.1);
+    background-color: rgba(31, 122, 140, 0.12);
 }
 
 /* Cards */
@@ -141,12 +147,12 @@ a:hover {
 }
 
 .list-group-item:hover {
-    background-color: #f1f5fb;
+    background-color: #f0f3f6;
 }
 
 .table thead th {
-    background-color: #f4f6fb;
-    color: var(--text-secondary);
+    background-color: #eef1f2;
+    color: #2f3b4a;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.76rem;
@@ -170,7 +176,7 @@ a:hover {
 }
 
 .btn-primary {
-    background: linear-gradient(130deg, var(--primary-color), #6b7bff);
+    background: linear-gradient(130deg, var(--primary-color), #245c69);
     border-color: var(--primary-color);
     padding: 0.625rem 1.25rem;
     font-weight: 600;
@@ -179,9 +185,9 @@ a:hover {
 }
 
 .btn-primary:hover {
-    background: linear-gradient(130deg, var(--primary-hover), #5569ff);
+    background: linear-gradient(130deg, var(--primary-hover), #1b4c58);
     border-color: var(--primary-hover);
-    box-shadow: 0 8px 24px rgba(57, 82, 255, 0.25);
+    box-shadow: 0 8px 24px rgba(31, 122, 140, 0.24);
 }
 
 .btn-outline-secondary {
@@ -193,11 +199,12 @@ a:hover {
     border-color: var(--border-color);
     border-radius: 12px;
     padding: 0.65rem 0.9rem;
+    background-color: #fbfaf7;
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: rgba(57, 82, 255, 0.6);
-    box-shadow: 0 0 0 0.2rem rgba(57, 82, 255, 0.15);
+    border-color: rgba(31, 122, 140, 0.6);
+    box-shadow: 0 0 0 0.2rem rgba(31, 122, 140, 0.15);
 }
 
 /* Utilities */
@@ -207,7 +214,19 @@ a:hover {
 
 .page-shell {
     max-width: 1200px;
-    padding: 0 1rem;
+    padding: 0 1rem 3rem;
+    position: relative;
+    z-index: 0;
+}
+
+.page-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(31, 122, 140, 0.03), transparent 50%);
+    pointer-events: none;
+    border-radius: 18px;
+    z-index: -1;
 }
 
 /* Animations */
