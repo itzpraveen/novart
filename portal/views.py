@@ -2,9 +2,9 @@ from base64 import b64encode
 from datetime import timedelta
 from decimal import Decimal
 import logging
-import pydyf
 import mimetypes
 import os
+from io import BytesIO
 from django.contrib.staticfiles import finders
 
 from django.contrib import messages
@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from weasyprint import CSS, HTML
+from xhtml2pdf import pisa
 
 logger = logging.getLogger(__name__)
 
@@ -451,7 +451,6 @@ def invoice_pdf(request, invoice_pk):
         logo_data = _encode_image(fallback_logo)
 
     font_path = finders.find('fonts/NotoSans-Regular.ttf') or finders.find('fonts/DejaVuSans.ttf')
-    logger.info("WeasyPrint/pydyf versions: weasy=%s pydyf=%s path=%s", HTML.__module__, getattr(pydyf, '__version__', 'unknown'), getattr(pydyf, '__file__', 'unknown'))
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
@@ -467,19 +466,14 @@ def invoice_pdf(request, invoice_pk):
             'font_path': font_path,
         },
     )
-    css = None
-    if font_path:
-        css = CSS(string=f"""
-            @font-face {{ font-family: 'StudioSans'; src: url('file://{font_path}'); }}
-            body {{ font-family: 'StudioSans', sans-serif; }}
-        """)
-    try:
-        pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf(stylesheets=[css] if css else None)
-    except Exception:
+    pdf_file = BytesIO()
+    result = pisa.CreatePDF(html, dest=pdf_file, encoding='UTF-8')
+    if result.err:
         logger.exception("Invoice PDF render failed for %s", invoice_pk)
         messages.error(request, 'Unable to generate PDF right now. Please try again.')
         return redirect('invoice_list')
-    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    pdf_file.seek(0)
+    response = HttpResponse(pdf_file.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
     return response
 
