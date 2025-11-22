@@ -2,6 +2,8 @@ from base64 import b64encode
 from datetime import timedelta
 from decimal import Decimal
 import mimetypes
+import os
+from django.contrib.staticfiles import finders
 from io import BytesIO
 
 from django.contrib import messages
@@ -425,15 +427,27 @@ def invoice_pdf(request, invoice_pk):
     firm = FirmProfile.objects.first()
     logo_path = None
     logo_data = None
+
+    def _encode_image(path: str | None) -> str | None:
+        if not path:
+            return None
+        try:
+            mime, _ = mimetypes.guess_type(path)
+            with open(path, 'rb') as f:
+                encoded = b64encode(f.read()).decode('utf-8')
+                return f"data:{mime or 'image/png'};base64,{encoded}"
+        except Exception:
+            return None
+
     if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
         logo_path = firm.logo.path
-        try:
-            mime, _ = mimetypes.guess_type(firm.logo.name)
-            with firm.logo.open('rb') as f:
-                encoded = b64encode(f.read()).decode('utf-8')
-                logo_data = f"data:{mime or 'image/png'};base64,{encoded}"
-        except Exception:
-            logo_data = None
+        logo_data = _encode_image(logo_path)
+
+    if not logo_data:
+        fallback_logo = finders.find('img/novart.png')
+        logo_data = _encode_image(fallback_logo)
+
+    font_path = finders.find('fonts/DejaVuSans.ttf')
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
@@ -446,6 +460,7 @@ def invoice_pdf(request, invoice_pk):
             'firm': firm,
             'firm_logo_path': logo_path,
             'firm_logo_data': logo_data,
+            'font_path': font_path,
         },
     )
     pdf_file = BytesIO()
