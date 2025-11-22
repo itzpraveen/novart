@@ -1,6 +1,7 @@
 from base64 import b64encode
 from datetime import timedelta
 from decimal import Decimal
+import logging
 import mimetypes
 import os
 from django.contrib.staticfiles import finders
@@ -14,6 +15,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from weasyprint import CSS, HTML
+
+logger = logging.getLogger(__name__)
 
 from .decorators import role_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
@@ -468,7 +471,12 @@ def invoice_pdf(request, invoice_pk):
             @font-face {{ font-family: 'StudioSans'; src: url('file://{font_path}'); }}
             body {{ font-family: 'StudioSans', sans-serif; }}
         """)
-    pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf(stylesheets=[css] if css else None)
+    try:
+        pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf(stylesheets=[css] if css else None)
+    except Exception:
+        logger.exception("Invoice PDF render failed for %s", invoice_pk)
+        messages.error(request, 'Unable to generate PDF right now. Please try again.')
+        return redirect('invoice_list')
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
     return response
