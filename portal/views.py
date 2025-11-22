@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
-from weasyprint import HTML
+from weasyprint import CSS, HTML
 
 from .decorators import role_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
@@ -462,7 +462,13 @@ def invoice_pdf(request, invoice_pk):
             'font_path': font_path,
         },
     )
-    pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
+    css = None
+    if font_path:
+        css = CSS(string=f"""
+            @font-face {{ font-family: 'StudioSans'; src: url('file://{font_path}'); }}
+            body {{ font-family: 'StudioSans', sans-serif; }}
+        """)
+    pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf(stylesheets=[css] if css else None)
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
     return response
