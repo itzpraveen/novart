@@ -38,7 +38,9 @@
             {% elif firm_logo_path %}
                 <img src="file://{{ firm_logo_path }}" alt="Logo" style="height: 50px; margin-bottom: 6px;">
             {% endif %}
-            <h1>{{ firm.name|default:"StudioFlow" }}</h1>
+            {% if not firm_logo_data and not firm_logo_path %}
+                <h1>{{ firm.name|default:"StudioFlow" }}</h1>
+            {% endif %}
             {% if firm.address %}<p>{{ firm.address }}</p>{% endif %}
             {% if firm.phone %}<p>Phone: {{ firm.phone }}</p>{% endif %}
             {% if firm.email %}<p>Email: {{ firm.email }}</p>{% endif %}
