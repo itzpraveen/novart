@@ -30,12 +30,38 @@ class ClientForm(forms.ModelForm):
         fields = ['name', 'phone', 'email', 'address', 'city', 'state', 'postal_code', 'notes']
         widgets = {'notes': forms.Textarea(attrs={'rows': 3})}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            'name': 'Full name or company',
+            'phone': 'Primary contact number',
+            'email': 'name@example.com',
+            'address': 'Street and number',
+            'city': 'City',
+            'state': 'State/Region',
+            'postal_code': 'Postal/ZIP code',
+            'notes': 'Any extra context about the client',
+        }
+        for field, text in placeholders.items():
+            self.fields[field].widget.attrs.setdefault('placeholder', text)
+
 
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = ['client', 'title', 'lead_source', 'status', 'estimated_value', 'notes']
         widgets = {'notes': forms.Textarea(attrs={'rows': 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            'title': 'Short summary (e.g., Kitchen remodel)',
+            'lead_source': 'How they found us (referral, ad, web, etc.)',
+            'estimated_value': 'Estimated contract value',
+            'notes': 'Next steps or extra details',
+        }
+        for field, text in placeholders.items():
+            self.fields[field].widget.attrs.setdefault('placeholder', text)
 
 
 class ProjectForm(forms.ModelForm):
@@ -62,6 +88,25 @@ class ProjectForm(forms.ModelForm):
             'start_date': DateInput(),
             'expected_handover': DateInput(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            'name': 'Project name (client-facing)',
+            'code': 'Internal code or job number (optional)',
+            'location': 'Site address or city',
+            'built_up_area': 'e.g., 3500 sq ft',
+            'description': 'Scope, goals, milestones',
+            'current_stage': 'e.g., Enquiry, Proposal, Execution',
+            'health_status': 'On Track, At Risk, etc.',
+        }
+        for field, text in placeholders.items():
+            if field in self.fields:
+                self.fields[field].widget.attrs.setdefault('placeholder', text)
+        # Date inputs render as type=date; keep a hint for non-supporting browsers.
+        for date_field in ['start_date', 'expected_handover']:
+            if date_field in self.fields:
+                self.fields[date_field].widget.attrs.setdefault('placeholder', 'mm/dd/yyyy')
 
 
 class StageUpdateForm(forms.ModelForm):
