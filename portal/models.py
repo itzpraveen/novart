@@ -431,3 +431,17 @@ class Notification(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.user}: {self.message}"
+
+
+class WhatsAppConfig(TimeStampedModel):
+    enabled = models.BooleanField(default=False)
+    phone_number_id = models.CharField(max_length=64, blank=True)
+    from_number = models.CharField(max_length=32, blank=True)
+    api_token = models.TextField(blank=True)
+    default_language = models.CharField(max_length=10, default='en', blank=True)
+
+    class Meta:
+        verbose_name = 'WhatsApp Configuration'
+
+    def __str__(self) -> str:
+        return self.from_number or self.phone_number_id or "WhatsApp Config"

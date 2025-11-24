@@ -4,16 +4,9 @@ import re
 from typing import Optional
 
 import requests
+from django.apps import apps
 
 logger = logging.getLogger(__name__)
-
-WHATSAPP_TOKEN = os.environ.get('WHATSAPP_TOKEN')
-WHATSAPP_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
-WHATSAPP_ENABLED = os.environ.get('WHATSAPP_ENABLED', '0') == '1'
-
-
-def _configured() -> bool:
-    return bool(WHATSAPP_ENABLED and WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID)
 
 
 def _normalize_phone(phone: str) -> Optional[str]:
@@ -24,21 +17,52 @@ def _normalize_phone(phone: str) -> Optional[str]:
     return cleaned if cleaned else None
 
 
+def _get_settings():
+    """
+    Prefer environment variables; fall back to enabled DB config.
+    Returns dict with token, phone_number_id, language or None if unavailable.
+    """
+    env_enabled = os.environ.get('WHATSAPP_ENABLED', '0') == '1'
+    env_token = os.environ.get('WHATSAPP_TOKEN')
+    env_number_id = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
+    env_lang = os.environ.get('WHATSAPP_LANGUAGE', 'en')
+    if env_enabled and env_token and env_number_id:
+        return {
+            'token': env_token,
+            'phone_number_id': env_number_id,
+            'language': env_lang,
+        }
+
+    try:
+        WhatsAppConfig = apps.get_model('portal', 'WhatsAppConfig')
+        cfg = WhatsAppConfig.objects.filter(enabled=True, api_token__isnull=False).order_by('-updated_at').first()
+        if cfg and cfg.api_token and cfg.phone_number_id:
+            return {
+                'token': cfg.api_token.strip(),
+                'phone_number_id': cfg.phone_number_id.strip(),
+                'language': (cfg.default_language or 'en').strip() or 'en',
+            }
+    except Exception as exc:  # pragma: no cover
+        logger.exception("WhatsApp config lookup failed: %s", exc)
+    return None
+
+
 def send_text(to_phone: str, body: str) -> bool:
     """
     Send a WhatsApp text message via WhatsApp Cloud API.
     Returns True on API success, False otherwise. Safe no-op if not configured.
     """
-    if not _configured():
+    settings = _get_settings()
+    if not settings:
         return False
     to = _normalize_phone(to_phone)
     if not to:
         logger.info("WhatsApp skip: invalid phone for %s", to_phone)
         return False
 
-    url = f"https://graph.facebook.com/v19.0/{WHATSAPP_PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v19.0/{settings['phone_number_id']}/messages"
     headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Authorization": f"Bearer {settings['token']}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -56,4 +80,3 @@ def send_text(to_phone: str, body: str) -> bool:
     except Exception as exc:  # pragma: no cover
         logger.exception("WhatsApp send error: %s", exc)
         return False
-

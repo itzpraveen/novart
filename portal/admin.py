@@ -19,6 +19,7 @@ from .models import (
     Task,
     Transaction,
     User,
+    WhatsAppConfig,
 )
 
 
@@ -124,3 +125,15 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(FirmProfile)
 class FirmProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email', 'tax_id')
+
+
+@admin.register(WhatsAppConfig)
+class WhatsAppConfigAdmin(admin.ModelAdmin):
+    list_display = ('enabled', 'from_number', 'phone_number_id', 'updated_at')
+    fields = ('enabled', 'from_number', 'phone_number_id', 'api_token', 'default_language')
+
+    def has_add_permission(self, request):
+        # Restrict to a single config entry
+        if WhatsAppConfig.objects.exists():
+            return False
+        return super().has_add_permission(request)
