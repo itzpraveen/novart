@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from portal.models import Invoice, Notification, Project, ReminderSetting, Task, User
+from portal.notifications.whatsapp import send_text as send_whatsapp_text
 
 
 class Command(BaseCommand):
@@ -33,6 +34,9 @@ class Command(BaseCommand):
         created = 0
         for user in users:
             Notification.objects.create(user=user, message=message, category=category, related_url=url)
+            # Best-effort WhatsApp push if enabled and phone is present
+            if user and user.phone:
+                send_whatsapp_text(user.phone, message)
             created += 1
         return created
 
