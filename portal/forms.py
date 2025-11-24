@@ -32,6 +32,7 @@ class ClientForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['name'].label = 'Client name'
         placeholders = {
             'name': 'Full name or company',
             'phone': 'Primary contact number',
@@ -54,6 +55,7 @@ class LeadForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['title'].label = 'Lead title'
         placeholders = {
             'title': 'Short summary (e.g., Kitchen remodel)',
             'lead_source': 'How they found us (referral, ad, web, etc.)',
@@ -91,6 +93,10 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'name' in self.fields:
+            self.fields['name'].label = 'Project name'
+        if 'code' in self.fields:
+            self.fields['code'].label = 'Project code'
         placeholders = {
             'name': 'Project name (client-facing)',
             'code': 'Internal code or job number (optional)',
