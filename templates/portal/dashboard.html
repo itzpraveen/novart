@@ -18,7 +18,7 @@
 
 <div class="row g-4 mb-4">
     <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
+        <a href="{% url 'project_list' %}" class="card h-100 border-0 shadow-sm text-decoration-none text-dark">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
@@ -33,10 +33,10 @@
                 </div>
                 <h3 class="stat-value">{{ total_projects }}</h3>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
+        <a href="{% url 'project_list' %}?active=1" class="card h-100 border-0 shadow-sm text-decoration-none text-dark">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
@@ -50,10 +50,10 @@
                 </div>
                 <h3 class="stat-value">{{ active_projects }}</h3>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
+        <a href="{% url 'site_visit_list' %}" class="card h-100 border-0 shadow-sm text-decoration-none text-dark">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
@@ -69,10 +69,10 @@
                 <h3 class="stat-value">{{ site_visits_this_month }}</h3>
                 <small class="text-muted">This Month</small>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card h-100 border-0 shadow-sm">
+        <a href="{% url 'invoice_list' %}?status=unpaid" class="card h-100 border-0 shadow-sm text-decoration-none text-dark">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-danger bg-opacity-10 p-2 rounded-circle me-3">
@@ -87,7 +87,7 @@
                 </div>
                 <h3 class="stat-value">{{ total_invoiced_month|rupee }}</h3>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
