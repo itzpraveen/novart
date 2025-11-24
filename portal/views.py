@@ -55,6 +55,7 @@ from .models import (
     SiteIssue,
     SiteVisit,
     Task,
+    TaskTemplate,
     Transaction,
     User,
 )
@@ -62,6 +63,14 @@ from .models import (
 
 def _get_default_context():
     return {'currency': '₹'}
+
+
+def _task_template_data():
+    return list(
+        TaskTemplate.objects.order_by('title').values(
+            'id', 'title', 'description', 'status', 'priority', 'due_in_days'
+        )
+    )
 
 
 @login_required
@@ -297,7 +306,13 @@ def project_tasks(request, pk):
     return render(
         request,
         'portal/project_tasks.html',
-        {'project': project, 'columns': columns, 'form': form, 'statuses': Task.Status.choices},
+        {
+            'project': project,
+            'columns': columns,
+            'form': form,
+            'statuses': Task.Status.choices,
+            'task_templates_json': _task_template_data(),
+        },
     )
 
 
@@ -317,7 +332,11 @@ def task_create(request):
             return redirect('project_detail', pk=task.project.pk)
     else:
         form = TaskForm(initial=initial)
-    return render(request, 'portal/task_form.html', {'form': form, 'project': project})
+    return render(
+        request,
+        'portal/task_form.html',
+        {'form': form, 'project': project, 'task_templates_json': _task_template_data()},
+    )
 
 
 @login_required
@@ -332,7 +351,11 @@ def task_edit(request, pk):
             return redirect('project_detail', pk=task.project.pk)
     else:
         form = TaskForm(instance=task)
-    return render(request, 'portal/task_form.html', {'form': form, 'task': task})
+    return render(
+        request,
+        'portal/task_form.html',
+        {'form': form, 'task': task, 'project': task.project, 'task_templates_json': _task_template_data()},
+    )
 
 
 @login_required

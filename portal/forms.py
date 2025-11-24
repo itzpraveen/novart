@@ -16,6 +16,7 @@ from .models import (
     SiteVisit,
     SiteVisitAttachment,
     Task,
+    TaskTemplate,
     Transaction,
     User,
 )
@@ -123,9 +124,14 @@ class StageUpdateForm(forms.ModelForm):
 
 
 class TaskForm(forms.ModelForm):
+    template = forms.ModelChoiceField(
+        queryset=TaskTemplate.objects.none(), required=False, empty_label='Select a template (optional)'
+    )
+
     class Meta:
         model = Task
         fields = [
+            'template',
             'project',
             'title',
             'description',
@@ -137,6 +143,33 @@ class TaskForm(forms.ModelForm):
             'actual_hours',
         ]
         widgets = {'due_date': DateInput(), 'description': forms.Textarea(attrs={'rows': 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['template'].queryset = TaskTemplate.objects.order_by('title')
+        placeholders = {
+            'title': 'Task title',
+            'description': 'Details or acceptance criteria',
+        }
+        for field, text in placeholders.items():
+            if field in self.fields:
+                self.fields[field].widget.attrs.setdefault('placeholder', text)
+
+    def clean(self):
+        cleaned = super().clean()
+        template = cleaned.get('template')
+        if template:
+            cleaned.setdefault('title', template.title)
+            cleaned.setdefault('description', template.description)
+            if template.status and not cleaned.get('status'):
+                cleaned['status'] = template.status
+            if template.priority and not cleaned.get('priority'):
+                cleaned['priority'] = template.priority
+            if template.due_in_days is not None and not cleaned.get('due_date'):
+                date_widget = self.fields['due_date']
+                from datetime import date, timedelta
+                cleaned['due_date'] = date.today() + timedelta(days=template.due_in_days or 0)
+        return cleaned
 
 
 class UserForm(forms.ModelForm):

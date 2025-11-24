@@ -30,4 +30,36 @@
         </form>
     </div>
 </div>
+{% if task_templates_json %}
+    {{ task_templates_json|json_script:"task-templates-data" }}
+    <script>
+        (() => {
+            const dataEl = document.getElementById('task-templates-data');
+            const templateSelect = document.getElementById('id_template');
+            if (!dataEl || !templateSelect) return;
+            const templates = JSON.parse(dataEl.textContent || '[]');
+            const byId = {};
+            templates.forEach(t => { byId[String(t.id)] = t; });
+            const title = document.getElementById('id_title');
+            const desc = document.getElementById('id_description');
+            const status = document.getElementById('id_status');
+            const priority = document.getElementById('id_priority');
+            const due = document.getElementById('id_due_date');
+            templateSelect.addEventListener('change', () => {
+                const tpl = byId[templateSelect.value];
+                if (!tpl) return;
+                if (title && !title.value) title.value = tpl.title || '';
+                if (desc && !desc.value) desc.value = tpl.description || '';
+                if (status && tpl.status) status.value = tpl.status;
+                if (priority && tpl.priority) priority.value = tpl.priority;
+                if (due && tpl.due_in_days !== null && tpl.due_in_days !== undefined) {
+                    const days = Number(tpl.due_in_days || 0);
+                    const d = new Date();
+                    d.setDate(d.getDate() + days);
+                    due.value = d.toISOString().slice(0, 10);
+                }
+            });
+        })();
+    </script>
+{% endif %}
 {% endblock %}

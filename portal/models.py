@@ -11,6 +11,13 @@ class User(AbstractUser):
         ARCHITECT = 'architect', 'Architect'
         SITE_ENGINEER = 'site_engineer', 'Site Engineer'
         FINANCE = 'finance', 'Finance'
+        PROJECT_MANAGER = 'project_manager', 'Project Manager'
+        DESIGNER = 'designer', 'Designer'
+        QS = 'qs', 'QS / Estimator'
+        PROCUREMENT = 'procurement', 'Procurement'
+        CLIENT_LIAISON = 'client_liaison', 'Client Liaison'
+        INTERN = 'intern', 'Intern / Trainee'
+        VIEWER = 'viewer', 'Viewer (read-only)'
 
     phone = models.CharField(max_length=50, blank=True)
     role = models.CharField(max_length=32, choices=Roles.choices, default=Roles.ARCHITECT)
@@ -170,6 +177,22 @@ class Task(TimeStampedModel):
 
     class Meta:
         ordering = ['due_date', 'priority']
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class TaskTemplate(TimeStampedModel):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=32, choices=Task.Status.choices, default=Task.Status.TODO)
+    priority = models.CharField(max_length=32, choices=Task.Priority.choices, default=Task.Priority.MEDIUM)
+    due_in_days = models.PositiveIntegerField(
+        null=True, blank=True, help_text='If set, due date will default to today + this many days.'
+    )
+
+    class Meta:
+        ordering = ['title']
 
     def __str__(self) -> str:
         return self.title
