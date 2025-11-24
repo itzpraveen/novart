@@ -130,6 +130,7 @@ class FirmProfileAdmin(admin.ModelAdmin):
 @admin.register(WhatsAppConfig)
 class WhatsAppConfigAdmin(admin.ModelAdmin):
     list_display = ('enabled', 'from_number', 'phone_number_id', 'updated_at')
+    list_display_links = ('from_number', 'phone_number_id')
     fields = ('enabled', 'from_number', 'phone_number_id', 'api_token', 'default_language')
 
     def has_add_permission(self, request):
