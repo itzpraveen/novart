@@ -46,7 +46,7 @@ jobs:
     envs:
       - key: DJANGO_SECRET_KEY
         type: SECRET
-        value: EV[1:QDrjVeNVUnK2tmvmqV7pKLabVUdzhefz:XBfunF0fjkr1sVJpQOwHzYNwVqc3roX5MA==]
+        value: EV[1:lgeIZg+A2H+qUG8+O79Oq4+5BLhaZDEm:ENgcR4e9jP5j8V08VLhOvK2m8epVcqfHzA==]
         scope: RUN_AND_BUILD_TIME
       - key: DJANGO_ALLOWED_HOSTS
         value: ${APP_DOMAIN}
@@ -59,5 +59,5 @@ jobs:
         scope: RUN_AND_BUILD_TIME
       - key: DATABASE_URL
         type: SECRET
-        value: EV[1:X+B3brIRcnxOHnt9m9Tz/62Vf+/+m1wE:IMrhlNYiT2WYAg+CxrtthAgVq9BQkqBX4ocZLPWkP4o0QecinYiC5vm//Uxhcy3go9p6BZXtp10649M=]
+        value: EV[1:pf9xwJDe7kKysMZ85FE/wJrui/BzR6Zj:/+XHH9ayVs3K9K6KyCB08vjKM/j9M1ci5NQTlexzaa8Cf/PqYDZpUMWedBENkMTINCmZStqiRNa6+3I=]
         scope: RUN_AND_BUILD_TIME
