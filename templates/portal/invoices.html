@@ -41,7 +41,7 @@
             </tr>
             </thead>
             <tbody>
-            {% for invoice in filter.qs %}
+            {% for invoice in invoices %}
                 <tr>
                     <td>{{ invoice.invoice_number }}</td>
                     <td>{{ invoice.project.name }}</td>
@@ -51,7 +51,14 @@
                     <td>{{ invoice.get_status_display }}</td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-secondary me-2" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
-                        <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
+                        <a class="btn btn-sm btn-outline-primary me-2" href="{% url 'invoice_edit' invoice.pk %}">Edit</a>
+                        {% if invoice.outstanding > 0 %}
+                        <a class="btn btn-sm btn-outline-success me-2" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
+                        {% endif %}
+                        <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
                     </td>
                 </tr>
             {% empty %}

@@ -73,6 +73,36 @@ def _task_template_data():
     )
 
 
+def _refresh_invoice_status(invoice: Invoice) -> Invoice:
+    today = timezone.localdate()
+    outstanding = invoice.outstanding
+    new_status = invoice.status
+    if outstanding <= 0:
+        new_status = Invoice.Status.PAID
+    elif invoice.due_date < today:
+        new_status = Invoice.Status.OVERDUE
+    elif invoice.status == Invoice.Status.DRAFT:
+        new_status = Invoice.Status.SENT
+    if new_status != invoice.status:
+        invoice.status = new_status
+        invoice.save(update_fields=['status'])
+    return invoice
+
+
+def _formset_line_total(formset) -> Decimal:
+    total = Decimal('0')
+    for form in formset:
+        data = getattr(form, 'cleaned_data', None)
+        if not data or data.get('DELETE'):
+            continue
+        if not any(data.get(field) for field in ('description', 'quantity', 'unit_price')):
+            continue
+        qty = data.get('quantity') or Decimal('0')
+        unit_price = data.get('unit_price') or Decimal('0')
+        total += qty * unit_price
+    return total
+
+
 @login_required
 def dashboard(request):
     today = timezone.localdate()
@@ -437,10 +467,15 @@ def issue_list(request):
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_list(request):
-    invoice_filter = InvoiceFilter(
-        request.GET, queryset=Invoice.objects.select_related('project', 'project__client').prefetch_related('lines')
-    )
-    return render(request, 'portal/invoices.html', {'filter': invoice_filter})
+    invoice_qs = Invoice.objects.select_related('project', 'project__client').prefetch_related('lines', 'payments')
+    invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
+    invoices = list(invoice_filter.qs)
+    for invoice in invoices:
+        _refresh_invoice_status(invoice)
+    # Re-apply filter to reflect any status changes after refresh.
+    invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
+    invoices = list(invoice_filter.qs)
+    return render(request, 'portal/invoices.html', {'filter': invoice_filter, 'invoices': invoices})
 
 
 @login_required
@@ -450,6 +485,7 @@ def invoice_pdf(request, invoice_pk):
         Invoice.objects.select_related('project__client', 'project__project_manager').prefetch_related('lines', 'payments'),
         pk=invoice_pk,
     )
+    invoice = _refresh_invoice_status(invoice)
     lines = list(invoice.lines.all())
     tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
     firm = FirmProfile.objects.first()
@@ -516,15 +552,55 @@ def invoice_create(request):
         form = InvoiceForm(request.POST)
         formset = InvoiceLineFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
-            invoice = form.save()
-            formset.instance = invoice
-            formset.save()
-            messages.success(request, 'Invoice created.')
-            return redirect('invoice_list')
+            lines_total = _formset_line_total(formset)
+            amount = form.cleaned_data.get('amount') or Decimal('0')
+            if lines_total and amount != lines_total:
+                form.add_error('amount', f'Total amount must match line items ({lines_total}).')
+            else:
+                invoice = form.save(commit=False)
+                if lines_total:
+                    invoice.amount = lines_total
+                if invoice.status == Invoice.Status.DRAFT:
+                    invoice.status = Invoice.Status.SENT
+                invoice.save()
+                formset.instance = invoice
+                formset.save()
+                _refresh_invoice_status(invoice)
+                messages.success(request, 'Invoice created.')
+                return redirect('invoice_list')
     else:
         form = InvoiceForm()
         formset = InvoiceLineFormSet()
     return render(request, 'portal/invoice_form.html', {'form': form, 'formset': formset})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+def invoice_edit(request, invoice_pk):
+    invoice = get_object_or_404(Invoice.objects.prefetch_related('lines', 'payments'), pk=invoice_pk)
+    if request.method == 'POST':
+        form = InvoiceForm(request.POST, instance=invoice)
+        formset = InvoiceLineFormSet(request.POST, instance=invoice)
+        if form.is_valid() and formset.is_valid():
+            lines_total = _formset_line_total(formset)
+            amount = form.cleaned_data.get('amount') or Decimal('0')
+            if lines_total and amount != lines_total:
+                form.add_error('amount', f'Total amount must match line items ({lines_total}).')
+            else:
+                invoice = form.save(commit=False)
+                if lines_total:
+                    invoice.amount = lines_total
+                if invoice.status == Invoice.Status.DRAFT:
+                    invoice.status = Invoice.Status.SENT
+                invoice.save()
+                formset.save()
+                _refresh_invoice_status(invoice)
+                messages.success(request, 'Invoice updated.')
+                return redirect('invoice_list')
+    else:
+        form = InvoiceForm(instance=invoice)
+        formset = InvoiceLineFormSet(instance=invoice)
+    return render(request, 'portal/invoice_form.html', {'form': form, 'formset': formset, 'invoice': invoice})
 
 
 @login_required
@@ -539,6 +615,7 @@ def invoice_aging(request):
     buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}
     totals = {key: Decimal('0') for key in buckets}
     for invoice in invoices:
+        invoice = _refresh_invoice_status(invoice)
         outstanding = invoice.outstanding
         if outstanding <= 0:
             continue
@@ -563,21 +640,36 @@ def invoice_aging(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+def invoice_delete(request, invoice_pk):
+    invoice = get_object_or_404(Invoice.objects.prefetch_related('payments'), pk=invoice_pk)
+    if request.method != 'POST':
+        return HttpResponseForbidden('Delete requires POST.')
+    if invoice.payments.exists():
+        messages.error(request, 'Cannot delete an invoice with recorded payments.')
+        return redirect('invoice_list')
+    invoice.delete()
+    messages.success(request, 'Invoice deleted.')
+    return redirect('invoice_list')
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def payment_create(request, invoice_pk):
     invoice = get_object_or_404(Invoice, pk=invoice_pk)
+    if invoice.outstanding <= 0:
+        messages.info(request, 'This invoice is already settled.')
+        return redirect('invoice_list')
     if request.method == 'POST':
-        form = PaymentForm(request.POST)
+        form = PaymentForm(request.POST, invoice=invoice)
         if form.is_valid():
             payment = form.save(commit=False)
             payment.invoice = invoice
             payment.save()
-            if invoice.total_with_tax <= invoice.amount_received:
-                invoice.status = Invoice.Status.PAID
-                invoice.save(update_fields=['status'])
+            _refresh_invoice_status(invoice)
             messages.success(request, 'Payment recorded.')
             return redirect('invoice_list')
     else:
-        form = PaymentForm(initial={'received_by': request.user})
+        form = PaymentForm(initial={'received_by': request.user}, invoice=invoice)
     return render(request, 'portal/payment_form.html', {'form': form, 'invoice': invoice})
 
 

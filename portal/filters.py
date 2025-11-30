@@ -47,8 +47,17 @@ class SiteIssueFilter(django_filters.FilterSet):
 
 
 class InvoiceFilter(django_filters.FilterSet):
-    status = django_filters.ChoiceFilter(choices=Invoice.Status.choices)
+    STATUS_CHOICES = [('unpaid', 'Unpaid (open)')] + list(Invoice.Status.choices)
+
+    status = django_filters.ChoiceFilter(choices=STATUS_CHOICES, method='filter_status')
     invoice_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+
+    def filter_status(self, queryset, name, value):
+        if value == 'unpaid':
+            return queryset.exclude(status=Invoice.Status.PAID)
+        if value:
+            return queryset.filter(**{name: value})
+        return queryset
 
     class Meta:
         model = Invoice

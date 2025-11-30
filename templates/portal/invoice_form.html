@@ -3,7 +3,8 @@
 {% block content %}
 <div class="card shadow-sm">
     <div class="card-body">
-        <h3>Invoice</h3>
+        <h3>{% if invoice %}Edit Invoice · {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}</h3>
+        {% if invoice %}<p class="text-muted mb-3">Status: {{ invoice.get_status_display }}</p>{% endif %}
         <form method="post">
             {% csrf_token %}
             <div class="row g-3">
@@ -25,6 +26,7 @@
                             <th>Description</th>
                             <th style="width: 140px;">Qty</th>
                             <th style="width: 180px;">Unit Price</th>
+                            {% if formset.can_delete %}<th style="width: 90px;">Remove</th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -34,6 +36,15 @@
                             <td>{{ form.description|add_class:"form-control" }}{% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
                             <td>{{ form.quantity|add_class:"form-control" }}{% for error in form.quantity.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
                             <td>{{ form.unit_price|add_class:"form-control" }}{% for error in form.unit_price.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+                            {% if formset.can_delete %}
+                            <td class="text-center">
+                                {% if form.instance.pk %}
+                                    <div class="form-check">
+                                        {{ form.DELETE|add_class:"form-check-input" }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>

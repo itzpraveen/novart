@@ -300,7 +300,7 @@ class Invoice(TimeStampedModel):
 
     @property
     def outstanding(self) -> Decimal:
-        return self.total_with_tax - self.amount_received
+        return max(self.total_with_tax - self.amount_received, Decimal('0'))
 
 
 class InvoiceLine(models.Model):

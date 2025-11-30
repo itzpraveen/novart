@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 from django.forms import inlineformset_factory
 
@@ -253,6 +255,14 @@ class InvoiceForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 3}),
         }
 
+    def clean(self):
+        cleaned = super().clean()
+        invoice_date = cleaned.get('invoice_date')
+        due_date = cleaned.get('due_date')
+        if invoice_date and due_date and due_date < invoice_date:
+            self.add_error('due_date', 'Due date cannot be earlier than the invoice date.')
+        return cleaned
+
 
 class InvoiceLineForm(forms.ModelForm):
     class Meta:
@@ -266,15 +276,35 @@ InvoiceLineFormSet = inlineformset_factory(
     InvoiceLine,
     form=InvoiceLineForm,
     extra=3,
-    can_delete=False,
+    can_delete=True,
 )
 
 
 class PaymentForm(forms.ModelForm):
+    def __init__(self, *args, invoice=None, **kwargs):
+        self.invoice = invoice
+        super().__init__(*args, **kwargs)
+        if invoice:
+            outstanding = invoice.outstanding
+            self.fields['amount'].widget.attrs.setdefault('max', str(outstanding))
+            self.fields['amount'].widget.attrs.setdefault('min', '0.01')
+
     class Meta:
         model = Payment
         fields = ['payment_date', 'amount', 'method', 'reference', 'received_by']
         widgets = {'payment_date': DateInput()}
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        if self.invoice:
+            outstanding = self.invoice.outstanding
+            if outstanding <= 0:
+                raise forms.ValidationError('This invoice is already settled.')
+            if amount > outstanding:
+                raise forms.ValidationError(f'Cannot record more than the outstanding balance ({outstanding}).')
+        return amount
 
 
 class TransactionForm(forms.ModelForm):
