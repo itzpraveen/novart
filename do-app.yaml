@@ -11,13 +11,7 @@ services:
       repo_clone_url: https://github.com/itzpraveen/novart.git
       branch: main
     source_dir: .
-    build_command: >-
-      apt-get update && \
-      apt-get install -y libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libffi-dev shared-mime-info libharfbuzz0b libfribidi0 && \
-      pip install --upgrade pip setuptools wheel && \
-      pip uninstall -y weasyprint pydyf || true && \
-      pip install --no-cache-dir -r requirements.txt && \
-      python manage.py collectstatic --noinput
+    build_command: python manage.py collectstatic --noinput
     run_command: gunicorn studioflow.wsgi:application --bind 0.0.0.0:${PORT:-8080}
     routes:
       - path: /
