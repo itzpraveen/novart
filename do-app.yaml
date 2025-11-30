@@ -18,7 +18,7 @@ services:
     envs:
       - key: DJANGO_SECRET_KEY
         type: SECRET
-        value: change-me
+        value: EV[1:lgeIZg+A2H+qUG8+O79Oq4+5BLhaZDEm:ENgcR4e9jP5j8V08VLhOvK2m8epVcqfHzA==]
         scope: RUN_TIME
       - key: DJANGO_ALLOWED_HOSTS
         value: ${APP_DOMAIN},*.ondigitalocean.app
@@ -31,7 +31,7 @@ services:
         scope: RUN_TIME
       - key: DATABASE_URL
         type: SECRET
-        value: postgresql://replace-with-connection-string
+        value: EV[1:pf9xwJDe7kKysMZ85FE/wJrui/BzR6Zj:/+XHH9ayVs3K9K6KyCB08vjKM/j9M1ci5NQTlexzaa8Cf/PqYDZpUMWedBENkMTINCmZStqiRNa6+3I=]
         scope: RUN_TIME
 
 jobs:
@@ -46,13 +46,18 @@ jobs:
     envs:
       - key: DJANGO_SECRET_KEY
         type: SECRET
-        value: change-me
+        value: EV[1:QDrjVeNVUnK2tmvmqV7pKLabVUdzhefz:XBfunF0fjkr1sVJpQOwHzYNwVqc3roX5MA==]
+        scope: RUN_AND_BUILD_TIME
       - key: DJANGO_ALLOWED_HOSTS
         value: ${APP_DOMAIN}
+        scope: RUN_AND_BUILD_TIME
       - key: DJANGO_DEBUG
         value: "0"
+        scope: RUN_AND_BUILD_TIME
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
         value: https://${APP_DOMAIN}
+        scope: RUN_AND_BUILD_TIME
       - key: DATABASE_URL
         type: SECRET
-        value: postgresql://replace-with-connection-string
+        value: EV[1:X+B3brIRcnxOHnt9m9Tz/62Vf+/+m1wE:IMrhlNYiT2WYAg+CxrtthAgVq9BQkqBX4ocZLPWkP4o0QecinYiC5vm//Uxhcy3go9p6BZXtp10649M=]
+        scope: RUN_AND_BUILD_TIME
