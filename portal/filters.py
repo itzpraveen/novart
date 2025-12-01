@@ -1,7 +1,7 @@
 import django_filters
 from django.contrib.auth import get_user_model
 
-from .models import Invoice, Project, SiteIssue, SiteVisit, Task, Transaction
+from .models import Invoice, Lead, Project, SiteIssue, SiteVisit, Task, Transaction
 
 User = get_user_model()
 
@@ -51,6 +51,7 @@ class InvoiceFilter(django_filters.FilterSet):
 
     status = django_filters.ChoiceFilter(choices=STATUS_CHOICES, method='filter_status')
     invoice_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+    lead = django_filters.ModelChoiceFilter(queryset=Invoice.objects.none(), label='Lead (PR)')
 
     def filter_status(self, queryset, name, value):
         if value == 'unpaid':
@@ -61,7 +62,13 @@ class InvoiceFilter(django_filters.FilterSet):
 
     class Meta:
         model = Invoice
-        fields = ['project', 'status']
+        fields = ['project', 'lead', 'status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'lead' in self.filters:
+            self.filters['lead'].queryset = Lead.objects.all()
+            self.filters['lead'].label = 'Lead (PR)'
 
 
 class TransactionFilter(django_filters.FilterSet):

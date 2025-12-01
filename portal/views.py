@@ -175,7 +175,7 @@ def client_edit(request, pk):
 
 @login_required
 def lead_list(request):
-    leads = Lead.objects.select_related('client').order_by('-created_at')
+    leads = Lead.objects.select_related('client').annotate(project_count=Count('projects')).order_by('-created_at')
     status = request.GET.get('status')
     if status:
         leads = leads.filter(status=status)
@@ -216,14 +216,38 @@ def lead_edit(request, pk):
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 def lead_convert(request, pk):
-    lead = get_object_or_404(Lead, pk=pk)
+    lead = get_object_or_404(Lead.objects.select_related('client'), pk=pk)
+    if lead.status == Lead.Status.LOST:
+        messages.warning(request, 'Lost leads cannot be converted. Please reopen the lead first.')
+        return redirect('lead_list')
+    if lead.status == Lead.Status.WON and not lead.is_converted:
+        messages.info(request, 'This lead is already marked as won. Link or view the project directly.')
+        return redirect('lead_list')
+    if lead.is_converted:
+        project = lead.projects.first()
+        messages.info(
+            request,
+            f'This lead is already converted{f" to project {project.code}" if project else ""}.',
+        )
+        if project:
+            return redirect('project_detail', pk=project.pk)
+        return redirect('lead_list')
     if request.method == 'POST':
         project_form = ProjectForm(request.POST)
         if project_form.is_valid():
-            project = project_form.save()
+            project = project_form.save(commit=False)
+            project.client = lead.client
+            project.lead = lead
+            if not project.name:
+                project.name = lead.title
+            if lead.planning_details and not project.description:
+                project.description = lead.planning_details
+            project.save()
             ProjectStageHistory.objects.create(project=project, stage=project.current_stage, changed_by=request.user)
             lead.status = Lead.Status.WON
-            lead.save(update_fields=['status'])
+            lead.converted_at = timezone.now()
+            lead.converted_by = request.user
+            lead.save(update_fields=['status', 'converted_at', 'converted_by'])
             messages.success(request, 'Lead converted to project.')
             return redirect('project_detail', pk=project.pk)
     else:
@@ -277,7 +301,9 @@ def project_edit(request, pk):
 
 @login_required
 def project_detail(request, pk):
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(
+        Project.objects.select_related('client', 'lead', 'lead__client', 'project_manager', 'site_engineer'), pk=pk
+    )
     tasks = project.tasks.exclude(status=Task.Status.DONE).select_related('assigned_to')
     site_visits = project.site_visits.order_by('-visit_date')[:5]
     issues = project.issues.order_by('-raised_on')[:5]
@@ -467,7 +493,9 @@ def issue_list(request):
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_list(request):
-    invoice_qs = Invoice.objects.select_related('project', 'project__client').prefetch_related('lines', 'payments')
+    invoice_qs = Invoice.objects.select_related('project', 'project__client', 'lead', 'lead__client').prefetch_related(
+        'lines', 'payments'
+    )
     invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
     invoices = list(invoice_filter.qs)
     for invoice in invoices:
@@ -482,12 +510,15 @@ def invoice_list(request):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 def invoice_pdf(request, invoice_pk):
     invoice = get_object_or_404(
-        Invoice.objects.select_related('project__client', 'project__project_manager').prefetch_related('lines', 'payments'),
+        Invoice.objects.select_related(
+            'project__client', 'project__project_manager', 'lead', 'lead__client'
+        ).prefetch_related('lines', 'payments'),
         pk=invoice_pk,
     )
     invoice = _refresh_invoice_status(invoice)
     lines = list(invoice.lines.all())
     tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
+    client = invoice.project.client if invoice.project else (invoice.lead.client if invoice.lead else None)
     firm = FirmProfile.objects.first()
     logo_path = None
     logo_data = None
@@ -511,11 +542,22 @@ def invoice_pdf(request, invoice_pk):
         fallback_logo = finders.find('img/novart.png')
         logo_data = _encode_image(fallback_logo)
 
-    font_path = finders.find('fonts/DejaVuSans.ttf') or finders.find('fonts/NotoSans-Regular.ttf')
-    if font_path:
+    font_path = (
+        finders.find('fonts/NotoSans-Regular.ttf')
+        or finders.find('fonts/DejaVuSans.ttf')
+        or '/opt/studioflow/static/fonts/NotoSans-Regular.ttf'
+    )
+    if font_path and os.path.exists(font_path):
         try:
             pdfmetrics.registerFont(TTFont('StudioSans', font_path))
             pdfmetrics.registerFont(TTFont('StudioSans-Bold', font_path))
+            pdfmetrics.registerFontFamily(
+                'StudioSans',
+                normal='StudioSans',
+                bold='StudioSans-Bold',
+                italic='StudioSans',
+                boldItalic='StudioSans-Bold',
+            )
         except Exception:
             logger.exception("Failed to register PDF font at %s", font_path)
     html = render_to_string(
@@ -523,7 +565,8 @@ def invoice_pdf(request, invoice_pk):
         {
             'invoice': invoice,
             'project': invoice.project,
-            'client': invoice.project.client,
+            'lead': invoice.lead,
+            'client': client,
             'lines': lines,
             'payments': invoice.payments.all(),
             'tax_amount': tax_value,
@@ -609,7 +652,7 @@ def invoice_aging(request):
     today = timezone.localdate()
     invoices = (
         Invoice.objects.exclude(status=Invoice.Status.PAID)
-        .select_related('project__client')
+        .select_related('project__client', 'lead', 'lead__client')
         .prefetch_related('lines', 'payments')
     )
     buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}

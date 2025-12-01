@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -61,10 +62,22 @@ class Lead(TimeStampedModel):
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.NEW)
     estimated_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
+    planning_details = models.TextField(blank=True)
+    converted_at = models.DateTimeField(null=True, blank=True)
+    converted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='converted_leads'
+    )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.title
+
+    @property
+    def is_converted(self) -> bool:
+        project_count = getattr(self, 'project_count', None)
+        if project_count is not None:
+            return bool(self.converted_at or project_count)
+        return bool(self.converted_at or self.projects.exists())
 
 
 class Project(TimeStampedModel):
@@ -257,7 +270,8 @@ class Invoice(TimeStampedModel):
         PAID = 'paid', 'Paid'
         OVERDUE = 'overdue', 'Overdue'
 
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invoices')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invoices', null=True, blank=True)
+    lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, related_name='invoices', null=True, blank=True)
     invoice_number = models.CharField(max_length=50, unique=True)
     invoice_date = models.DateField()
     due_date = models.DateField()
@@ -272,6 +286,11 @@ class Invoice(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Invoice {self.invoice_number}"
+
+    def clean(self):
+        super().clean()
+        if not self.project and not self.lead:
+            raise ValidationError('Select a project or a lead to bill.')
 
     @property
     def subtotal(self) -> Decimal:

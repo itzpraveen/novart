@@ -4,6 +4,7 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <h3>{% if invoice %}Edit Invoice · {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}</h3>
+        <p class="text-muted small">Link to a project or lead (including Lost) so billing works for proposals.</p>
         {% if invoice %}<p class="text-muted mb-3">Status: {{ invoice.get_status_display }}</p>{% endif %}
         <form method="post">
             {% csrf_token %}

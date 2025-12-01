@@ -32,7 +32,7 @@
             <thead>
             <tr>
                 <th>Invoice #</th>
-                <th>Project</th>
+                <th>Project / Lead</th>
                 <th>Date</th>
                 <th>Due Date</th>
                 <th>Amount</th>
@@ -44,7 +44,17 @@
             {% for invoice in invoices %}
                 <tr>
                     <td>{{ invoice.invoice_number }}</td>
-                    <td>{{ invoice.project.name }}</td>
+                    <td>
+                        {% if invoice.project %}
+                            <div>{{ invoice.project.code }} · {{ invoice.project.name }}</div>
+                            <small class="text-muted">{{ invoice.project.client.name }}</small>
+                        {% elif invoice.lead %}
+                            <div>{{ invoice.lead.title }}</div>
+                            <small class="text-muted">Lead · {{ invoice.lead.client.name }}{% if invoice.lead.status %} · {{ invoice.lead.get_status_display }}{% endif %}</small>
+                        {% else %}
+                            <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
                     <td>{{ invoice.invoice_date|date:"d-m-Y" }}</td>
                     <td>{{ invoice.due_date|date:"d-m-Y" }}</td>
                     <td>{{ invoice.total_with_tax|rupee }}</td>

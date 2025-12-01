@@ -36,7 +36,13 @@
                     <td>₹{{ lead.estimated_value }}</td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
-                        <a class="btn btn-sm btn-success" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                        {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Converted</button>
+                        {% elif lead.status == 'lost' %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>Not eligible</button>
+                        {% else %}
+                            <a class="btn btn-sm btn-success" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

@@ -10,24 +10,137 @@
             src: url("file://{{ font_path }}");
         }
         {% endif %}
-        body { font-family: "StudioSans", "Helvetica", "Arial", sans-serif; color: #222; margin: 32px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }
-        .brand h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
-        .brand p { margin: 4px 0 0; font-size: 11px; color: #666; }
-        .meta { text-align: right; }
-        .meta h2 { margin: 0; font-size: 20px; }
-        .meta p { margin: 4px 0; font-size: 12px; }
+        @page { font-family: "StudioSans", "DejaVu Sans", "Helvetica", "Arial", sans-serif; }
+        body, table, th, td {
+            font-family: "StudioSans", "DejaVu Sans", "Helvetica", "Arial", sans-serif;
+            color: #1f1f1f;
+            margin: 28px;
+            line-height: 1.4;
+            font-size: 12px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #1f1f1f;
+            margin-bottom: 18px;
+        }
+        .brand h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.6px;
+        }
+        .brand p {
+            margin: 2px 0 0;
+            font-size: 11px;
+            color: #5c5c5c;
+        }
+        .meta {
+            text-align: right;
+            min-width: 200px;
+        }
+        .meta h2 {
+            margin: 0 0 6px;
+            font-size: 20px;
+        }
+        .meta .meta-grid {
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #fff;
+        }
+        .meta .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            padding: 3px 0;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .meta .row:last-child { border-bottom: none; }
+        .meta .label { color: #5c5c5c; }
         .section { margin-bottom: 18px; }
-        .section h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 0.3px; text-transform: uppercase; }
-        .box { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
+        .section h3 {
+            margin: 0 0 8px;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: #0b5ed7;
+        }
+        .box {
+            border: 1px solid #e8e8e8;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .box p { margin: 0 0 4px; }
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; font-size: 12px; padding: 8px; background: #f7f7f7; border-bottom: 1px solid #e0e0e0; }
-        td { padding: 8px; font-size: 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-        .totals td { border: none; padding: 4px 8px; font-size: 12px; }
-        .totals .label { text-align: right; color: #555; }
-        .totals .value { text-align: right; font-weight: bold; }
-        .pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; color: #0b5ed7; border: 1px solid #0b5ed7; }
-        .muted { color: #777; font-size: 11px; }
+        th {
+            text-align: left;
+            font-size: 12px;
+            padding: 9px 8px;
+            background: #f7f9fb;
+            border-bottom: 1px solid #e8e8e8;
+            color: #5c5c5c;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        td {
+            padding: 8px;
+            font-size: 12px;
+            border-bottom: 1px solid #f2f2f2;
+            vertical-align: top;
+        }
+        .text-right { text-align: right; }
+        .text-muted { color: #5c5c5c; }
+        .pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            color: #0b5ed7;
+            border: 1px solid #0b5ed7;
+            background: #eef3fb;
+        }
+        .totals {
+            margin-top: 6px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .totals td {
+            border-bottom: 1px solid #e8e8e8;
+            padding: 8px 10px;
+        }
+        .totals tr:last-child td { border-bottom: none; }
+        .totals .label { text-align: right; color: #5c5c5c; }
+        .totals .value { text-align: right; font-weight: 600; }
+        .totals .total-row td {
+            background: #f2f6ff;
+            font-weight: 700;
+            color: #0b5ed7;
+        }
+        .totals .balance-row td {
+            background: #fff9e9;
+            font-weight: 700;
+            color: #c27b00;
+        }
+        .table-section { border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
+        .table-section tbody tr:nth-child(odd) { background: #fbfbfb; }
+        .note {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #5c5c5c;
+        }
+        .footer {
+            margin-top: 18px;
+            font-size: 10px;
+            color: #5c5c5c;
+            border-top: 1px solid #e8e8e8;
+            padding-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -48,63 +161,80 @@
         </div>
         <div class="meta">
             <h2>#{{ invoice.invoice_number }}</h2>
-            <p>Invoice Date: {{ invoice.invoice_date|date:"d M Y" }}</p>
-            <p>Due Date: {{ invoice.due_date|date:"d M Y" }}</p>
-            <p>Status: <span class="pill">{{ invoice.get_status_display }}</span></p>
+            <div class="meta-grid">
+                <div class="row"><span class="label">Invoice Date</span><span>{{ invoice.invoice_date|date:"d M Y" }}</span></div>
+                <div class="row"><span class="label">Due Date</span><span>{{ invoice.due_date|date:"d M Y" }}</span></div>
+                <div class="row"><span class="label">Status</span><span class="pill">{{ invoice.get_status_display }}</span></div>
+                <div class="row"><span class="label">Total</span><span>{{ invoice.total_with_tax|rupee }}</span></div>
+            </div>
         </div>
     </div>
 
     <div class="section">
         <h3>Bill To</h3>
         <div class="box">
-            <strong>{{ client.name }}</strong><br>
-            {% if client.address %}{{ client.address }}<br>{% endif %}
-            {% if client.city or client.state %}{{ client.city }} {{ client.state }}<br>{% endif %}
-            {% if client.phone %}Phone: {{ client.phone }}<br>{% endif %}
-            {% if client.email %}Email: {{ client.email }}{% endif %}
+            {% if client %}
+                <strong>{{ client.name }}</strong><br>
+                {% if client.address %}{{ client.address }}<br>{% endif %}
+                {% if client.city or client.state %}{{ client.city }} {{ client.state }}<br>{% endif %}
+                {% if client.phone %}Phone: {{ client.phone }}<br>{% endif %}
+                {% if client.email %}Email: {{ client.email }}{% endif %}
+            {% else %}
+                <span class="text-muted">No client linked</span>
+            {% endif %}
         </div>
     </div>
 
     <div class="section">
-        <h3>Project</h3>
+        <h3>Project / Lead</h3>
         <div class="box">
-            <div><strong>{{ project.code }}</strong> — {{ project.name }}</div>
-            {% if project.location %}<div class="muted">{{ project.location }}</div>{% endif %}
-            {% if project.project_manager %}<div>PM: {{ project.project_manager.get_full_name|default:project.project_manager }}</div>{% endif %}
+            {% if project %}
+                <div><strong>{{ project.code }}</strong> — {{ project.name }}</div>
+                {% if project.location %}<div class="text-muted">{{ project.location }}</div>{% endif %}
+                {% if project.project_manager %}<div>PM: {{ project.project_manager.get_full_name|default:project.project_manager }}</div>{% endif %}
+            {% elif lead %}
+                <div><strong>{{ lead.title }}</strong></div>
+                <div class="text-muted">Lead · {{ lead.client.name }}</div>
+                {% if lead.planning_details %}<div class="text-muted" style="margin-top: 6px;">{{ lead.planning_details }}</div>{% endif %}
+            {% else %}
+                <div class="text-muted">No linked project/lead</div>
+            {% endif %}
         </div>
     </div>
 
     <div class="section">
         <h3>Summary</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th style="text-align: right;">Rate</th>
-                    <th style="text-align: right;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if lines %}
-                    {% for line in lines %}
+        <div class="table-section">
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ line.description }}</td>
-                        <td style="text-align: right;">{{ line.quantity }}</td>
-                        <td style="text-align: right;">{{ line.unit_price|rupee }}</td>
-                        <td style="text-align: right;">{{ line.line_total|rupee }}</td>
+                        <th>Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Rate</th>
+                        <th class="text-right">Amount</th>
                     </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td>{{ invoice.description|default:"Architectural services and deliverables" }}</td>
-                        <td style="text-align: right;">1</td>
-                        <td style="text-align: right;">{{ invoice.amount|rupee }}</td>
-                        <td style="text-align: right;">{{ invoice.amount|rupee }}</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% if lines %}
+                        {% for line in lines %}
+                        <tr>
+                            <td>{{ line.description }}</td>
+                            <td class="text-right">{{ line.quantity }}</td>
+                            <td class="text-right">{{ line.unit_price|rupee }}</td>
+                            <td class="text-right">{{ line.line_total|rupee }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ invoice.description|default:"Architectural services and deliverables" }}</td>
+                            <td class="text-right">1</td>
+                            <td class="text-right">{{ invoice.amount|rupee }}</td>
+                            <td class="text-right">{{ invoice.amount|rupee }}</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="section">
@@ -122,7 +252,7 @@
                 <td class="label">Tax ({{ invoice.tax_percent }}%)</td>
                 <td class="value">{{ tax_amount|rupee }}</td>
             </tr>
-            <tr>
+            <tr class="total-row">
                 <td class="label">Total</td>
                 <td class="value">{{ invoice.total_with_tax|rupee }}</td>
             </tr>
@@ -130,11 +260,12 @@
                 <td class="label">Payments Received</td>
                 <td class="value">{{ invoice.amount_received|rupee }}</td>
             </tr>
-            <tr>
+            <tr class="balance-row">
                 <td class="label">Outstanding</td>
                 <td class="value">{{ invoice.outstanding|rupee }}</td>
             </tr>
         </table>
+        <div class="note">Thank you for your business. Please reference invoice #{{ invoice.invoice_number }} on payments.</div>
     </div>
 
     {% if firm.bank_account_number or firm.upi_id %}
@@ -154,7 +285,7 @@
     <div class="section">
         <h3>Payment Terms</h3>
         <div class="box">
-            <p class="muted" style="white-space: pre-line;">{{ firm.terms }}</p>
+            <p class="text-muted" style="white-space: pre-line;">{{ firm.terms }}</p>
         </div>
     </div>
     {% endif %}
@@ -162,31 +293,35 @@
     <div class="section">
         <h3>Payment Activity</h3>
         {% if payments %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Method</th>
-                        <th>Reference</th>
-                        <th style="text-align: right;">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for payment in payments %}
+            <div class="table-section">
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ payment.payment_date|date:"d M Y" }}</td>
-                            <td>{{ payment.method|default:"-" }}</td>
-                            <td>{{ payment.reference|default:"-" }}</td>
-                            <td style="text-align: right;">{{ payment.amount|rupee }}</td>
+                            <th>Date</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                            <th class="text-right">Amount</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                                <td>{{ payment.method|default:"-" }}</td>
+                                <td>{{ payment.reference|default:"-" }}</td>
+                                <td class="text-right">{{ payment.amount|rupee }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
-            <p class="muted">No payments recorded against this invoice.</p>
+            <p class="text-muted">No payments recorded against this invoice.</p>
         {% endif %}
     </div>
 
-    <p class="muted">Generated on {{ invoice.updated_at|date:"d M Y H:i" }} via StudioFlow.</p>
+    <div class="footer">
+        Generated on {{ invoice.updated_at|date:"d M Y H:i" }} via StudioFlow.{% if firm.email %} · Contact: {{ firm.email }}{% endif %}
+    </div>
 </body>
 </html>

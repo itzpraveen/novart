@@ -103,6 +103,24 @@
         </div>
     </div>
     <div class="col-md-6">
+        {% if project.lead %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">Lead context</div>
+            <div class="card-body small">
+                <div class="fw-semibold">{{ project.lead.title }}</div>
+                <div class="text-muted">Status: {{ project.lead.get_status_display }} · Client: {{ project.lead.client.name }}</div>
+                {% if project.lead.planning_details %}
+                    <div class="mt-2">
+                        <div class="text-muted mb-1">Planning details</div>
+                        <div class="border rounded p-2 bg-light" style="white-space: pre-wrap;">{{ project.lead.planning_details }}</div>
+                    </div>
+                {% endif %}
+                {% if project.lead.converted_at %}
+                    <div class="text-muted mt-2">Converted {{ project.lead.converted_at|date:"d-m-Y H:i" }}{% if project.lead.converted_by %} by {{ project.lead.converted_by }}{% endif %}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
         <div class="card shadow-sm mb-3">
             <div class="card-header bg-white fw-semibold">Site visits</div>
             <ul class="list-group list-group-flush">

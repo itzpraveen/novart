@@ -53,8 +53,8 @@ class ClientForm(forms.ModelForm):
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['client', 'title', 'lead_source', 'status', 'estimated_value', 'notes']
-        widgets = {'notes': forms.Textarea(attrs={'rows': 3})}
+        fields = ['client', 'title', 'lead_source', 'status', 'estimated_value', 'notes', 'planning_details']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 3}), 'planning_details': forms.Textarea(attrs={'rows': 3})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,6 +64,7 @@ class LeadForm(forms.ModelForm):
             'lead_source': 'How they found us (referral, ad, web, etc.)',
             'estimated_value': 'Estimated contract value',
             'notes': 'Next steps or extra details',
+            'planning_details': 'Planning details and confirmations captured in lead stage',
         }
         for field, text in placeholders.items():
             self.fields[field].widget.attrs.setdefault('placeholder', text)
@@ -240,6 +241,7 @@ class InvoiceForm(forms.ModelForm):
         model = Invoice
         fields = [
             'project',
+            'lead',
             'invoice_number',
             'invoice_date',
             'due_date',
@@ -261,6 +263,12 @@ class InvoiceForm(forms.ModelForm):
         due_date = cleaned.get('due_date')
         if invoice_date and due_date and due_date < invoice_date:
             self.add_error('due_date', 'Due date cannot be earlier than the invoice date.')
+        project = cleaned.get('project')
+        lead = cleaned.get('lead')
+        if not project and not lead:
+            self.add_error('project', 'Select a project or a lead to bill.')
+            self.add_error('lead', 'Select a project or a lead to bill.')
+        return cleaned
         return cleaned
 
 

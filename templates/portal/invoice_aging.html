@@ -23,7 +23,7 @@
                         <thead>
                             <tr>
                                 <th>Invoice</th>
-                                <th>Client / Project</th>
+                                <th>Client / Project or Lead</th>
                                 <th class="text-end">Outstanding</th>
                                 <th class="text-end">Days overdue</th>
                             </tr>
@@ -33,8 +33,15 @@
                             <tr>
                                 <td>#{{ row.invoice.invoice_number }}</td>
                                 <td>
-                                    <div>{{ row.invoice.project.client.name }}</div>
-                                    <small class="text-muted">{{ row.invoice.project.name }}</small>
+                                    {% if row.invoice.project %}
+                                        <div>{{ row.invoice.project.client.name }}</div>
+                                        <small class="text-muted">{{ row.invoice.project.name }}</small>
+                                    {% elif row.invoice.lead %}
+                                        <div>{{ row.invoice.lead.client.name }}</div>
+                                        <small class="text-muted">Lead · {{ row.invoice.lead.title }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-end">{{ row.outstanding|rupee }}</td>
                                 <td class="text-end">{{ row.days_overdue }}</td>

@@ -83,7 +83,7 @@ class Command(BaseCommand):
         invoices = Invoice.objects.filter(due_date__lte=horizon).exclude(status=Invoice.Status.PAID)
         count = 0
         for invoice in invoices:
-            owner = invoice.project.project_manager
+            owner = invoice.project.project_manager if invoice.project else None
             message = f'Invoice {invoice.invoice_number} due on {invoice.due_date.strftime("%d-%m-%Y")}'
             url = reverse('invoice_list')
             recipients = self._recipients(setting, owner, admins)
@@ -94,7 +94,7 @@ class Command(BaseCommand):
         invoices = Invoice.objects.filter(due_date__lt=today).exclude(status=Invoice.Status.PAID)
         count = 0
         for invoice in invoices:
-            owner = invoice.project.project_manager
+            owner = invoice.project.project_manager if invoice.project else None
             message = f'Invoice {invoice.invoice_number} is overdue'
             recipients = self._recipients(setting, owner, admins)
             count += self._notify(recipients, message, setting.category, reverse('invoice_list'))

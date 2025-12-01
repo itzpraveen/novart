@@ -28,7 +28,6 @@
             <thead>
             <tr>
                 <th>Code</th>
-                <th>Name</th>
                 <th>Client</th>
                 <th>Manager</th>
                 <th>Site Engineer</th>
@@ -43,7 +42,6 @@
             {% for project in filter.qs %}
                 <tr>
                     <td><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
-                    <td>{{ project.name }}</td>
                     <td>{{ project.client.name }}</td>
                     <td>{{ project.project_manager|default:"—" }}</td>
                     <td>{{ project.site_engineer|default:"—" }}</td>
@@ -58,7 +56,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="8" class="text-center">No projects found.</td></tr>
+                <tr><td colspan="9" class="text-center">No projects found.</td></tr>
             {% endfor %}
             </tbody>
         </table>
