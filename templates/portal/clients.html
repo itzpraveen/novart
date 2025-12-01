@@ -3,18 +3,45 @@
 {% block content %}
 <div class="page-header page-header-sticky">
     <h2 class="mb-0">Clients</h2>
-    <div class="actions">
+    <div class="actions flex-wrap">
         <form class="d-flex align-items-center gap-2" method="get">
             <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search clients..." />
             <button class="btn btn-outline-secondary" type="submit">Search</button>
         </form>
+        <button class="btn btn-primary d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#addClientPanel" aria-expanded="false" aria-controls="addClientPanel">
+            Add Client
+        </button>
     </div>
 </div>
-<div class="layout-duo">
-    <div>
-        <div class="card shadow-sm">
+
+<div class="row g-3 g-lg-4">
+    <div class="col-lg-7">
+        <div class="d-lg-none">
+            {% for client in clients %}
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="text-muted small">Name</span>
+                            <div class="fw-semibold text-end">{{ client.name }}</div>
+                        </div>
+                        <div class="text-muted small mt-2">Contact</div>
+                        <div class="fw-medium">{{ client.phone|default:"—" }}</div>
+                        {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="badge bg-light text-dark">{{ client.city|default:"—" }}</span>
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="card shadow-sm">
+                    <div class="card-body text-center text-muted">No clients yet. Add your first client.</div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="card shadow-sm d-none d-lg-block">
             <div class="table-responsive">
-                <table class="table mb-0 align-middle table-stack">
+                <table class="table mb-0 align-middle">
                     <thead>
                     <tr>
                         <th>Name</th>
@@ -26,16 +53,14 @@
                     <tbody>
                     {% for client in clients %}
                         <tr>
-                            <td class="fw-semibold" data-label="Name">{{ client.name }}</td>
-                            <td data-label="Contact">
+                            <td class="fw-semibold">{{ client.name }}</td>
+                            <td>
                                 {% if client.phone %}<div class="fw-semibold">{{ client.phone }}</div>{% endif %}
                                 {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
                             </td>
-                            <td class="text-uppercase text-muted" data-label="City">{{ client.city }}</td>
-                            <td class="text-end" data-label="Actions">
-                                <div class="stack-inline justify-content-end">
-                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
-                                </div>
+                            <td class="text-uppercase text-muted">{{ client.city }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
                             </td>
                         </tr>
                     {% empty %}
@@ -46,25 +71,29 @@
             </div>
         </div>
     </div>
-    <div>
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Add client</h5>
-                    <span class="badge bg-light text-dark">New</span>
-                </div>
-                <form method="post" class="d-grid gap-3">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div>
-                            <label class="form-label text-muted small">{{ field.label }}</label>
-                            {{ field|add_class:"form-control" }}
-                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    <div class="col-lg-5">
+        <div class="collapse show" id="addClientPanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Add client</h5>
+                        <span class="badge bg-light text-dark">New</span>
+                    </div>
+                    <form method="post" class="row g-3">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="col-12">
+                                <label class="form-label text-muted small">{{ field.label }}</label>
+                                {{ field|add_class:"form-control" }}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            </div>
+                        {% endfor %}
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100">Save</button>
                         </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary w-100">Save</button>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
