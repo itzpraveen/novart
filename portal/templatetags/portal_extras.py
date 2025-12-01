@@ -13,7 +13,7 @@ def rupee(value):
     except (InvalidOperation, TypeError, ValueError):
         return value
     formatted = f"{amount:,.2f}"
-    return mark_safe(f"&#8377; {formatted}")
+    return mark_safe(f"Rs. {formatted}")
 
 
 @register.filter
