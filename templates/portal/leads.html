@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Leads</h2>
-    <form method="get" class="d-flex">
-        <select name="status" class="form-select me-2">
-            <option value="">All statuses</option>
-            {% for value,label in statuses %}
-                <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-outline-secondary me-2">Filter</button>
+<div class="page-header">
+    <h2 class="mb-0">Leads</h2>
+    <div class="actions">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <select name="status" class="form-select" style="min-width: 140px;">
+                <option value="">All statuses</option>
+                {% for value,label in statuses %}
+                    <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-outline-secondary">Filter</button>
+        </form>
         <a class="btn btn-primary" href="{% url 'lead_create' %}">New Lead</a>
-    </form>
+    </div>
 </div>
 <div class="card shadow-sm">
     <div class="table-responsive">
@@ -22,35 +24,37 @@
                 <th>Client</th>
                 <th>Status</th>
                 <th>Source</th>
-                <th>Value</th>
-                <th></th>
+                <th class="text-end">Value</th>
+                <th class="text-end">Actions</th>
             </tr>
             </thead>
             <tbody>
             {% for lead in leads %}
                 <tr>
-                    <td>{{ lead.title }}</td>
+                    <td class="fw-semibold text-uppercase">{{ lead.title }}</td>
                     <td>{{ lead.client.name }}</td>
                     <td>
                         <span class="badge badge-status {% if lead.status == 'won' %}badge-won{% elif lead.status == 'lost' %}badge-lost{% elif lead.status == 'discussion' %}badge-discussion{% else %}badge-new{% endif %}">
                             {{ lead.get_status_display }}
                         </span>
                     </td>
-                    <td>{{ lead.lead_source }}</td>
-                    <td>₹{{ lead.estimated_value }}</td>
+                    <td class="text-muted text-uppercase">{{ lead.lead_source }}</td>
+                    <td class="text-end fw-semibold">{{ lead.estimated_value|rupee }}</td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
-                        {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
-                            <button class="btn btn-sm btn-converted" disabled>Converted</button>
-                        {% elif lead.status == 'lost' %}
-                            <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
-                        {% else %}
-                            <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
-                        {% endif %}
+                        <div class="d-flex justify-content-end gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
+                            {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
+                                <button class="btn btn-sm btn-converted" disabled>Converted</button>
+                            {% elif lead.status == 'lost' %}
+                                <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
+                            {% else %}
+                                <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6" class="text-center">No leads yet.</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-4">No leads yet. Click “New Lead” to add one.</td></tr>
             {% endfor %}
             </tbody>
         </table>

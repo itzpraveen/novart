@@ -1,54 +1,59 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Clients</h2>
-    <form class="d-flex" method="get">
-        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control me-2" placeholder="Search..."/>
-        <button class="btn btn-outline-secondary" type="submit">Search</button>
-    </form>
+<div class="page-header">
+    <h2 class="mb-0">Clients</h2>
+    <div class="actions">
+        <form class="d-flex align-items-center gap-2" method="get">
+            <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search clients..." />
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+        </form>
+    </div>
 </div>
-<div class="row g-3">
-    <div class="col-md-8">
+<div class="layout-duo">
+    <div>
         <div class="card shadow-sm">
             <div class="table-responsive">
-                <table class="table mb-0">
+                <table class="table mb-0 align-middle">
                     <thead>
                     <tr>
                         <th>Name</th>
                         <th>Contact</th>
                         <th>City</th>
-                        <th></th>
+                        <th class="text-end">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for client in clients %}
                         <tr>
-                            <td>{{ client.name }}</td>
+                            <td class="fw-semibold">{{ client.name }}</td>
                             <td>
-                                <div>{{ client.phone }}</div>
-                                <div class="text-muted">{{ client.email }}</div>
+                                {% if client.phone %}<div class="fw-semibold">{{ client.phone }}</div>{% endif %}
+                                {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
                             </td>
-                            <td>{{ client.city }}</td>
-                            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'client_edit' client.pk %}">Edit</a></td>
+                            <td class="text-uppercase text-muted">{{ client.city }}</td>
+                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a></td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="4" class="text-center">No clients yet.</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted py-4">No clients yet. Add your first client.</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div>
         <div class="card shadow-sm">
             <div class="card-body">
-                <h5>Add client</h5>
-                <form method="post">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Add client</h5>
+                    <span class="badge bg-light text-dark">New</span>
+                </div>
+                <form method="post" class="d-grid gap-3">
                     {% csrf_token %}
                     {% for field in form %}
-                        <div class="mb-2">
-                            <label class="form-label">{{ field.label }}</label>
+                        <div>
+                            <label class="form-label text-muted small">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
