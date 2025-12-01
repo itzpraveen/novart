@@ -7,16 +7,18 @@
 </div>
 <div class="row g-3">
     {% for code,label in statuses %}
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white fw-semibold">{{ label }}</div>
+        <div class="col-lg-4 col-md-6">
+            <div class="card shadow-sm h-100 kanban-col kanban-{{ code }}">
+                <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                    <span>{{ label }}</span>
+                </div>
                 <div class="card-body" style="min-height: 250px;">
                     {% with column=columns|get_item:code %}
                         {% if column %}
                             {% for task in column %}
-                                <div class="border rounded p-2 mb-2 bg-light">
+                                <div class="kanban-task mb-2">
                                     <div class="fw-semibold">{{ task.title }}</div>
-                                    <div class="small text-muted">{{ task.assigned_to }} · due {{ task.due_date|date:"d-m-Y" }}</div>
+                                    <div class="small text-muted">{{ task.assigned_to|default:"Unassigned" }}{% if task.due_date %} · due {{ task.due_date|date:"d-m-Y" }}{% endif %}</div>
                                     <div class="mt-2">
                                         <a href="{% url 'task_edit' task.pk %}" class="btn btn-sm btn-outline-secondary">Update</a>
                                     </div>
@@ -33,7 +35,7 @@
 </div>
 <div class="card shadow-sm mt-4">
     <div class="card-body">
-        <h5>Add Task</h5>
+        <h5 class="mb-3">Add Task</h5>
         <form method="post">
             {% csrf_token %}
             <div class="row g-3">
