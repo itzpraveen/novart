@@ -347,6 +347,12 @@ textarea.form-control:focus {
         width: 100%;
         justify-content: flex-start;
     }
+    .navbar .dropdown-menu {
+        border-radius: var(--radius-md);
+    }
+    .navbar .nav-link {
+        padding: 0.5rem 0.75rem !important;
+    }
     .layout-duo {
         grid-template-columns: 1fr;
     }
