@@ -4,11 +4,11 @@
 <div class="page-header">
     <h2 class="mb-0">Invoices</h2>
     <div class="actions">
-        <a class="btn btn-outline-secondary" href="{% url 'invoice_aging' %}">Aging report</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_aging' %}">Aging report</a>
         {% if request.user.role == 'admin' or request.user.is_superuser %}
-        <a class="btn btn-outline-secondary" href="{% url 'firm_profile' %}">Firm profile</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'firm_profile' %}">Firm profile</a>
         {% endif %}
-        <a class="btn btn-primary" href="{% url 'invoice_create' %}">New Invoice</a>
+        <a class="btn btn-primary btn-sm" href="{% url 'invoice_create' %}">New Invoice</a>
     </div>
 </div>
 <div class="card panel-subtle mb-3">

@@ -29,35 +29,20 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if request.user.is_authenticated %}
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-1">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Work</a>
-                        <ul class="dropdown-menu shadow-sm border-0">
-                            <li><a class="dropdown-item" href="{% url 'lead_list' %}">Leads</a></li>
-                            <li><a class="dropdown-item" href="{% url 'project_list' %}">Projects</a></li>
-                            <li><a class="dropdown-item" href="{% url 'site_visit_list' %}">Site Visits</a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">People</a>
-                        <ul class="dropdown-menu shadow-sm border-0">
-                            <li><a class="dropdown-item" href="{% url 'client_list' %}">Clients</a></li>
-                            <li><a class="dropdown-item" href="{% url 'team_list' %}">Team</a></li>
-                            {% if request.user.role == 'admin' or request.user.is_superuser %}
-                            <li><a class="dropdown-item" href="{% url 'user_admin_list' %}">Users</a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Finance</a>
-                        <ul class="dropdown-menu shadow-sm border-0">
-                            <li><a class="dropdown-item" href="{% url 'finance_dashboard' %}">Finance Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{% url 'invoice_list' %}">Invoices</a></li>
-                        </ul>
-                    </li>
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'client_list' %}">Clients</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'lead_list' %}">Leads</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'project_list' %}">Projects</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'site_visit_list' %}">Site Visits</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'finance_dashboard' %}">Finance</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'invoice_list' %}">Invoices</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'document_list' %}">Docs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'team_list' %}">Team</a></li>
+                    {% if request.user.role == 'admin' or request.user.is_superuser %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'user_admin_list' %}">Users</a></li>
+                    {% endif %}
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-lg-center">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item me-3">
                         <a class="nav-link position-relative" href="{% url 'notification_list' %}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"

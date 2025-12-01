@@ -141,7 +141,7 @@ a:hover {
 .card {
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     transition: var(--transition-normal);
     overflow: hidden;
@@ -268,7 +268,7 @@ table td {
 .page-shell {
     background: var(--bg-glass);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
     max-width: 1280px;
