@@ -10,10 +10,20 @@ class User(AbstractUser):
     class Roles(models.TextChoices):
         ADMIN = 'admin', 'Admin'
         ARCHITECT = 'architect', 'Architect'
+        SENIOR_ARCHITECT = 'senior_architect', 'Senior Architect'
+        JUNIOR_ARCHITECT = 'junior_architect', 'Junior Architect'
+        MANAGING_DIRECTOR = 'managing_director', 'Managing Director'
         SITE_ENGINEER = 'site_engineer', 'Site Engineer'
+        SENIOR_CIVIL_ENGINEER = 'senior_civil_engineer', 'Senior Civil Engineer'
+        JUNIOR_CIVIL_ENGINEER = 'junior_civil_engineer', 'Junior Civil Engineer'
         FINANCE = 'finance', 'Finance'
+        ACCOUNTANT = 'accountant', 'Accountant'
         PROJECT_MANAGER = 'project_manager', 'Project Manager'
         DESIGNER = 'designer', 'Designer'
+        SENIOR_INTERIOR_DESIGNER = 'senior_interior_designer', 'Senior Interior Designer'
+        JUNIOR_INTERIOR_DESIGNER = 'junior_interior_designer', 'Junior Interior Designer'
+        DRAUGHTSMAN = 'draughtsman', 'Draughtsman'
+        VISUALISER_3D = 'visualiser_3d', '3D Visualiser'
         QS = 'qs', 'QS / Estimator'
         PROCUREMENT = 'procurement', 'Procurement'
         CLIENT_LIAISON = 'client_liaison', 'Client Liaison'
@@ -25,6 +35,41 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
+
+    def has_any_role(self, *roles: str) -> bool:
+        """Role-aware helper that also considers equivalent/specialised titles."""
+        role_groups = {
+            self.Roles.ADMIN: {self.Roles.ADMIN},
+            self.Roles.ARCHITECT: {
+                self.Roles.ARCHITECT,
+                self.Roles.SENIOR_ARCHITECT,
+                self.Roles.JUNIOR_ARCHITECT,
+                self.Roles.MANAGING_DIRECTOR,
+            },
+            self.Roles.SITE_ENGINEER: {
+                self.Roles.SITE_ENGINEER,
+                self.Roles.SENIOR_CIVIL_ENGINEER,
+                self.Roles.JUNIOR_CIVIL_ENGINEER,
+            },
+            self.Roles.FINANCE: {self.Roles.FINANCE, self.Roles.ACCOUNTANT},
+            self.Roles.PROJECT_MANAGER: {self.Roles.PROJECT_MANAGER},
+            self.Roles.DESIGNER: {
+                self.Roles.DESIGNER,
+                self.Roles.SENIOR_INTERIOR_DESIGNER,
+                self.Roles.JUNIOR_INTERIOR_DESIGNER,
+                self.Roles.DRAUGHTSMAN,
+                self.Roles.VISUALISER_3D,
+            },
+            self.Roles.QS: {self.Roles.QS},
+            self.Roles.PROCUREMENT: {self.Roles.PROCUREMENT},
+            self.Roles.CLIENT_LIAISON: {self.Roles.CLIENT_LIAISON},
+            self.Roles.INTERN: {self.Roles.INTERN},
+            self.Roles.VIEWER: {self.Roles.VIEWER},
+        }
+        for requested in roles:
+            if self.role in role_groups.get(requested, {requested}):
+                return True
+        return False
 
 
 class TimeStampedModel(models.Model):

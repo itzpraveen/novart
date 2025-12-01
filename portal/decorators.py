@@ -13,7 +13,15 @@ def role_required(*roles):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
             user = getattr(request, "user", None)
-            if user and (user.is_superuser or getattr(user, "role", None) in roles):
+            if not user:
+                return HttpResponseForbidden("You do not have permission to perform this action.")
+            role_check = getattr(user, "has_any_role", None)
+            has_role = False
+            if callable(role_check):
+                has_role = role_check(*roles)
+            elif getattr(user, "role", None) in roles:
+                has_role = True
+            if user.is_superuser or has_role:
                 return view_func(request, *args, **kwargs)
             return HttpResponseForbidden("You do not have permission to perform this action.")
 
