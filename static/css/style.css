@@ -314,7 +314,7 @@ textarea.form-control:focus {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
 }
 
 .page-header .actions {
@@ -333,6 +333,17 @@ textarea.form-control:focus {
 .table th,
 .table td {
     vertical-align: middle;
+}
+
+.panel-subtle {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+}
+
+.panel-subtle .card-body {
+    padding: 1rem 1.25rem;
 }
 
 @media (max-width: 992px) {

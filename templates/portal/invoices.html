@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Invoices</h2>
-    <div>
-        <a class="btn btn-outline-secondary me-2" href="{% url 'invoice_aging' %}">Aging report</a>
+<div class="page-header">
+    <h2 class="mb-0">Invoices</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'invoice_aging' %}">Aging report</a>
         {% if request.user.role == 'admin' or request.user.is_superuser %}
-        <a class="btn btn-outline-secondary me-2" href="{% url 'firm_profile' %}">Firm profile</a>
+        <a class="btn btn-outline-secondary" href="{% url 'firm_profile' %}">Firm profile</a>
         {% endif %}
         <a class="btn btn-primary" href="{% url 'invoice_create' %}">New Invoice</a>
     </div>
 </div>
-<div class="card shadow-sm mb-3">
+<div class="card panel-subtle mb-3">
     <div class="card-body">
-        <form method="get" class="row g-3">
+        <form method="get" class="row g-3 align-items-end">
             {% for field in filter.form %}
-                <div class="col-md-4">
-                    <label class="form-label">{{ field.label }}</label>
+                <div class="col-md-3 col-lg-3">
+                    <label class="form-label text-muted small">{{ field.label }}</label>
                     {{ field|add_class:"form-control" }}
                 </div>
             {% endfor %}
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-2 col-lg-2">
                 <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
             </div>
         </form>
@@ -28,22 +28,22 @@
 </div>
 <div class="card shadow-sm">
     <div class="table-responsive">
-        <table class="table mb-0">
+        <table class="table mb-0 align-middle">
             <thead>
             <tr>
                 <th>Invoice #</th>
                 <th>Project / Lead</th>
                 <th>Date</th>
                 <th>Due Date</th>
-                <th>Amount</th>
+                <th class="text-end">Amount</th>
                 <th>Status</th>
-                <th></th>
+                <th class="text-end">Actions</th>
             </tr>
             </thead>
             <tbody>
             {% for invoice in invoices %}
                 <tr>
-                    <td>{{ invoice.invoice_number }}</td>
+                    <td class="fw-semibold">{{ invoice.invoice_number }}</td>
                     <td>
                         {% if invoice.project %}
                             <div>{{ invoice.project.code }} · {{ invoice.project.name }}</div>
@@ -57,22 +57,24 @@
                     </td>
                     <td>{{ invoice.invoice_date|date:"d-m-Y" }}</td>
                     <td>{{ invoice.due_date|date:"d-m-Y" }}</td>
-                    <td>{{ invoice.total_with_tax|rupee }}</td>
+                    <td class="text-end fw-semibold">{{ invoice.total_with_tax|rupee }}</td>
                     <td>{{ invoice.get_status_display }}</td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary me-2" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
-                        <a class="btn btn-sm btn-outline-primary me-2" href="{% url 'invoice_edit' invoice.pk %}">Edit</a>
-                        {% if invoice.outstanding > 0 %}
-                        <a class="btn btn-sm btn-outline-success me-2" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
-                        {% endif %}
-                        <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
+                        <div class="d-flex justify-content-end flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{% url 'invoice_edit' invoice.pk %}">Edit</a>
+                            {% if invoice.outstanding > 0 %}
+                            <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
+                            {% endif %}
+                            <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="7" class="text-center">No invoices found.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">No invoices found.</td></tr>
             {% endfor %}
             </tbody>
         </table>
