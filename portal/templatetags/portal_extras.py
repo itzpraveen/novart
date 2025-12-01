@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+from django.utils.safestring import mark_safe
 
 from django import template
 
@@ -12,7 +13,7 @@ def rupee(value):
     except (InvalidOperation, TypeError, ValueError):
         return value
     formatted = f"{amount:,.2f}"
-    return f"₹ {formatted}"
+    return mark_safe(f"&#8377; {formatted}")
 
 
 @register.filter
