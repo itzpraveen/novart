@@ -31,17 +31,21 @@
                 <tr>
                     <td>{{ lead.title }}</td>
                     <td>{{ lead.client.name }}</td>
-                    <td><span class="badge bg-info">{{ lead.get_status_display }}</span></td>
+                    <td>
+                        <span class="badge badge-status {% if lead.status == 'won' %}badge-won{% elif lead.status == 'lost' %}badge-lost{% elif lead.status == 'discussion' %}badge-discussion{% else %}badge-new{% endif %}">
+                            {{ lead.get_status_display }}
+                        </span>
+                    </td>
                     <td>{{ lead.lead_source }}</td>
                     <td>₹{{ lead.estimated_value }}</td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
                         {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>Converted</button>
+                            <button class="btn btn-sm btn-converted" disabled>Converted</button>
                         {% elif lead.status == 'lost' %}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>Not eligible</button>
+                            <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
                         {% else %}
-                            <a class="btn btn-sm btn-success" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                            <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
                         {% endif %}
                     </td>
                 </tr>

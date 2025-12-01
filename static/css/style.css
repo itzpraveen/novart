@@ -184,6 +184,69 @@ a:hover {
     overflow: hidden;
 }
 
+.badge-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.badge-won {
+    background: rgba(16, 185, 129, 0.14);
+    color: #0f5132;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.badge-lost {
+    background: rgba(239, 68, 68, 0.14);
+    color: #7f1d1d;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+.badge-discussion {
+    background: rgba(245, 158, 11, 0.16);
+    color: #92400e;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.badge-new {
+    background: rgba(59, 130, 246, 0.14);
+    color: #1e3a8a;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+}
+
+.btn-convert {
+    background: linear-gradient(135deg, #0f9f4f, #0ea371);
+    color: #fff;
+    border: none;
+    box-shadow: 0 8px 18px rgba(14, 163, 113, 0.25);
+}
+
+.btn-convert:hover {
+    background: linear-gradient(135deg, #0c8c45, #0c9a64);
+    color: #fff;
+}
+
+.btn-converted,
+.btn-locked {
+    background: #f4f4f5;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+thead th {
+    color: #334155;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+table.table tr:hover {
+    background: rgba(8, 145, 178, 0.04);
+}
+
 .stat-card::after {
     content: '';
     position: absolute;
