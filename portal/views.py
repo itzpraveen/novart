@@ -542,12 +542,15 @@ def invoice_pdf(request, invoice_pk):
         fallback_logo = finders.find('img/novart.png')
         logo_data = _encode_image(fallback_logo)
 
-    font_path = (
-        finders.find('fonts/NotoSans-Regular.ttf')
-        or finders.find('fonts/DejaVuSans.ttf')
-        or '/opt/studioflow/static/fonts/NotoSans-Regular.ttf'
-    )
-    if font_path and os.path.exists(font_path):
+    font_candidates = [
+        finders.find('fonts/NotoSans-Regular.ttf'),
+        finders.find('fonts/DejaVuSans.ttf'),
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/opt/studioflow/static/fonts/NotoSans-Regular.ttf',
+        '/opt/studioflow/static/fonts/DejaVuSans.ttf',
+    ]
+    font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
+    if font_path:
         try:
             pdfmetrics.registerFont(TTFont('StudioSans', font_path))
             pdfmetrics.registerFont(TTFont('StudioSans-Bold', font_path))
@@ -560,6 +563,7 @@ def invoice_pdf(request, invoice_pk):
             )
         except Exception:
             logger.exception("Failed to register PDF font at %s", font_path)
+            font_path = None
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
