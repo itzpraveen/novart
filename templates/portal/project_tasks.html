@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>{{ project.name }} · Tasks</h2>
+<div class="page-header page-header-sticky">
+    <div>
+        <p class="text-muted mb-1">{{ project.code }}</p>
+        <h2 class="mb-0">{{ project.name }} · Tasks</h2>
+    </div>
     <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back</a>
 </div>
-<div class="row g-3">
+<div class="kanban-board mb-4">
     {% for code,label in statuses %}
-        <div class="col-lg-4 col-md-6">
+        <div class="kanban-column">
             <div class="card shadow-sm h-100 kanban-col kanban-{{ code }}">
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
                     <span>{{ label }}</span>

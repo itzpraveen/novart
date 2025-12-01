@@ -46,13 +46,7 @@
 
 body {
     font-family: var(--font-sans);
-    background-color: var(--bg-body);
-    background-image:
-        radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.08) 0px, transparent 45%),
-        radial-gradient(at 100% 0%, rgba(214, 167, 91, 0.08) 0px, transparent 40%),
-        radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.05) 0px, transparent 45%),
-        radial-gradient(at 0% 100%, rgba(15, 118, 110, 0.06) 0px, transparent 40%);
-    background-attachment: fixed;
+    background-color: #f4f5f7;
     color: var(--text-main);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -326,6 +320,74 @@ textarea.form-control:focus {
     flex-wrap: wrap;
 }
 
+.page-header-sticky {
+    position: sticky;
+    top: 72px;
+    z-index: 8;
+    padding: 0.35rem 0;
+    background: #f4f5f7;
+}
+
+.filter-toggle {
+    display: none;
+}
+
+.filter-collapse {
+    transition: height 0.2s ease;
+}
+
+.table-stack {
+    border: none;
+}
+
+@media (max-width: 768px) {
+    .table-stack thead {
+        display: none;
+    }
+    .table-stack tbody {
+        display: grid;
+        gap: 0.75rem;
+    }
+    .table-stack tr {
+        display: grid;
+        gap: 0.35rem;
+        padding: 0.85rem 0.9rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+    .table-stack td {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.15rem 0;
+        border: 0;
+    }
+    .table-stack td::before {
+        content: attr(data-label);
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+    .table-stack td.text-end {
+        justify-content: flex-end;
+    }
+    .stack-inline {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .filter-toggle {
+        display: block;
+    }
+    .page-header-sticky {
+        top: 64px;
+    }
+}
+
 .layout-duo {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
@@ -358,6 +420,20 @@ textarea.form-control:focus {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scroll-snap-type: x proximity;
+}
+
+.kanban-column {
+    min-width: 260px;
+    flex: 0 0 280px;
+    scroll-snap-align: start;
 }
 
 .kanban-col {
@@ -563,6 +639,16 @@ textarea.form-control:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
     background: white;
+}
+
+.form-actions-sticky {
+    position: sticky;
+    bottom: 0;
+    padding: 0.75rem 0;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
 }
 
 /* Badges */

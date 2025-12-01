@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="page-header">
+<div class="page-header page-header-sticky">
     <h2 class="mb-0">Invoices</h2>
     <div class="actions">
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_aging' %}">Aging report</a>
@@ -11,16 +11,20 @@
         <a class="btn btn-primary btn-sm" href="{% url 'invoice_create' %}">New Invoice</a>
     </div>
 </div>
-<div class="card panel-subtle mb-3">
+
+<button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#invoiceFilters" aria-expanded="false" aria-controls="invoiceFilters">
+    Filters
+</button>
+<div class="card panel-subtle mb-3 collapse show d-lg-block" id="invoiceFilters">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             {% for field in filter.form %}
-                <div class="col-md-3 col-lg-3">
+                <div class="col-12 col-md-4 col-lg-3">
                     <label class="form-label text-muted small">{{ field.label }}</label>
                     {{ field|add_class:"form-control" }}
                 </div>
             {% endfor %}
-            <div class="col-md-2 col-lg-2">
+            <div class="col-12 col-md-3 col-lg-2">
                 <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
             </div>
         </form>
@@ -28,7 +32,7 @@
 </div>
 <div class="card shadow-sm">
     <div class="table-responsive">
-        <table class="table mb-0 align-middle">
+        <table class="table mb-0 align-middle table-stack">
             <thead>
             <tr>
                 <th>Invoice #</th>
@@ -43,8 +47,8 @@
             <tbody>
             {% for invoice in invoices %}
                 <tr>
-                    <td class="fw-semibold">{{ invoice.invoice_number }}</td>
-                    <td>
+                    <td class="fw-semibold" data-label="Invoice #">{{ invoice.invoice_number }}</td>
+                    <td data-label="Project / Lead">
                         {% if invoice.project %}
                             <div>{{ invoice.project.code }} · {{ invoice.project.name }}</div>
                             <small class="text-muted">{{ invoice.project.client.name }}</small>
@@ -55,12 +59,12 @@
                             <span class="text-muted">Unassigned</span>
                         {% endif %}
                     </td>
-                    <td>{{ invoice.invoice_date|date:"d-m-Y" }}</td>
-                    <td>{{ invoice.due_date|date:"d-m-Y" }}</td>
-                    <td class="text-end fw-semibold">{{ invoice.total_with_tax|rupee }}</td>
-                    <td>{{ invoice.get_status_display }}</td>
-                    <td class="text-end">
-                        <div class="d-flex justify-content-end flex-wrap gap-2">
+                    <td data-label="Date">{{ invoice.invoice_date|date:"d-m-Y" }}</td>
+                    <td data-label="Due">{{ invoice.due_date|date:"d-m-Y" }}</td>
+                    <td class="text-end fw-semibold" data-label="Amount">{{ invoice.total_with_tax|rupee }}</td>
+                    <td data-label="Status"><span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %}">{{ invoice.get_status_display }}</span></td>
+                    <td class="text-end" data-label="Actions">
+                        <div class="d-flex justify-content-end flex-wrap gap-2 stack-inline">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
                             <a class="btn btn-sm btn-outline-primary" href="{% url 'invoice_edit' invoice.pk %}">Edit</a>
                             {% if invoice.outstanding > 0 %}

@@ -1,30 +1,35 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Projects</h2>
-    <div>
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Projects</h2>
+    <div class="actions">
         <a class="btn btn-primary" href="{% url 'project_create' %}">New Project</a>
     </div>
 </div>
-<div class="card shadow-sm mb-3">
+
+<button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#projectFilters" aria-expanded="false" aria-controls="projectFilters">
+    Filters
+</button>
+<div class="card shadow-sm mb-3 collapse show d-lg-block" id="projectFilters">
     <div class="card-body">
         <form method="get" class="row g-3">
             {% for field in filter.form %}
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <label class="form-label">{{ field.label }}</label>
                     {{ field|add_class:"form-select" }}
                 </div>
             {% endfor %}
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-12 col-md-3 col-lg-2 d-flex align-items-end">
                 <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
             </div>
         </form>
     </div>
 </div>
+
 <div class="card shadow-sm">
     <div class="table-responsive">
-        <table class="table mb-0 align-middle">
+        <table class="table mb-0 align-middle table-stack">
             <thead>
             <tr>
                 <th>Code</th>
@@ -41,18 +46,21 @@
             <tbody>
             {% for project in filter.qs %}
                 <tr>
-                    <td><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
-                    <td>{{ project.client.name }}</td>
-                    <td>{{ project.project_manager|default:"—" }}</td>
-                    <td>{{ project.site_engineer|default:"—" }}</td>
-                    <td>{{ project.current_stage }}</td>
-                    <td><span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
+                    <td data-label="Code"><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
+                    <td data-label="Client">{{ project.client.name }}</td>
+                    <td data-label="Manager">{{ project.project_manager|default:"—" }}</td>
+                    <td data-label="Site Engineer">{{ project.site_engineer|default:"—" }}</td>
+                    <td data-label="Stage">{{ project.current_stage }}</td>
+                    <td data-label="Health"><span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
                         {{ project.get_health_status_display }}
                     </span></td>
-                    <td>{{ project.start_date|date:"d-m-Y" }}</td>
-                    <td>{{ project.expected_handover|date:"d-m-Y" }}</td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+                    <td data-label="Start">{{ project.start_date|date:"d-m-Y" }}</td>
+                    <td data-label="Handover">{{ project.expected_handover|date:"d-m-Y" }}</td>
+                    <td data-label="Actions" class="text-end">
+                        <div class="stack-inline justify-content-end">
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{% url 'project_tasks' project.pk %}">Kanban</a>
+                        </div>
                     </td>
                 </tr>
             {% empty %}
