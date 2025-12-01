@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="page-header">
+<div class="page-header page-header-sticky">
     <h2 class="mb-0">Clients</h2>
     <div class="actions">
         <form class="d-flex align-items-center gap-2" method="get">
@@ -14,7 +14,7 @@
     <div>
         <div class="card shadow-sm">
             <div class="table-responsive">
-                <table class="table mb-0 align-middle">
+                <table class="table mb-0 align-middle table-stack">
                     <thead>
                     <tr>
                         <th>Name</th>
@@ -26,13 +26,17 @@
                     <tbody>
                     {% for client in clients %}
                         <tr>
-                            <td class="fw-semibold">{{ client.name }}</td>
-                            <td>
+                            <td class="fw-semibold" data-label="Name">{{ client.name }}</td>
+                            <td data-label="Contact">
                                 {% if client.phone %}<div class="fw-semibold">{{ client.phone }}</div>{% endif %}
                                 {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
                             </td>
-                            <td class="text-uppercase text-muted">{{ client.city }}</td>
-                            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a></td>
+                            <td class="text-uppercase text-muted" data-label="City">{{ client.city }}</td>
+                            <td class="text-end" data-label="Actions">
+                                <div class="stack-inline justify-content-end">
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
+                                </div>
+                            </td>
                         </tr>
                     {% empty %}
                         <tr><td colspan="4" class="text-center text-muted py-4">No clients yet. Add your first client.</td></tr>
