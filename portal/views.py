@@ -578,6 +578,7 @@ def invoice_pdf(request, invoice_pk):
             'firm_logo_path': logo_path,
             'firm_logo_data': logo_data,
             'font_path': font_path,
+            'generated_on': timezone.localtime(),
         },
     )
     pdf_file = BytesIO()

@@ -350,7 +350,7 @@
     </div>
 
     <div class="footer">
-        Generated on {{ invoice.updated_at|date:"d M Y H:i" }} via StudioFlow.{% if firm.email %} · Contact: {{ firm.email }}{% endif %}
+        Generated on {{ generated_on|date:"d M Y H:i" }} · StudioFlow{% if firm.email %} · {{ firm.email }}{% endif %}
     </div>
 </body>
 </html>
