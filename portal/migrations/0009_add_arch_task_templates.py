@@ -3,7 +3,6 @@ from django.db import migrations
 
 def add_arch_templates(apps, schema_editor):
     TaskTemplate = apps.get_model('portal', 'TaskTemplate')
-    Task = apps.get_model('portal', 'Task')
     titles = [
         "Plan Designing",
         "Exterior 3D",
@@ -30,13 +29,7 @@ def add_arch_templates(apps, schema_editor):
     for title in titles:
         if title in existing:
             continue
-        TaskTemplate.objects.create(
-            title=title,
-            description="",
-            status=Task.Status.TODO,
-            priority=Task.Priority.MEDIUM,
-            due_in_days=None,
-        )
+        TaskTemplate.objects.create(title=title, description="", status="todo", priority="medium", due_in_days=None)
 
 
 def remove_arch_templates(apps, schema_editor):
