@@ -548,6 +548,7 @@ def invoice_pdf(request, invoice_pk):
         '/opt/studioflow/static/fonts/DejaVuSans.ttf',
     ]
     font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
+    font_data_b64 = None
     if font_path:
         try:
             pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
@@ -558,6 +559,8 @@ def invoice_pdf(request, invoice_pk):
                 italic='DejaVuSans',
                 boldItalic='DejaVuSans',
             )
+            with open(font_path, 'rb') as f:
+                font_data_b64 = b64encode(f.read()).decode('utf-8')
         except Exception:
             logger.exception("Failed to register PDF font at %s", font_path)
             font_path = None
@@ -575,6 +578,7 @@ def invoice_pdf(request, invoice_pk):
             'firm_logo_path': logo_path,
             'firm_logo_data': logo_data,
             'font_path': font_path,
+            'font_data': font_data_b64,
             'generated_on': timezone.localtime(),
         },
     )

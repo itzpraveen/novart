@@ -4,7 +4,12 @@
 <head>
     <meta charset="utf-8">
     <style>
-        {% if font_path %}
+        {% if font_data %}
+        @font-face {
+            font-family: "DejaVuSans";
+            src: url("data:font/ttf;base64,{{ font_data }}") format("truetype");
+        }
+        {% elif font_path %}
         @font-face {
             font-family: "DejaVuSans";
             src: url("file://{{ font_path }}");
