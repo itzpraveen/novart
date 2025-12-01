@@ -273,7 +273,7 @@ table td {
     box-shadow: var(--shadow-sm);
     max-width: 1280px;
     width: 100%;
-    margin: 0 auto;
+    margin: 1.25rem auto 0 auto;
 }
 
 .section-title {
@@ -314,7 +314,7 @@ textarea.form-control:focus {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .page-header .actions {
