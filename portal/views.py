@@ -543,23 +543,20 @@ def invoice_pdf(request, invoice_pk):
         logo_data = _encode_image(fallback_logo)
 
     font_candidates = [
-        finders.find('fonts/NotoSans-Regular.ttf'),
         finders.find('fonts/DejaVuSans.ttf'),
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-        '/opt/studioflow/static/fonts/NotoSans-Regular.ttf',
         '/opt/studioflow/static/fonts/DejaVuSans.ttf',
     ]
     font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
     if font_path:
         try:
-            pdfmetrics.registerFont(TTFont('StudioSans', font_path))
-            pdfmetrics.registerFont(TTFont('StudioSans-Bold', font_path))
+            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
             pdfmetrics.registerFontFamily(
-                'StudioSans',
-                normal='StudioSans',
-                bold='StudioSans-Bold',
-                italic='StudioSans',
-                boldItalic='StudioSans-Bold',
+                'DejaVuSans',
+                normal='DejaVuSans',
+                bold='DejaVuSans',
+                italic='DejaVuSans',
+                boldItalic='DejaVuSans',
             )
         except Exception:
             logger.exception("Failed to register PDF font at %s", font_path)
