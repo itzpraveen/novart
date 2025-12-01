@@ -126,6 +126,8 @@ def dashboard(request):
         .select_related('client')
     )
 
+    cash_gap_value = (total_invoiced or 0) - (total_received or 0)
+
     context = _get_default_context() | {
         'total_projects': projects.count(),
         'active_projects': total_active,
@@ -135,7 +137,8 @@ def dashboard(request):
         'upcoming_handover': upcoming_handover,
         'total_invoiced_month': total_invoiced,
         'total_received_month': total_received,
-        'cash_gap': (total_invoiced or 0) - (total_received or 0),
+        'cash_gap': cash_gap_value,
+        'cash_gap_rupee': f"Rs. {cash_gap_value:,.2f}",
         'top_projects': top_projects,
     }
     return render(request, 'portal/dashboard.html', context)
