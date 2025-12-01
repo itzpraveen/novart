@@ -275,6 +275,9 @@ table td {
     width: 100%;
     margin: 1.25rem auto 0 auto;
 }
+.page-shell > * + * {
+    margin-top: 1rem;
+}
 
 .section-title {
     font-weight: 700;
