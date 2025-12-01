@@ -10,6 +10,10 @@
             src: url("file://{{ font_path }}");
         }
         {% endif %}
+        @font-face {
+            font-family: "DejaVuSans";
+            src: url("file:///usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+        }
         @page { font-family: "StudioSans", "DejaVu Sans", "Noto Sans", "Helvetica", "Arial", sans-serif; }
         body, table, th, td {
             font-family: "StudioSans", "DejaVu Sans", "Noto Sans", "Helvetica", "Arial", sans-serif;
@@ -87,8 +91,8 @@
             text-align: left;
             font-size: 11px;
             padding: 9px 8px;
-            background: #f2f4f7;
-            color: #1f2937;
+            background: #f5f6f8;
+            color: #111827;
             border-bottom: 1px solid #e5e7eb;
             text-transform: uppercase;
             letter-spacing: 0.2px;
@@ -136,9 +140,9 @@
         .totals .label { text-align: right; color: #5c5c5c; }
         .totals .value { text-align: right; font-weight: 600; }
         .totals .total-row td {
-            background: #eef2f7;
+            background: #f2f4f7;
             font-weight: 700;
-            color: #111827;
+            color: #0d9488;
         }
         .totals .balance-row td {
             background: #fff7e6;
