@@ -8,6 +8,25 @@
     </div>
 </div>
 
+<div class="summary-grid">
+    <div class="stat-tile">
+        <div class="label">Total projects</div>
+        <div class="value">{{ project_summary.total }}</div>
+    </div>
+    <div class="stat-tile">
+        <div class="label">Active</div>
+        <div class="value">{{ project_summary.active }}</div>
+    </div>
+    <div class="stat-tile">
+        <div class="label">At risk</div>
+        <div class="value text-warning">{{ project_summary.at_risk }}</div>
+    </div>
+    <div class="stat-tile">
+        <div class="label">Delayed</div>
+        <div class="value text-danger">{{ project_summary.delayed }}</div>
+    </div>
+</div>
+
 <button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#projectFilters" aria-expanded="false" aria-controls="projectFilters">
     Filters
 </button>
@@ -25,6 +44,13 @@
             </div>
         </form>
     </div>
+</div>
+
+<div class="filter-bar">
+    <form class="d-flex align-items-center gap-2 flex-grow-1" onsubmit="return false;">
+        <input id="projectSearch" type="search" class="form-control" placeholder="Live search by code, client, manager" aria-label="Search projects">
+    </form>
+    <div class="text-muted small">Showing {{ filter.qs|length }}</div>
 </div>
 
 <div class="card shadow-sm">
@@ -45,12 +71,12 @@
             </thead>
             <tbody>
             {% for project in filter.qs %}
-                <tr>
-                    <td data-label="Code"><a href="{% url 'project_detail' project.pk %}">{{ project.code }}</a></td>
+                <tr class="project-row" data-search="{{ project.code }} {{ project.client.name }} {{ project.project_manager }} {{ project.site_engineer }} {{ project.current_stage }} {{ project.get_health_status_display }}">
+                    <td data-label="Code"><a href="{% url 'project_detail' project.pk %}" class="fw-semibold">{{ project.code }}</a></td>
                     <td data-label="Client">{{ project.client.name }}</td>
                     <td data-label="Manager">{{ project.project_manager|default:"—" }}</td>
                     <td data-label="Site Engineer">{{ project.site_engineer|default:"—" }}</td>
-                    <td data-label="Stage">{{ project.current_stage }}</td>
+                    <td data-label="Stage"><span class="chip chip-ghost">{{ project.current_stage }}</span></td>
                     <td data-label="Health"><span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
                         {{ project.get_health_status_display }}
                     </span></td>
@@ -66,8 +92,29 @@
             {% empty %}
                 <tr><td colspan="9" class="text-center">No projects found.</td></tr>
             {% endfor %}
+            <tr id="projectEmptyState" class="d-none"><td colspan="9" class="text-center text-muted py-4">No matches for this search.</td></tr>
             </tbody>
         </table>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('projectSearch');
+    const rows = Array.from(document.querySelectorAll('.project-row'));
+    const empty = document.getElementById('projectEmptyState');
+    if (!input || !rows.length) return;
+    const filterRows = (term) => {
+        const q = term.trim().toLowerCase();
+        let visible = 0;
+        rows.forEach(row => {
+            const txt = row.dataset.search.toLowerCase();
+            const match = !q || txt.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) visible += 1;
+        });
+        if (empty) empty.classList.toggle('d-none', visible !== 0);
+    };
+    input.addEventListener('input', () => filterRows(input.value));
+});
+</script>
 {% endblock %}

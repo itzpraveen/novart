@@ -395,7 +395,16 @@ def project_list(request):
     project_filter = ProjectFilter(
         request.GET, queryset=Project.objects.select_related('client', 'project_manager', 'site_engineer')
     )
-    context = {'filter': project_filter}
+    qs = project_filter.qs
+    context = {
+        'filter': project_filter,
+        'project_summary': {
+            'total': qs.count(),
+            'active': qs.exclude(current_stage=Project.Stage.CLOSED).count(),
+            'at_risk': qs.filter(health_status=Project.Health.AT_RISK).count(),
+            'delayed': qs.filter(health_status=Project.Health.DELAYED).count(),
+        },
+    }
     return render(request, 'portal/projects.html', context)
 
 
