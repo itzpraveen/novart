@@ -178,8 +178,8 @@
 
 <button class="btn btn-primary fab-add d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#addClientOffcanvas">Add client</button>
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="addClientOffcanvas" aria-labelledby="addClientLabel">
-    <div class="offcanvas-header">
+<div class="offcanvas offcanvas-end offcanvas-glow" tabindex="-1" id="addClientOffcanvas" aria-labelledby="addClientLabel">
+    <div class="offcanvas-header align-items-start">
         <div>
             <div class="eyebrow">New record</div>
             <h5 class="offcanvas-title" id="addClientLabel">Add client</h5>
@@ -191,7 +191,10 @@
         <form method="post" class="row g-3">
             {% csrf_token %}
             <div class="col-12">
-                <label class="form-label text-muted small" for="{{ form.name.id_for_label }}">Client name</label>
+                <label class="form-label text-muted small d-flex justify-content-between align-items-center" for="{{ form.name.id_for_label }}">
+                    <span>Client name</span>
+                    <span class="badge bg-light text-dark">Primary</span>
+                </label>
                 {{ form.name|add_class:"form-control form-control-lg" }}
                 {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
@@ -245,7 +248,7 @@
                 {% if form.notes.help_text %}<div class="form-text">{{ form.notes.help_text }}</div>{% endif %}
                 {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
-            <div class="col-12 d-flex flex-wrap gap-2">
+            <div class="col-12 d-flex flex-wrap gap-2 sticky-footer">
                 <button type="submit" class="btn btn-primary flex-grow-1">Save client</button>
                 <button type="submit" name="next" value="project" class="btn btn-outline-secondary flex-grow-1">Save & add project</button>
             </div>

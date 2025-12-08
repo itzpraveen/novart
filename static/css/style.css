@@ -959,6 +959,35 @@ textarea.form-control:focus {
     padding: 0.9rem 1.1rem;
 }
 
+.offcanvas-glow {
+    background: var(--bg-elevated);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.08);
+}
+
+.offcanvas-glow .form-control,
+.offcanvas-glow .form-select {
+    border-radius: var(--radius-md);
+    border-color: var(--border-color);
+}
+
+.offcanvas-glow .form-control:focus,
+.offcanvas-glow .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: var(--focus-ring);
+}
+
+.sticky-footer {
+    position: sticky;
+    bottom: 0;
+    padding-top: 0.5rem;
+    background: linear-gradient(180deg, transparent 0%, var(--bg-elevated) 40%);
+}
+
+.offcanvas-glow .card.form-section {
+    border: 1px dashed var(--border-color);
+    background: var(--bg-surface);
+}
 .summary-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
