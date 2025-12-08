@@ -963,6 +963,7 @@ textarea.form-control:focus {
     background: var(--bg-elevated);
     border-left: 1px solid var(--border-color);
     box-shadow: -16px 0 40px rgba(15, 23, 42, 0.08);
+    max-width: 420px;
 }
 
 .offcanvas-glow .form-control,
@@ -982,11 +983,27 @@ textarea.form-control:focus {
     bottom: 0;
     padding-top: 0.5rem;
     background: linear-gradient(180deg, transparent 0%, var(--bg-elevated) 40%);
+    padding-bottom: 0.75rem;
 }
 
 .offcanvas-glow .card.form-section {
     border: 1px dashed var(--border-color);
     background: var(--bg-surface);
+}
+
+.offcanvas-glow .offcanvas-body {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding-bottom: 1rem;
+}
+
+.offcanvas-glow .offcanvas-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg-elevated);
+    padding-bottom: 0.75rem;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 .summary-grid {
     display: grid;
