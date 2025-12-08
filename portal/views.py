@@ -209,6 +209,7 @@ def client_list(request):
         .annotate(
             project_count=Count('projects', distinct=True),
             invoice_count=Count('projects__invoices', distinct=True),
+            first_project_id=Subquery(Project.objects.filter(client=OuterRef('pk')).values('pk')[:1]),
             invoice_total=Coalesce(
                 Subquery(invoice_totals),
                 Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),

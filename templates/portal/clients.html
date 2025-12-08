@@ -146,12 +146,18 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="text-end client-actions d-none d-md-flex">
+                        <div class="text-end client-actions d-none d-md-flex flex-column gap-2">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
+                            {% if client.project_count == 1 and client.first_project_id %}
+                                <a class="btn btn-sm btn-soft" href="{% url 'project_detail' client.first_project_id %}">View project</a>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="d-md-none mt-3 d-flex gap-2">
                         <a class="btn btn-outline-secondary btn-sm flex-grow-1" href="{% url 'client_edit' client.pk %}">Edit</a>
+                        {% if client.project_count == 1 and client.first_project_id %}
+                            <a class="btn btn-soft btn-sm flex-grow-1" href="{% url 'project_detail' client.first_project_id %}">Project</a>
+                        {% endif %}
                     </div>
                 </article>
             {% empty %}
