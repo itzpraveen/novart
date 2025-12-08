@@ -24,6 +24,8 @@ from django.db.models import (
     Exists,
     Max,
     IntegerField,
+    Case,
+    When,
 )
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
