@@ -878,6 +878,12 @@ textarea.form-control:focus {
     border-style: dashed;
 }
 
+.client-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
 .client-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -951,6 +957,40 @@ textarea.form-control:focus {
     border-radius: 999px;
     box-shadow: var(--shadow-lg);
     padding: 0.9rem 1.1rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stat-tile {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-tile .label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.stat-tile .value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.stat-tile.action {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .table th,

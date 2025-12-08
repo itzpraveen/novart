@@ -23,6 +23,7 @@ from django.db.models import (
     ExpressionWrapper,
     Exists,
     Max,
+    IntegerField,
 )
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -260,6 +261,22 @@ def client_list(request):
         'clients': clients,
         'form': form,
         'cities': cities,
+        'summary': clients.aggregate(
+            total_clients=Count('id'),
+            overdue_clients=Sum(
+                Case(
+                    When(has_overdue=True, then=1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            outstanding_sum=Sum(
+                ExpressionWrapper(
+                    F('invoice_total') - F('payment_total'),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                )
+            ),
+        ),
         'applied_filters': {
             'q': search or '',
             'city': city_filter or '',
