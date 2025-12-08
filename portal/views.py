@@ -1,5 +1,6 @@
 from base64 import b64encode
 from datetime import timedelta
+import datetime as dt
 from decimal import Decimal
 import logging
 import mimetypes
@@ -9,12 +10,26 @@ from django.contrib.staticfiles import finders
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Sum
+from django.db.models import (
+    Count,
+    Q,
+    Sum,
+    OuterRef,
+    Subquery,
+    Value,
+    F,
+    DecimalField,
+    DateTimeField,
+    ExpressionWrapper,
+    Exists,
+    Max,
+)
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.db.models.functions import Coalesce, Greatest, Cast
 from xhtml2pdf import pisa
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -146,20 +161,96 @@ def dashboard(request):
 
 @login_required
 def client_list(request):
-    clients = Client.objects.all().order_by('name')
+    base_clients = Client.objects.all()
+
+    invoice_totals = (
+        Invoice.objects.filter(project__client=OuterRef('pk'))
+        .values('project__client')
+        .annotate(total_amount=Coalesce(Sum('amount'), Value(0)))
+        .values('total_amount')[:1]
+    )
+    payment_totals = (
+        Payment.objects.filter(invoice__project__client=OuterRef('pk'))
+        .values('invoice__project__client')
+        .annotate(total_paid=Coalesce(Sum('amount'), Value(0)))
+        .values('total_paid')[:1]
+    )
+    overdue_exists = Invoice.objects.filter(
+        project__client=OuterRef('pk'),
+        status=Invoice.Status.OVERDUE,
+    )
+
+    fallback_dt = Value(
+        timezone.make_aware(dt.datetime(2000, 1, 1)),
+        output_field=DateTimeField(),
+    )
+
+    clients = (
+        base_clients
+        .annotate(
+            project_count=Count('projects', distinct=True),
+            invoice_count=Count('projects__invoices', distinct=True),
+            invoice_total=Coalesce(Subquery(invoice_totals), Value(0)),
+            payment_total=Coalesce(Subquery(payment_totals), Value(0)),
+            last_project_update=Max('projects__updated_at'),
+            last_invoice_date_dt=Cast(Max('projects__invoices__invoice_date'), output_field=DateTimeField()),
+            has_overdue=Exists(overdue_exists),
+        )
+        .annotate(
+            last_activity=Greatest(
+                Coalesce('last_project_update', fallback_dt),
+                Coalesce('last_invoice_date_dt', fallback_dt),
+            ),
+            outstanding_total=Greatest(
+                ExpressionWrapper(
+                    F('invoice_total') - F('payment_total'),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                ),
+                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            ),
+        )
+        .order_by('name')
+    )
+
     search = request.GET.get('q')
+    city_filter = request.GET.get('city')
+    only_overdue = request.GET.get('overdue') == '1'
+    has_contact = request.GET.get('contact') == '1'
+
     if search:
         clients = clients.filter(Q(name__icontains=search) | Q(phone__icontains=search) | Q(email__icontains=search))
+    if city_filter:
+        clients = clients.filter(city__iexact=city_filter)
+    if only_overdue:
+        clients = clients.filter(has_overdue=True)
+    if has_contact:
+        clients = clients.filter(Q(phone__isnull=False, phone__gt='') | Q(email__isnull=False, email__gt=''))
+
+    cities = base_clients.exclude(city='').values_list('city', flat=True).distinct().order_by('city')
 
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
-            form.save()
+            client = form.save()
             messages.success(request, 'Client saved.')
+            if request.POST.get('next') == 'project':
+                return redirect(f"{reverse('project_create')}?client={client.pk}")
             return redirect('client_list')
     else:
         form = ClientForm()
-    return render(request, 'portal/clients.html', {'clients': clients, 'form': form})
+
+    context = {
+        'clients': clients,
+        'form': form,
+        'cities': cities,
+        'applied_filters': {
+            'q': search or '',
+            'city': city_filter or '',
+            'overdue': only_overdue,
+            'contact': has_contact,
+        },
+    }
+    return render(request, 'portal/clients.html', context)
 
 
 @login_required

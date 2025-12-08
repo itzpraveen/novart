@@ -1,5 +1,25 @@
 {% extends "base.html" %}
 {% load portal_extras %}
+
+{% block subnav %}
+<div class="subnav">
+    <div class="container subnav-inner">
+        <div class="subnav-title">
+            <div class="eyebrow">Workspace</div>
+            <div class="fw-semibold">Clients</div>
+        </div>
+        <div class="subnav-tabs">
+            <a class="subnav-link active" href="{% url 'client_list' %}">Directory</a>
+            <a class="subnav-link disabled" href="#" aria-disabled="true">Segments</a>
+            <a class="subnav-link disabled" href="#" aria-disabled="true">Imports</a>
+        </div>
+        <div class="subnav-actions">
+            <a class="btn btn-outline-secondary btn-sm" href="#addClientPanel">Add client</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-header page-header-sticky align-items-start">
     <div>
@@ -11,9 +31,44 @@
         <p class="text-muted mb-0 small">Keep the roster tidy for quick lead conversions and invoicing.</p>
     </div>
     <form class="searchbar" method="get">
-        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search by name, phone, or email" aria-label="Search clients">
+        <input type="search" name="q" value="{{ applied_filters.q }}" class="form-control" placeholder="Search by name, phone, or email" aria-label="Search clients">
         <button class="btn btn-primary" type="submit">Search</button>
     </form>
+</div>
+
+<div class="toolbar soft">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <form class="d-flex flex-wrap align-items-center gap-2" method="get">
+            <input type="hidden" name="q" value="{{ applied_filters.q }}">
+            <select name="city" class="form-select form-select-sm w-auto">
+                <option value="">City</option>
+                {% for city in cities %}
+                    <option value="{{ city }}" {% if applied_filters.city == city %}selected{% endif %}>{{ city }}</option>
+                {% endfor %}
+            </select>
+            <label class="chip chip-ghost filter-chip">
+                <input type="checkbox" class="form-check-input me-1" name="overdue" value="1" {% if applied_filters.overdue %}checked{% endif %}>
+                Overdue invoices
+            </label>
+            <label class="chip chip-ghost filter-chip">
+                <input type="checkbox" class="form-check-input me-1" name="contact" value="1" {% if applied_filters.contact %}checked{% endif %}>
+                Has phone/email
+            </label>
+            <button class="btn btn-outline-secondary btn-sm" type="submit">Apply</button>
+            <a class="btn btn-link btn-sm text-muted" href="{% url 'client_list' %}">Clear</a>
+        </form>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        {% if applied_filters.city %}
+            <span class="chip chip-soft">City: {{ applied_filters.city }}</span>
+        {% endif %}
+        {% if applied_filters.overdue %}
+            <span class="chip chip-soft">Overdue only</span>
+        {% endif %}
+        {% if applied_filters.contact %}
+            <span class="chip chip-soft">Has contact</span>
+        {% endif %}
+    </div>
 </div>
 
 <div class="layout-duo">
@@ -22,7 +77,7 @@
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <div class="fw-semibold">Directory</div>
-                    <div class="text-muted small">Alphabetical overview{% if request.GET.q %} - filtered for "{{ request.GET.q }}"{% endif %}</div>
+                    <div class="text-muted small">Alphabetical overview{% if applied_filters.q %} - filtered for "{{ applied_filters.q }}"{% endif %}</div>
                 </div>
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <span class="chip chip-soft">A-Z</span>
@@ -46,10 +101,31 @@
                                     {% if client.city or client.state %}
                                         <span class="chip chip-soft">{{ client.city|default:"City not set" }}{% if client.state %}, {{ client.state }}{% endif %}</span>
                                     {% endif %}
+                                    {% if client.has_overdue %}
+                                        <span class="chip chip-warning">Overdue</span>
+                                    {% endif %}
                                 </div>
                                 <div class="d-flex flex-wrap gap-2 mt-2">
                                     {% if client.phone %}<span class="chip chip-ghost">Phone {{ client.phone }}</span>{% endif %}
                                     {% if client.email %}<span class="chip chip-ghost">Email {{ client.email }}</span>{% endif %}
+                                </div>
+                                <div class="client-stats mt-3">
+                                    <div class="stat-pill">
+                                        <div class="label">Projects</div>
+                                        <div class="value">{{ client.project_count }}</div>
+                                    </div>
+                                    <div class="stat-pill">
+                                        <div class="label">Invoices</div>
+                                        <div class="value">{{ client.invoice_count }}</div>
+                                    </div>
+                                    <div class="stat-pill">
+                                        <div class="label">Outstanding</div>
+                                        <div class="value text-danger">{{ client.outstanding_total|rupee }}</div>
+                                    </div>
+                                    <div class="stat-pill">
+                                        <div class="label">Last touch</div>
+                                        <div class="value">{{ client.last_activity|date:"d M Y"|default:"—" }}</div>
+                                    </div>
                                 </div>
                                 {% if client.address or client.notes %}
                                     <div class="text-muted small mt-2">
@@ -59,14 +135,24 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="text-end">
+                        <div class="text-end client-actions d-none d-md-flex flex-column gap-2">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
+                            <a class="btn btn-sm btn-soft" href="{% url 'lead_create' %}?client={{ client.pk }}">New lead</a>
+                            <a class="btn btn-sm btn-soft" href="{% url 'project_create' %}?client={{ client.pk }}">New project</a>
                         </div>
+                    </div>
+                    <div class="d-md-none mt-3 d-flex gap-2">
+                        <a class="btn btn-outline-secondary btn-sm flex-grow-1" href="{% url 'client_edit' client.pk %}">Edit</a>
+                        <a class="btn btn-soft btn-sm flex-grow-1" href="{% url 'project_create' %}?client={{ client.pk }}">Project</a>
                     </div>
                 </article>
             {% empty %}
-                <div class="card shadow-sm">
-                    <div class="card-body text-center text-muted">No clients yet. Add your first client.</div>
+                <div class="card shadow-sm empty-state">
+                    <div class="card-body text-center">
+                        <div class="eyebrow mb-1">No clients yet</div>
+                        <p class="text-muted mb-3">Start by adding your first client or import a CSV.</p>
+                        <a class="btn btn-primary" href="#addClientPanel">Add client</a>
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -102,24 +188,38 @@
                             {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="col-12">
-                            <label class="form-label text-muted small" for="{{ form.address.id_for_label }}">Address</label>
-                            {{ form.address|add_class:"form-control" }}
-                            {% for error in form.address.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small" for="{{ form.city.id_for_label }}">City</label>
-                            {{ form.city|add_class:"form-control" }}
-                            {% for error in form.city.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small" for="{{ form.state.id_for_label }}">State</label>
-                            {{ form.state|add_class:"form-control" }}
-                            {% for error in form.state.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small" for="{{ form.postal_code.id_for_label }}">Postal code</label>
-                            {{ form.postal_code|add_class:"form-control" }}
-                            {% for error in form.postal_code.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            <div class="card form-section">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <div class="eyebrow">Location</div>
+                                            <div class="fw-semibold">Address & city</div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label text-muted small" for="{{ form.address.id_for_label }}">Address</label>
+                                            {{ form.address|add_class:"form-control" }}
+                                            {% for error in form.address.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small" for="{{ form.city.id_for_label }}">City</label>
+                                            {{ form.city|add_class:"form-control" }}
+                                            {% for error in form.city.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small" for="{{ form.state.id_for_label }}">State</label>
+                                            {{ form.state|add_class:"form-control" }}
+                                            {% for error in form.state.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small" for="{{ form.postal_code.id_for_label }}">Postal code</label>
+                                            {{ form.postal_code|add_class:"form-control" }}
+                                            {% for error in form.postal_code.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label text-muted small" for="{{ form.notes.id_for_label }}">Notes</label>
@@ -127,8 +227,9 @@
                             {% if form.notes.help_text %}<div class="form-text">{{ form.notes.help_text }}</div>{% endif %}
                             {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary w-100">Save client</button>
+                        <div class="col-12 d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">Save client</button>
+                            <button type="submit" name="next" value="project" class="btn btn-outline-secondary flex-grow-1">Save & add project</button>
                         </div>
                     </form>
                 </div>
