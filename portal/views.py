@@ -166,13 +166,25 @@ def client_list(request):
     invoice_totals = (
         Invoice.objects.filter(project__client=OuterRef('pk'))
         .values('project__client')
-        .annotate(total_amount=Coalesce(Sum('amount'), Value(0)))
+        .annotate(
+            total_amount=Coalesce(
+                Sum('amount'),
+                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            )
+        )
         .values('total_amount')[:1]
     )
     payment_totals = (
         Payment.objects.filter(invoice__project__client=OuterRef('pk'))
         .values('invoice__project__client')
-        .annotate(total_paid=Coalesce(Sum('amount'), Value(0)))
+        .annotate(
+            total_paid=Coalesce(
+                Sum('amount'),
+                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            )
+        )
         .values('total_paid')[:1]
     )
     overdue_exists = Invoice.objects.filter(
@@ -201,12 +213,9 @@ def client_list(request):
                 Coalesce('last_project_update', fallback_dt),
                 Coalesce('last_invoice_date_dt', fallback_dt),
             ),
-            outstanding_total=Greatest(
-                ExpressionWrapper(
-                    F('invoice_total') - F('payment_total'),
-                    output_field=DecimalField(max_digits=14, decimal_places=2),
-                ),
-                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            outstanding_total=ExpressionWrapper(
+                F('invoice_total') - F('payment_total'),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
             ),
         )
         .order_by('name')
