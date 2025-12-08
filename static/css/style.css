@@ -95,6 +95,12 @@
     border-bottom-color: var(--border-color);
 }
 
+[data-theme="dark"] .nav-elevated {
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    border-bottom-color: var(--border-color);
+}
+
 [data-theme="dark"] .card {
     background: var(--bg-surface);
     border-color: var(--border-color);
@@ -174,6 +180,16 @@
     background: rgba(148, 163, 184, 0.15);
     border-color: var(--text-muted);
     color: var(--text-main);
+}
+
+[data-theme="dark"] .nav-user-pill {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-icon:hover {
+    border-color: var(--border-color);
+    background: rgba(20, 184, 166, 0.08);
 }
 
 [data-theme="dark"] .bg-light {
@@ -308,17 +324,35 @@ a:hover {
 
 /* Navigation */
 .navbar {
-    background: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border-color);
-    padding: 0.75rem 0;
+    padding: 0.9rem 0;
     box-shadow: var(--shadow-sm);
 }
 
+.nav-elevated {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fafb 100%) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-utility {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .app-nav .nav-links .nav-link {
-    padding-left: 0.4rem !important;
-    padding-right: 0.4rem !important;
+    padding-left: 0.7rem !important;
+    padding-right: 0.7rem !important;
 }
 
 .app-nav .navbar-toggler {
@@ -355,19 +389,57 @@ a:hover {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
+.nav-links {
+    gap: 0.25rem;
+}
+
 .nav-link {
     color: var(--text-muted) !important;
     font-weight: 600;
-    padding: 0.6rem 1rem !important;
-    border-radius: var(--radius-md);
+    padding: 0.6rem 0.95rem !important;
+    border-radius: 999px;
     transition: var(--transition-fast);
     font-size: 0.95rem;
+    position: relative;
 }
 
 .nav-link:hover,
 .nav-link.active {
     color: var(--primary-color) !important;
-    background: rgba(13, 148, 136, 0.1);
+    background: rgba(13, 148, 136, 0.08);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--primary-color);
+}
+
+.nav-icon {
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid transparent;
+}
+
+.nav-icon:hover {
+    border-color: var(--border-color);
+    background: rgba(13, 148, 136, 0.06);
+}
+
+.nav-user-pill {
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 0.35rem 0.6rem !important;
+    background: rgba(248, 250, 252, 0.9);
 }
 
 /* Cards */
@@ -634,6 +706,127 @@ textarea.form-control:focus {
     align-items: start;
 }
 
+.eyebrow {
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--text-light);
+    font-weight: 700;
+}
+
+.searchbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0.35rem 0.35rem 0.35rem 0.75rem;
+    box-shadow: var(--shadow-sm);
+    min-width: 260px;
+}
+
+.searchbar .form-control {
+    border: none;
+    background: transparent;
+    padding-left: 0;
+    box-shadow: none;
+}
+
+.searchbar .form-control:focus {
+    box-shadow: none;
+}
+
+.client-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+@media (min-width: 992px) {
+    .client-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.client-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    padding: 1rem 1.1rem;
+    transition: var(--transition-normal);
+}
+
+.client-card:hover {
+    border-color: rgba(13, 148, 136, 0.35);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.client-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-family: var(--font-heading);
+}
+
+.client-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.chip-soft {
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid rgba(13, 148, 136, 0.18);
+}
+
+.chip-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+}
+
+.client-form-shell {
+    position: sticky;
+    top: 96px;
+}
+
+.client-form-card {
+    border: 1px solid rgba(13, 148, 136, 0.12);
+    background: linear-gradient(180deg, rgba(13, 148, 136, 0.06), rgba(13, 148, 136, 0.02));
+}
+
+.client-form-card .form-control {
+    background: var(--bg-input);
+}
+
+.client-form-card .btn-primary {
+    box-shadow: var(--shadow-glow);
+}
+
+.client-directory .panel-subtle {
+    border-style: dashed;
+}
+
 .table th,
 .table td {
     vertical-align: middle;
@@ -736,6 +929,9 @@ textarea.form-control:focus {
     .table > :not(caption) > * > * {
         padding: 0.75rem 0.65rem;
     }
+    .client-form-shell {
+        position: static;
+    }
 }
 
 @media (max-width: 640px) {
@@ -766,6 +962,19 @@ textarea.form-control:focus {
     }
 }
 
+[data-theme="dark"] .client-card {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .client-card:hover {
+    border-color: rgba(20, 184, 166, 0.35);
+}
+
+[data-theme="dark"] .client-form-card {
+    border-color: rgba(20, 184, 166, 0.25);
+    background: linear-gradient(180deg, rgba(20, 184, 166, 0.1), rgba(20, 184, 166, 0.03));
+}
 .stat-card::after {
     content: '';
     position: absolute;

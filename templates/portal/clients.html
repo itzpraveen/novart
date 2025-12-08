@@ -1,101 +1,139 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="page-header page-header-sticky">
-    <h2 class="mb-0">Clients</h2>
-    <div class="actions flex-wrap">
-        <form class="d-flex align-items-center gap-2" method="get">
-            <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search clients..." />
-            <button class="btn btn-outline-secondary" type="submit">Search</button>
-        </form>
-        <button class="btn btn-primary d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#addClientPanel" aria-expanded="false" aria-controls="addClientPanel">
-            Add Client
-        </button>
+<div class="page-header page-header-sticky align-items-start">
+    <div>
+        <div class="eyebrow text-uppercase">CRM / Directory</div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h2 class="mb-0">Clients</h2>
+            <span class="badge rounded-pill bg-primary-subtle text-primary fw-semibold">{{ clients|length }} in list</span>
+        </div>
+        <p class="text-muted mb-0 small">Keep the roster tidy for quick lead conversions and invoicing.</p>
     </div>
+    <form class="searchbar" method="get">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search by name, phone, or email" aria-label="Search clients">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
 </div>
 
-<div class="row g-3 g-md-4">
-    <div class="col-md-7">
-        <div class="d-md-none">
+<div class="layout-duo">
+    <div class="client-directory">
+        <div class="card panel-subtle mb-3">
+            <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <div class="fw-semibold">Directory</div>
+                    <div class="text-muted small">Alphabetical overview{% if request.GET.q %} - filtered for "{{ request.GET.q }}"{% endif %}</div>
+                </div>
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="chip chip-soft">A-Z</span>
+                    <span class="chip chip-ghost">{{ clients|length }} showing</span>
+                    <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#addClientPanel" aria-expanded="false" aria-controls="addClientPanel">
+                        Add client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="client-grid">
             {% for client in clients %}
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <span class="text-muted small">Name</span>
-                            <div class="fw-semibold text-end">{{ client.name }}</div>
+                <article class="client-card">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div class="d-flex gap-3 flex-grow-1">
+                            <div class="client-avatar">{{ client.name|first|default:"C"|upper }}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="client-name mb-0">{{ client.name }}</div>
+                                    {% if client.city or client.state %}
+                                        <span class="chip chip-soft">{{ client.city|default:"City not set" }}{% if client.state %}, {{ client.state }}{% endif %}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    {% if client.phone %}<span class="chip chip-ghost">Phone {{ client.phone }}</span>{% endif %}
+                                    {% if client.email %}<span class="chip chip-ghost">Email {{ client.email }}</span>{% endif %}
+                                </div>
+                                {% if client.address or client.notes %}
+                                    <div class="text-muted small mt-2">
+                                        {% if client.address %}<div>{{ client.address }}</div>{% endif %}
+                                        {% if client.notes %}<div class="text-truncate">{{ client.notes }}</div>{% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="text-muted small mt-2">Contact</div>
-                        <div class="fw-medium">{{ client.phone|default:"—" }}</div>
-                        {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="badge bg-light text-dark">{{ client.city|default:"—" }}</span>
+                        <div class="text-end">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
                         </div>
                     </div>
-                </div>
+                </article>
             {% empty %}
                 <div class="card shadow-sm">
                     <div class="card-body text-center text-muted">No clients yet. Add your first client.</div>
                 </div>
             {% endfor %}
         </div>
-        <div class="card shadow-sm d-none d-md-block">
-            <div class="table-responsive">
-                <table class="table mb-0 align-middle">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Contact</th>
-                        <th>City</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for client in clients %}
-                        <tr>
-                            <td class="fw-semibold">{{ client.name }}</td>
-                            <td>
-                                {% if client.phone %}<div class="fw-semibold">{{ client.phone }}</div>{% endif %}
-                                {% if client.email %}<div class="text-muted small">{{ client.email }}</div>{% endif %}
-                            </td>
-                            <td class="text-uppercase text-muted">{{ client.city }}</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="4" class="text-center text-muted py-4">No clients yet. Add your first client.</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
-    <div class="col-md-5">
+
+    <aside class="client-form-shell">
         <div class="collapse show" id="addClientPanel">
-            <div class="card shadow-sm">
+            <div class="card client-form-card shadow-lg">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Add client</h5>
-                        <span class="badge bg-light text-dark">New</span>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="eyebrow text-uppercase">New record</div>
+                            <h5 class="mb-1">Add client</h5>
+                            <div class="text-muted small">Save contact + address for downstream tasks.</div>
+                        </div>
+                        <span class="badge bg-light text-dark">Live</span>
                     </div>
-                    <form method="post" class="row g-3">
+                    <form method="post" class="row g-3 mt-3">
                         {% csrf_token %}
-                        {% for field in form %}
-                            <div class="col-12">
-                                <label class="form-label text-muted small">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
-                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                            </div>
-                        {% endfor %}
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary w-100">Save</button>
+                            <label class="form-label text-muted small" for="{{ form.name.id_for_label }}">Client name</label>
+                            {{ form.name|add_class:"form-control form-control-lg" }}
+                            {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small" for="{{ form.phone.id_for_label }}">Phone</label>
+                            {{ form.phone|add_class:"form-control" }}
+                            {% for error in form.phone.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small" for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email|add_class:"form-control" }}
+                            {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small" for="{{ form.address.id_for_label }}">Address</label>
+                            {{ form.address|add_class:"form-control" }}
+                            {% for error in form.address.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small" for="{{ form.city.id_for_label }}">City</label>
+                            {{ form.city|add_class:"form-control" }}
+                            {% for error in form.city.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small" for="{{ form.state.id_for_label }}">State</label>
+                            {{ form.state|add_class:"form-control" }}
+                            {% for error in form.state.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small" for="{{ form.postal_code.id_for_label }}">Postal code</label>
+                            {{ form.postal_code|add_class:"form-control" }}
+                            {% for error in form.postal_code.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small" for="{{ form.notes.id_for_label }}">Notes</label>
+                            {{ form.notes|add_class:"form-control" }}
+                            {% if form.notes.help_text %}<div class="form-text">{{ form.notes.help_text }}</div>{% endif %}
+                            {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100">Save client</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
+    </aside>
 </div>
 {% endblock %}
