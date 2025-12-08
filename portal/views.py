@@ -202,8 +202,16 @@ def client_list(request):
         .annotate(
             project_count=Count('projects', distinct=True),
             invoice_count=Count('projects__invoices', distinct=True),
-            invoice_total=Coalesce(Subquery(invoice_totals), Value(0)),
-            payment_total=Coalesce(Subquery(payment_totals), Value(0)),
+            invoice_total=Coalesce(
+                Subquery(invoice_totals),
+                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+            payment_total=Coalesce(
+                Subquery(payment_totals),
+                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
             last_project_update=Max('projects__updated_at'),
             last_invoice_date_dt=Cast(Max('projects__invoices__invoice_date'), output_field=DateTimeField()),
             has_overdue=Exists(overdue_exists),
