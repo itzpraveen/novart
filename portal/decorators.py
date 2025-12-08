@@ -1,6 +1,10 @@
 from functools import wraps
 
 from django.http import HttpResponseForbidden
+from django.shortcuts import redirect
+from django.contrib import messages
+
+from .permissions import guard_module
 
 
 def role_required(*roles):
@@ -24,6 +28,24 @@ def role_required(*roles):
             if user.is_superuser or has_role:
                 return view_func(request, *args, **kwargs)
             return HttpResponseForbidden("You do not have permission to perform this action.")
+
+        return _wrapped
+
+    return decorator
+
+
+def module_required(module: str):
+    """
+    Enforce module-level access using RolePermission settings.
+    """
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped(request, *args, **kwargs):
+            if guard_module(request, module):
+                return view_func(request, *args, **kwargs)
+            messages.error(request, "You don't have access to this area.")
+            return redirect('dashboard')
 
         return _wrapped
 

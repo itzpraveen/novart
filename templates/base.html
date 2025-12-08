@@ -69,17 +69,15 @@
                 </div>
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 nav-links">
                     <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'client_list' %}">Clients</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'lead' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lead_list' %}">Leads</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'project_list' %}">Projects</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'site_visit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'site_visit_list' %}">Site Visits</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'finance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'finance_dashboard' %}">Finance</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'invoice_list' %}">Invoices</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'document' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'document_list' %}">Docs</a></li>
-                    <li class="nav-item"><a class="nav-link {% if 'team' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'team_list' %}">Team</a></li>
-                    {% if request.user.role == 'admin' or request.user.is_superuser %}
-                    <li class="nav-item"><a class="nav-link {% if 'user_admin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user_admin_list' %}">Users</a></li>
-                    {% endif %}
+                    {% if module_perms.clients %}<li class="nav-item"><a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'client_list' %}">Clients</a></li>{% endif %}
+                    {% if module_perms.leads %}<li class="nav-item"><a class="nav-link {% if 'lead' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'lead_list' %}">Leads</a></li>{% endif %}
+                    {% if module_perms.projects %}<li class="nav-item"><a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'project_list' %}">Projects</a></li>{% endif %}
+                    {% if module_perms.site_visits %}<li class="nav-item"><a class="nav-link {% if 'site_visit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'site_visit_list' %}">Site Visits</a></li>{% endif %}
+                    {% if module_perms.finance %}<li class="nav-item"><a class="nav-link {% if 'finance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'finance_dashboard' %}">Finance</a></li>{% endif %}
+                    {% if module_perms.invoices %}<li class="nav-item"><a class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'invoice_list' %}">Invoices</a></li>{% endif %}
+                    {% if module_perms.docs %}<li class="nav-item"><a class="nav-link {% if 'document' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'document_list' %}">Docs</a></li>{% endif %}
+                    {% if module_perms.team %}<li class="nav-item"><a class="nav-link {% if 'team' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'team_list' %}">Team</a></li>{% endif %}
+                    {% if module_perms.users %}<li class="nav-item"><a class="nav-link {% if 'user_admin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user_admin_list' %}">Users</a></li>{% endif %}
                     <li class="nav-item d-md-none pt-2">
                         <a class="nav-link" href="{% url 'my_tasks' %}">My Tasks</a>
                         <a class="nav-link" href="{% url 'reminder_settings' %}">Settings</a>

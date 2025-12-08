@@ -39,7 +39,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger(__name__)
 
-from .decorators import role_required
+from .decorators import role_required, module_required
 from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
 from .forms import (
     ClientForm,
@@ -58,6 +58,7 @@ from .forms import (
     TransactionForm,
     ReminderSettingForm,
     UserForm,
+    RolePermissionForm,
 )
 from .models import (
     Client,
@@ -76,7 +77,9 @@ from .models import (
     TaskTemplate,
     Transaction,
     User,
+    RolePermission,
 )
+from .permissions import ensure_role_permissions
 
 
 def _get_default_context():
@@ -163,6 +166,7 @@ def dashboard(request):
 
 
 @login_required
+@module_required('clients')
 def client_list(request):
     base_clients = Client.objects.all()
 
@@ -290,6 +294,7 @@ def client_list(request):
 
 
 @login_required
+@module_required('clients')
 def client_edit(request, pk):
     client = get_object_or_404(Client, pk=pk)
     if request.method == 'POST':
@@ -304,6 +309,7 @@ def client_edit(request, pk):
 
 
 @login_required
+@module_required('leads')
 def lead_list(request):
     leads = Lead.objects.select_related('client').annotate(project_count=Count('projects')).order_by('-created_at')
     status = request.GET.get('status')
@@ -314,6 +320,7 @@ def lead_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('leads')
 def lead_create(request):
     if request.method == 'POST':
         form = LeadForm(request.POST)
@@ -330,6 +337,7 @@ def lead_create(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('leads')
 def lead_edit(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     if request.method == 'POST':
@@ -391,6 +399,7 @@ def lead_convert(request, pk):
 
 
 @login_required
+@module_required('projects')
 def project_list(request):
     project_filter = ProjectFilter(
         request.GET, queryset=Project.objects.select_related('client', 'project_manager', 'site_engineer')
@@ -410,6 +419,7 @@ def project_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('projects')
 def project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -425,6 +435,7 @@ def project_create(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('projects')
 def project_edit(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
@@ -560,6 +571,7 @@ def my_tasks(request):
 
 
 @login_required
+@module_required('site_visits')
 def site_visit_list(request):
     visit_filter = SiteVisitFilter(request.GET, queryset=SiteVisit.objects.select_related('project', 'visited_by'))
     return render(request, 'portal/site_visits.html', {'filter': visit_filter})
@@ -616,6 +628,7 @@ def site_visit_detail(request, pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
+@module_required('site_visits')
 def issue_list(request):
     issue_filter = SiteIssueFilter(request.GET, queryset=SiteIssue.objects.select_related('project', 'site_visit'))
     if request.method == 'POST':
@@ -631,6 +644,7 @@ def issue_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_list(request):
     invoice_qs = Invoice.objects.select_related('project', 'project__client', 'lead', 'lead__client').prefetch_related(
         'lines', 'payments'
@@ -647,6 +661,7 @@ def invoice_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_pdf(request, invoice_pk):
     invoice = get_object_or_404(
         Invoice.objects.select_related(
@@ -862,7 +877,9 @@ def payment_create(request, invoice_pk):
 
 
 @login_required
+@login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('finance')
 def transaction_list(request):
     txn_filter = TransactionFilter(request.GET, queryset=Transaction.objects.select_related('related_project'))
     if request.method == 'POST':
@@ -877,6 +894,7 @@ def transaction_list(request):
 
 
 @login_required
+@module_required('docs')
 def document_list(request):
     documents = Document.objects.select_related('project').order_by('-created_at')
     doc_type = request.GET.get('file_type')
@@ -905,6 +923,7 @@ def document_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('finance')
 def finance_dashboard(request):
     projects = Project.objects.all()
     total_invoiced = sum((invoice.total_with_tax for invoice in Invoice.objects.prefetch_related('lines')), Decimal('0'))
@@ -979,6 +998,7 @@ def notification_mark_read(request, pk):
 
 
 @login_required
+@module_required('team')
 def team_list(request):
     team = (
         User.objects.order_by('role', 'first_name', 'last_name')
@@ -995,9 +1015,25 @@ def team_list(request):
 
 @login_required
 @role_required(User.Roles.ADMIN)
+@module_required('users')
 def user_admin_list(request):
     users = User.objects.order_by('role', 'first_name', 'last_name')
-    if request.method == 'POST':
+    ensure_role_permissions()
+    role_forms = {
+        rp.role: RolePermissionForm(prefix=rp.role, instance=rp)
+        for rp in RolePermission.objects.order_by('role')
+    }
+    if request.method == 'POST' and request.POST.get('perm_role'):
+        role_key = request.POST.get('perm_role')
+        rp = RolePermission.objects.filter(role=role_key).first()
+        if rp:
+            form = RolePermissionForm(request.POST, prefix=role_key, instance=rp)
+            if form.is_valid():
+                form.save()
+                messages.success(request, f"Permissions updated for {rp.get_role_display()}.")
+                return redirect('user_admin_list')
+            role_forms[role_key] = form
+    elif request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
             form.save()
@@ -1005,14 +1041,34 @@ def user_admin_list(request):
             return redirect('user_admin_list')
     else:
         form = UserForm()
-    return render(request, 'portal/user_admin.html', {'users': users, 'form': form})
+    return render(
+        request,
+        'portal/user_admin.html',
+        {'users': users, 'form': form, 'role_forms': role_forms},
+    )
 
 
 @login_required
 @role_required(User.Roles.ADMIN)
+@module_required('users')
 def user_admin_edit(request, pk):
     user = get_object_or_404(User, pk=pk)
-    if request.method == 'POST':
+    ensure_role_permissions()
+    role_forms = {
+        rp.role: RolePermissionForm(prefix=rp.role, instance=rp)
+        for rp in RolePermission.objects.order_by('role')
+    }
+    if request.method == 'POST' and request.POST.get('perm_role'):
+        role_key = request.POST.get('perm_role')
+        rp = RolePermission.objects.filter(role=role_key).first()
+        if rp:
+            form_perm = RolePermissionForm(request.POST, prefix=role_key, instance=rp)
+            if form_perm.is_valid():
+                form_perm.save()
+                messages.success(request, f"Permissions updated for {rp.get_role_display()}.")
+                return redirect('user_admin_edit', pk=user.pk)
+            role_forms[role_key] = form_perm
+    elif request.method == 'POST':
         form = UserForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
@@ -1020,4 +1076,13 @@ def user_admin_edit(request, pk):
             return redirect('user_admin_list')
     else:
         form = UserForm(instance=user)
-    return render(request, 'portal/user_admin.html', {'users': User.objects.order_by('role', 'first_name'), 'form': form, 'editing': user})
+    return render(
+        request,
+        'portal/user_admin.html',
+        {
+            'users': User.objects.order_by('role', 'first_name'),
+            'form': form,
+            'editing': user,
+            'role_forms': role_forms,
+        },
+    )

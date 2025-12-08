@@ -463,8 +463,34 @@ class FirmProfile(TimeStampedModel):
     def __str__(self) -> str:
         return self.name or "Firm Profile"
 
+
+class RolePermission(TimeStampedModel):
+    class Module(models.TextChoices):
+        CLIENTS = 'clients', 'Clients'
+        LEADS = 'leads', 'Leads'
+        PROJECTS = 'projects', 'Projects'
+        SITE_VISITS = 'site_visits', 'Site Visits'
+        FINANCE = 'finance', 'Finance'
+        INVOICES = 'invoices', 'Invoices'
+        DOCS = 'docs', 'Docs'
+        TEAM = 'team', 'Team'
+        USERS = 'users', 'Users'
+        SETTINGS = 'settings', 'Settings'
+
+    role = models.CharField(max_length=32, choices=User.Roles.choices, unique=True)
+    clients = models.BooleanField(default=False)
+    leads = models.BooleanField(default=False)
+    projects = models.BooleanField(default=False)
+    site_visits = models.BooleanField(default=False)
+    finance = models.BooleanField(default=False)
+    invoices = models.BooleanField(default=False)
+    docs = models.BooleanField(default=False)
+    team = models.BooleanField(default=False)
+    users = models.BooleanField(default=False)
+    settings = models.BooleanField(default=False)
+
     def __str__(self) -> str:
-        return self.file_name
+        return f"{self.get_role_display()} permissions"
 
 
 class ReminderSetting(TimeStampedModel):

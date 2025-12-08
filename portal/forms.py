@@ -21,6 +21,7 @@ from .models import (
     TaskTemplate,
     Transaction,
     User,
+    RolePermission,
 )
 
 class DateInput(forms.DateInput):
@@ -117,6 +118,24 @@ class ProjectForm(forms.ModelForm):
         for date_field in ['start_date', 'expected_handover']:
             if date_field in self.fields:
                 self.fields[date_field].widget.attrs.setdefault('placeholder', 'mm/dd/yyyy')
+
+
+class RolePermissionForm(forms.ModelForm):
+    class Meta:
+        model = RolePermission
+        fields = [
+            'clients',
+            'leads',
+            'projects',
+            'site_visits',
+            'finance',
+            'invoices',
+            'docs',
+            'team',
+            'users',
+            'settings',
+        ]
+        widgets = {field: forms.CheckboxInput(attrs={'class': 'form-check-input'}) for field in fields}
 
 
 class StageUpdateForm(forms.ModelForm):

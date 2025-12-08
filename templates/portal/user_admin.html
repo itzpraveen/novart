@@ -76,4 +76,40 @@
         </div>
     </div>
 </div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+        <span>Role access</span>
+        <small class="text-muted">Tick/untick modules per role</small>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for role, perm_form in role_forms.items %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="border rounded p-3 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="fw-semibold">{{ perm_form.instance.get_role_display }}</div>
+                            {% if perm_form.instance.role == 'admin' %}
+                                <span class="badge bg-primary">All access</span>
+                            {% endif %}
+                        </div>
+                        <form method="post" class="role-perm-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="perm_role" value="{{ perm_form.instance.role }}">
+                            <div class="d-grid gap-2">
+                                {% for field in perm_form %}
+                                    <label class="form-check form-switch d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small">{{ field.label }}</span>
+                                        {{ field }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100 mt-3">Save</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}
