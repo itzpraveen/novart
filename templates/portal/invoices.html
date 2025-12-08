@@ -12,10 +12,10 @@
     </div>
 </div>
 
-<button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#invoiceFilters" aria-expanded="false" aria-controls="invoiceFilters">
+<button class="btn btn-outline-secondary w-100 d-md-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#invoiceFilters" aria-expanded="false" aria-controls="invoiceFilters">
     Filters
 </button>
-<div class="card panel-subtle mb-3 collapse show d-lg-block" id="invoiceFilters">
+<div class="card panel-subtle mb-3 collapse show d-md-block" id="invoiceFilters">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             {% for field in filter.form %}
@@ -64,16 +64,37 @@
                     <td class="text-end fw-semibold" data-label="Amount">{{ invoice.total_with_tax|rupee }}</td>
                     <td data-label="Status"><span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %}">{{ invoice.get_status_display }}</span></td>
                     <td class="text-end" data-label="Actions">
-                        <div class="d-flex justify-content-end flex-wrap gap-2 stack-inline">
-                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">PDF</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{% url 'invoice_edit' invoice.pk %}">Edit</a>
-                            {% if invoice.outstanding > 0 %}
-                            <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">Record payment</a>
-                            {% endif %}
-                            <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
+                        <div class="action-dropdown">
+                            <button class="action-dropdown-toggle" aria-label="Actions for invoice {{ invoice.invoice_number }}" aria-haspopup="true" aria-expanded="false">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="19" cy="12" r="1"></circle>
+                                    <circle cx="5" cy="12" r="1"></circle>
+                                </svg>
+                            </button>
+                            <div class="action-dropdown-menu">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'invoice_pdf' invoice.pk %}" target="_blank" rel="noopener">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                    PDF
+                                </a>
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'invoice_edit' invoice.pk %}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    Edit
+                                </a>
+                                {% if invoice.outstanding > 0 %}
+                                <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                    Record payment
+                                </a>
+                                {% endif %}
+                                <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline w-100" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger w-100 text-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </td>
                 </tr>

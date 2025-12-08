@@ -8,15 +8,15 @@
             <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search clients..." />
             <button class="btn btn-outline-secondary" type="submit">Search</button>
         </form>
-        <button class="btn btn-primary d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#addClientPanel" aria-expanded="false" aria-controls="addClientPanel">
+        <button class="btn btn-primary d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#addClientPanel" aria-expanded="false" aria-controls="addClientPanel">
             Add Client
         </button>
     </div>
 </div>
 
-<div class="row g-3 g-lg-4">
-    <div class="col-lg-7">
-        <div class="d-lg-none">
+<div class="row g-3 g-md-4">
+    <div class="col-md-7">
+        <div class="d-md-none">
             {% for client in clients %}
                 <div class="card shadow-sm mb-3">
                     <div class="card-body">
@@ -39,7 +39,7 @@
                 </div>
             {% endfor %}
         </div>
-        <div class="card shadow-sm d-none d-lg-block">
+        <div class="card shadow-sm d-none d-md-block">
             <div class="table-responsive">
                 <table class="table mb-0 align-middle">
                     <thead>
@@ -71,7 +71,7 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-5">
+    <div class="col-md-5">
         <div class="collapse show" id="addClientPanel">
             <div class="card shadow-sm">
                 <div class="card-body">
