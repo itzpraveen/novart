@@ -135,15 +135,12 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="text-end client-actions d-none d-md-flex flex-column gap-2">
+                        <div class="text-end client-actions d-none d-md-flex">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'client_edit' client.pk %}">Edit</a>
-                            <a class="btn btn-sm btn-soft" href="{% url 'lead_create' %}?client={{ client.pk }}">New lead</a>
-                            <a class="btn btn-sm btn-soft" href="{% url 'project_create' %}?client={{ client.pk }}">New project</a>
                         </div>
                     </div>
                     <div class="d-md-none mt-3 d-flex gap-2">
                         <a class="btn btn-outline-secondary btn-sm flex-grow-1" href="{% url 'client_edit' client.pk %}">Edit</a>
-                        <a class="btn btn-soft btn-sm flex-grow-1" href="{% url 'project_create' %}?client={{ client.pk }}">Project</a>
                     </div>
                 </article>
             {% empty %}
