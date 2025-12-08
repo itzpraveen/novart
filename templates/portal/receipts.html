@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Finance</div>
+        <h2 class="mb-0">Receipts</h2>
+        <div class="text-muted small">Separate receipt numbers with allocations to invoices.</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_list' %}">Invoices</a>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <form class="d-flex align-items-center gap-2 flex-grow-1" method="get">
+        <input type="search" class="form-control" name="q" placeholder="Search by receipt #, invoice #, client, project" value="{{ query }}">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+        {% if query %}
+            <a class="btn btn-link" href="{% url 'receipt_list' %}">Clear</a>
+        {% endif %}
+    </form>
+    <div class="text-muted small">Total: {{ total_amount|rupee }}</div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+                <tr>
+                    <th>Receipt #</th>
+                    <th>Invoice</th>
+                    <th>Client / Project</th>
+                    <th>Date</th>
+                    <th class="text-end">Amount</th>
+                    <th>Method</th>
+                    <th>Ref</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for receipt in receipts %}
+                <tr>
+                    <td class="fw-semibold" data-label="Receipt #">{{ receipt.receipt_number }}</td>
+                    <td data-label="Invoice">
+                        <div>{{ receipt.invoice.invoice_number }}</div>
+                        <small class="text-muted">Status: {{ receipt.invoice.get_status_display }}</small>
+                    </td>
+                    <td data-label="Client / Project">
+                        {% if receipt.project %}
+                            <div>{{ receipt.project.code }} · {{ receipt.project.name }}</div>
+                            <small class="text-muted">{{ receipt.client.name|default:"" }}</small>
+                        {% elif receipt.client %}
+                            <div>{{ receipt.client.name }}</div>
+                        {% else %}
+                            <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Date">{{ receipt.receipt_date|date:"d-m-Y" }}</td>
+                    <td class="text-end fw-semibold" data-label="Amount">{{ receipt.amount|rupee }}</td>
+                    <td data-label="Method">{{ receipt.method|default:"—" }}</td>
+                    <td data-label="Ref">{{ receipt.reference|default:"—" }}</td>
+                    <td class="text-end" data-label="Actions">
+                        {% if receipt.attachment %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ receipt.attachment.url }}" target="_blank" rel="noopener">File</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

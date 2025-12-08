@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">{{ editing|default_if_none:"New" }} User</h2>
-        <p class="text-muted mb-0">Manage team accounts and roles.</p>
+        <p class="text-muted mb-0">Manage team accounts, roles, and access.</p>
     </div>
     <div>
         {% if editing %}
@@ -35,10 +35,34 @@
                 </form>
             </div>
         </div>
+        {% if editing_perms %}
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>Access for {{ editing.get_full_name|default:editing.username }}</span>
+                <small class="text-muted">{{ editing.get_role_display }} role</small>
+            </div>
+            <div class="card-body">
+                <div class="text-muted small mb-2">This is what they can see based on current role toggles.</div>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    {% for key,label in editing_perms.allowed %}
+                        <span class="badge bg-success-subtle text-success">{{ label }}</span>
+                    {% empty %}
+                        <span class="text-muted small">No modules enabled.</span>
+                    {% endfor %}
+                </div>
+                {% if editing_perms.blocked %}
+                    <div class="text-muted small">Hidden for this user: {% for key,label in editing_perms.blocked %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     <div class="col-lg-7">
         <div class="card shadow-sm">
-            <div class="card-header bg-white fw-semibold">Team</div>
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>Team</span>
+                <small class="text-muted">Role-driven access is set below</small>
+            </div>
             <div class="table-responsive">
                 <table class="table mb-0 align-middle">
                     <thead>
@@ -80,7 +104,7 @@
 <div class="card shadow-sm mt-4">
     <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
         <span>Role access</span>
-        <small class="text-muted">Tick/untick modules per role</small>
+        <small class="text-muted">Toggle modules per role (applies to all users in that role)</small>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -88,7 +112,10 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="border rounded p-3 h-100">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="fw-semibold">{{ perm_form.instance.get_role_display }}</div>
+                            <div>
+                                <div class="fw-semibold">{{ perm_form.instance.get_role_display }}</div>
+                                <div class="text-muted small">{{ perm_form.fields|length }} modules</div>
+                            </div>
                             {% if perm_form.instance.role == 'admin' %}
                                 <span class="badge bg-primary">All access</span>
                             {% endif %}
@@ -111,5 +138,14 @@
             {% endfor %}
         </div>
     </div>
+</div>
+
+<div class="alert alert-info mt-3">
+    <div class="fw-semibold mb-1">How it works</div>
+    <ul class="mb-0 small">
+        <li>Role toggles apply to all users with that role; admin can change them anytime.</li>
+        <li>Navigation and pages are gated by these toggles. If a module is off, the link hides and access is denied.</li>
+        <li>Need per-user overrides? Tell me and I’ll add a user-specific toggle row.</li>
+    </ul>
 </div>
 {% endblock %}

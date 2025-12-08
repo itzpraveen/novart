@@ -50,7 +50,15 @@
     <form class="d-flex align-items-center gap-2 flex-grow-1" onsubmit="return false;">
         <input id="projectSearch" type="search" class="form-control" placeholder="Live search by code, client, manager" aria-label="Search projects">
     </form>
-    <div class="text-muted small">Showing {{ filter.qs|length }}</div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap" aria-label="Health quick filters">
+            <button class="chip chip-ghost" type="button" data-health-filter="all">All</button>
+            <button class="chip chip-soft text-success border-0" type="button" data-health-filter="on_track">On track</button>
+            <button class="chip chip-soft text-warning border-0" type="button" data-health-filter="at_risk">At risk</button>
+            <button class="chip chip-soft text-danger border-0" type="button" data-health-filter="delayed">Delayed</button>
+        </div>
+        <div class="text-muted small" id="projectCount" aria-live="polite">Showing {{ filter.qs|length }}</div>
+    </div>
 </div>
 
 <div class="card shadow-sm">
@@ -71,7 +79,7 @@
             </thead>
             <tbody>
             {% for project in filter.qs %}
-                <tr class="project-row" data-search="{{ project.code }} {{ project.client.name }} {{ project.project_manager }} {{ project.site_engineer }} {{ project.current_stage }} {{ project.get_health_status_display }}">
+                <tr class="project-row" data-search="{{ project.code }} {{ project.client.name }} {{ project.project_manager }} {{ project.site_engineer }} {{ project.current_stage }} {{ project.get_health_status_display }}" data-health="{{ project.health_status|default:'unknown' }}">
                     <td data-label="Code"><a href="{% url 'project_detail' project.pk %}" class="fw-semibold">{{ project.code }}</a></td>
                     <td data-label="Client">{{ project.client.name }}</td>
                     <td data-label="Manager">{{ project.project_manager|default:"—" }}</td>
@@ -102,19 +110,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('projectSearch');
     const rows = Array.from(document.querySelectorAll('.project-row'));
     const empty = document.getElementById('projectEmptyState');
-    if (!input || !rows.length) return;
-    const filterRows = (term) => {
+    const counter = document.getElementById('projectCount');
+    const chips = Array.from(document.querySelectorAll('[data-health-filter]'));
+
+    const filterRows = (term, health) => {
         const q = term.trim().toLowerCase();
+        const healthKey = health || 'all';
         let visible = 0;
         rows.forEach(row => {
             const txt = row.dataset.search.toLowerCase();
-            const match = !q || txt.includes(q);
-            row.style.display = match ? '' : 'none';
-            if (match) visible += 1;
+            const healthVal = row.dataset.health || 'unknown';
+            const matchesText = !q || txt.includes(q);
+            const matchesHealth = healthKey === 'all' || healthVal === healthKey;
+            const show = matchesText && matchesHealth;
+            row.style.display = show ? '' : 'none';
+            if (show) visible += 1;
         });
         if (empty) empty.classList.toggle('d-none', visible !== 0);
+        if (counter) counter.textContent = `Showing ${visible}`;
     };
-    input.addEventListener('input', () => filterRows(input.value));
+
+    let currentHealth = 'all';
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentHealth = chip.dataset.healthFilter;
+            filterRows(input ? input.value : '', currentHealth);
+        });
+    });
+
+    if (input) {
+        input.addEventListener('input', () => filterRows(input.value, currentHealth));
+    }
+    filterRows(input ? input.value : '', currentHealth);
 });
 </script>
 {% endblock %}

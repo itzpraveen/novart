@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Finance</div>
+        <h2 class="mb-0">Add receipt</h2>
+        <div class="text-muted small">Invoice {{ invoice.invoice_number }} · Outstanding {{ invoice.outstanding|rupee }}</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to invoices</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" class="row g-3">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            {% endfor %}
+            <div class="col-12">
+                <button class="btn btn-primary">Save receipt</button>
+                <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
+            </div>
+        </form>
+        <div class="alert alert-info mt-3 small mb-0">
+            Receipt number auto-builds from project code and date ({{ invoice.project.code|default:"RCPT" }}-{{ form.initial.receipt_date|date:"Ymd" }}-XX). Payments are recorded automatically to settle the invoice.
+        </div>
+    </div>
+</div>
+{% endblock %}

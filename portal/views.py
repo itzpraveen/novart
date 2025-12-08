@@ -48,6 +48,7 @@ from .forms import (
     InvoiceForm,
     InvoiceLineFormSet,
     LeadForm,
+    ReceiptForm,
     PaymentForm,
     ProjectForm,
     SiteIssueForm,
@@ -68,6 +69,7 @@ from .models import (
     Lead,
     Notification,
     Payment,
+    Receipt,
     Project,
     ProjectStageHistory,
     ReminderSetting,
@@ -79,7 +81,7 @@ from .models import (
     User,
     RolePermission,
 )
-from .permissions import ensure_role_permissions
+from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
 
 
 def _get_default_context():
@@ -878,6 +880,67 @@ def payment_create(request, invoice_pk):
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def receipt_list(request):
+    receipts = Receipt.objects.select_related('invoice', 'project', 'client').order_by('-receipt_date', '-created_at')
+    q = request.GET.get('q')
+    if q:
+        receipts = receipts.filter(
+            Q(receipt_number__icontains=q)
+            | Q(invoice__invoice_number__icontains=q)
+            | Q(client__name__icontains=q)
+            | Q(project__code__icontains=q)
+        )
+    total_amount = receipts.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    return render(
+        request,
+        'portal/receipts.html',
+        {'receipts': receipts, 'query': q or '', 'total_amount': total_amount},
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def receipt_create(request, invoice_pk):
+    invoice = get_object_or_404(Invoice.objects.select_related('project', 'lead__client'), pk=invoice_pk)
+    if invoice.outstanding <= 0:
+        messages.info(request, 'This invoice is already settled.')
+        return redirect('invoice_list')
+    if request.method == 'POST':
+        form = ReceiptForm(request.POST, request.FILES, invoice=invoice)
+        if form.is_valid():
+            receipt = form.save(commit=False)
+            receipt.invoice = invoice
+            if not receipt.received_by:
+                receipt.received_by = request.user
+            payment = Payment.objects.create(
+                invoice=invoice,
+                payment_date=receipt.receipt_date,
+                amount=receipt.amount,
+                method=receipt.method,
+                reference=receipt.reference,
+                received_by=receipt.received_by,
+            )
+            receipt.payment = payment
+            receipt.save()
+            _refresh_invoice_status(invoice)
+            messages.success(request, f"Receipt {receipt.receipt_number} recorded.")
+            return redirect('invoice_list')
+    else:
+        form = ReceiptForm(
+            initial={
+                'receipt_date': timezone.now().date(),
+                'amount': invoice.outstanding,
+                'received_by': request.user,
+            },
+            invoice=invoice,
+        )
+    return render(request, 'portal/receipt_form.html', {'form': form, 'invoice': invoice})
+
+
+@login_required
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 @module_required('finance')
@@ -1045,7 +1108,14 @@ def user_admin_list(request):
     return render(
         request,
         'portal/user_admin.html',
-        {'users': users, 'form': form, 'role_forms': role_forms},
+        {
+            'users': users,
+            'form': form,
+            'editing': None,
+            'role_forms': role_forms,
+            'module_labels': MODULE_LABELS,
+            'editing_perms': None,
+        },
     )
 
 
@@ -1077,6 +1147,11 @@ def user_admin_edit(request, pk):
             return redirect('user_admin_list')
     else:
         form = UserForm(instance=user)
+    user_perms = get_permissions_for_user(user)
+    editing_perms = {
+        'allowed': [(key, MODULE_LABELS.get(key, key.title())) for key, allowed in user_perms.items() if allowed],
+        'blocked': [(key, MODULE_LABELS.get(key, key.title())) for key, allowed in user_perms.items() if not allowed],
+    }
     return render(
         request,
         'portal/user_admin.html',
@@ -1085,5 +1160,7 @@ def user_admin_edit(request, pk):
             'form': form,
             'editing': user,
             'role_forms': role_forms,
+            'module_labels': MODULE_LABELS,
+            'editing_perms': editing_perms,
         },
     )

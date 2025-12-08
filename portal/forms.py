@@ -11,6 +11,7 @@ from .models import (
     InvoiceLine,
     Lead,
     Payment,
+    Receipt,
     Project,
     ProjectStageHistory,
     ReminderSetting,
@@ -320,6 +321,33 @@ class PaymentForm(forms.ModelForm):
         model = Payment
         fields = ['payment_date', 'amount', 'method', 'reference', 'received_by']
         widgets = {'payment_date': DateInput()}
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        if self.invoice:
+            outstanding = self.invoice.outstanding
+            if outstanding <= 0:
+                raise forms.ValidationError('This invoice is already settled.')
+            if amount > outstanding:
+                raise forms.ValidationError(f'Cannot record more than the outstanding balance ({outstanding}).')
+        return amount
+
+
+class ReceiptForm(forms.ModelForm):
+    def __init__(self, *args, invoice=None, **kwargs):
+        self.invoice = invoice
+        super().__init__(*args, **kwargs)
+        if invoice:
+            outstanding = invoice.outstanding
+            self.fields['amount'].widget.attrs.setdefault('max', str(outstanding))
+            self.fields['amount'].widget.attrs.setdefault('min', '0.01')
+
+    class Meta:
+        model = Receipt
+        fields = ['receipt_date', 'amount', 'method', 'reference', 'notes', 'attachment', 'received_by']
+        widgets = {'receipt_date': DateInput()}
 
     def clean_amount(self):
         amount = self.cleaned_data.get('amount') or Decimal('0')

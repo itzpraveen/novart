@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -399,6 +400,66 @@ class Payment(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Payment {self.amount} on {self.payment_date}"
+
+
+class Receipt(TimeStampedModel):
+    receipt_number = models.CharField(max_length=64, unique=True)
+    receipt_date = models.DateField(default=timezone.now)
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='receipts')
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
+    lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=50, blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    attachment = models.FileField(upload_to='receipts/', blank=True, null=True)
+    payment = models.OneToOneField(
+        Payment, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipt'
+    )
+    received_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts_received'
+    )
+
+    class Meta:
+        ordering = ['-receipt_date', '-created_at']
+
+    def __str__(self) -> str:
+        return self.receipt_number
+
+    def save(self, *args, **kwargs):
+        if not self.receipt_date:
+            self.receipt_date = timezone.now().date()
+        if self.invoice:
+            if not self.project:
+                self.project = self.invoice.project
+            if not self.lead:
+                self.lead = self.invoice.lead
+            if not self.client:
+                if self.invoice.project and self.invoice.project.client:
+                    self.client = self.invoice.project.client
+                elif self.invoice.lead:
+                    self.client = self.invoice.lead.client
+        if not self.receipt_number:
+            self.receipt_number = self._generate_receipt_number()
+        super().save(*args, **kwargs)
+
+    def _generate_receipt_number(self) -> str:
+        receipt_date = self.receipt_date or timezone.now().date()
+        prefix_code = None
+        if self.project and getattr(self.project, 'code', None):
+            prefix_code = self.project.code
+        elif self.invoice and self.invoice.project and getattr(self.invoice.project, 'code', None):
+            prefix_code = self.invoice.project.code
+        prefix = f"{prefix_code or 'RCPT'}-{receipt_date:%Y%m%d}"
+        base_qs = Receipt.objects.filter(receipt_number__startswith=prefix)
+        seq = base_qs.count() + 1
+        candidate = f"{prefix}-{seq:02d}"
+        # ensure uniqueness if races or existing data
+        while Receipt.objects.filter(receipt_number=candidate).exists():
+            seq += 1
+            candidate = f"{prefix}-{seq:02d}"
+        return candidate
 
 
 class Transaction(TimeStampedModel):

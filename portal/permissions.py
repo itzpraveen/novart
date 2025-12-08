@@ -20,6 +20,19 @@ MODULE_KEYS = [
     'settings',
 ]
 
+MODULE_LABELS: Dict[str, str] = {
+    'clients': 'Clients',
+    'leads': 'Leads',
+    'projects': 'Projects',
+    'site_visits': 'Site visits',
+    'finance': 'Finance',
+    'invoices': 'Invoices',
+    'docs': 'Documents',
+    'team': 'Team',
+    'users': 'Users',
+    'settings': 'Settings',
+}
+
 DEFAULT_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
     User.Roles.ADMIN: {key: True for key in MODULE_KEYS},
     User.Roles.ARCHITECT: {

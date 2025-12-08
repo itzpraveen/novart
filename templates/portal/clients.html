@@ -165,7 +165,7 @@
                     <div class="card-body text-center">
                         <div class="eyebrow mb-1">No clients yet</div>
                         <p class="text-muted mb-3">Start by adding your first client or import a CSV.</p>
-                        <a class="btn btn-primary" href="#addClientPanel">Add client</a>
+                        <button class="btn btn-primary open-add-client" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
                     </div>
                 </div>
             {% endfor %}
@@ -266,9 +266,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('clientSearch');
     const cards = Array.from(document.querySelectorAll('.client-card'));
     const empty = document.getElementById('clientEmpty');
-    if (!input || !cards.length) return;
 
     const filter = (term) => {
+        if (!input || !cards.length) return;
         const q = term.trim().toLowerCase();
         let visible = 0;
         cards.forEach(card => {
@@ -282,15 +282,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    input.addEventListener('input', () => filter(input.value));
-
-    {% if form.errors %}
-    const modalEl = document.getElementById('addClientModal');
-    if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
+    if (input) {
+        input.addEventListener('input', () => filter(input.value));
+        filter(input.value || '');
     }
-    {% endif %}
 
     // Move modal to body to avoid nesting issues and ensure visibility
     const addModal = document.getElementById('addClientModal');
@@ -305,6 +300,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    {% if form.errors %}
+    if (addModal) {
+        const modal = bootstrap.Modal.getOrCreateInstance(addModal);
+        modal.show();
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}
