@@ -963,6 +963,7 @@ textarea.form-control:focus {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+    z-index: 9999;
 }
 
 .modal-elevated .form-control,

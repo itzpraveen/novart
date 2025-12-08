@@ -48,7 +48,7 @@
     </div>
     <div class="stat-tile action">
         <div class="label">Actions</div>
-        <button class="btn btn-primary w-100" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
+        <button class="btn btn-primary w-100 open-add-client" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
     </div>
 </div>
 
@@ -96,7 +96,7 @@
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <span class="chip chip-soft">A-Z</span>
                     <span class="chip chip-ghost">{{ clients|length }} showing</span>
-                    <button class="btn btn-outline-secondary btn-sm d-md-none" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
+                    <button class="btn btn-outline-secondary btn-sm d-md-none open-add-client" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
                 </div>
             </div>
         </div>
@@ -172,7 +172,7 @@
         </div>
 </div>
 
-<button class="btn btn-primary fab-add d-md-none" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
+<button class="btn btn-primary fab-add d-md-none open-add-client" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
 
 <div class="modal fade modal-elevated" id="addClientModal" tabindex="-1" aria-labelledby="addClientLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -285,6 +285,20 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.show();
     }
     {% endif %}
+
+    // Move modal to body to avoid nesting issues and ensure visibility
+    const addModal = document.getElementById('addClientModal');
+    if (addModal && addModal.parentElement !== document.body) {
+        document.body.appendChild(addModal);
+    }
+    document.querySelectorAll('.open-add-client').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (addModal) {
+                const m = bootstrap.Modal.getOrCreateInstance(addModal);
+                m.show();
+            }
+        });
+    });
 });
 </script>
 {% endblock %}
