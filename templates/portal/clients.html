@@ -14,7 +14,7 @@
             <a class="subnav-link disabled" href="#" aria-disabled="true">Imports</a>
         </div>
         <div class="subnav-actions">
-            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#addClientOffcanvas">Add client</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
         </div>
     </div>
 </div>
@@ -175,83 +175,87 @@
         </div>
 </div>
 
-<button class="btn btn-primary fab-add d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#addClientOffcanvas">Add client</button>
+<button class="btn btn-primary fab-add d-md-none" type="button" data-bs-toggle="modal" data-bs-target="#addClientModal">Add client</button>
 
-<div class="offcanvas offcanvas-end offcanvas-glow" tabindex="-1" id="addClientOffcanvas" aria-labelledby="addClientLabel">
-    <div class="offcanvas-header align-items-start">
-        <div>
-            <div class="eyebrow">New record</div>
-            <h5 class="offcanvas-title" id="addClientLabel">Add client</h5>
-            <div class="text-muted small">Save contact + address for downstream tasks.</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-        <form method="post" class="row g-3">
-            {% csrf_token %}
-            <div class="col-12">
-                <label class="form-label text-muted small d-flex justify-content-between align-items-center" for="{{ form.name.id_for_label }}">
-                    <span>Client name</span>
-                    <span class="badge bg-light text-dark">Primary</span>
-                </label>
-                {{ form.name|add_class:"form-control form-control-lg" }}
-                {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+<div class="modal fade modal-elevated" id="addClientModal" tabindex="-1" aria-labelledby="addClientLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="eyebrow">New record</div>
+                    <h5 class="modal-title" id="addClientLabel">Add client</h5>
+                    <div class="text-muted small">Save contact + address for downstream tasks.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-6">
-                <label class="form-label text-muted small" for="{{ form.phone.id_for_label }}">Phone</label>
-                {{ form.phone|add_class:"form-control" }}
-                {% for error in form.phone.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="col-md-6">
-                <label class="form-label text-muted small" for="{{ form.email.id_for_label }}">Email</label>
-                {{ form.email|add_class:"form-control" }}
-                {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="col-12">
-                <div class="card form-section">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <div class="eyebrow">Location</div>
-                                <div class="fw-semibold">Address & city</div>
-                            </div>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label text-muted small" for="{{ form.address.id_for_label }}">Address</label>
-                                {{ form.address|add_class:"form-control" }}
-                                {% for error in form.address.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label text-muted small" for="{{ form.city.id_for_label }}">City</label>
-                                {{ form.city|add_class:"form-control" }}
-                                {% for error in form.city.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label text-muted small" for="{{ form.state.id_for_label }}">State</label>
-                                {{ form.state|add_class:"form-control" }}
-                                {% for error in form.state.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label text-muted small" for="{{ form.postal_code.id_for_label }}">Postal code</label>
-                                {{ form.postal_code|add_class:"form-control" }}
-                                {% for error in form.postal_code.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            <div class="modal-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <div class="col-12">
+                        <label class="form-label text-muted small d-flex justify-content-between align-items-center" for="{{ form.name.id_for_label }}">
+                            <span>Client name</span>
+                            <span class="badge bg-light text-dark">Primary</span>
+                        </label>
+                        {{ form.name|add_class:"form-control form-control-lg" }}
+                        {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small" for="{{ form.phone.id_for_label }}">Phone</label>
+                        {{ form.phone|add_class:"form-control" }}
+                        {% for error in form.phone.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small" for="{{ form.email.id_for_label }}">Email</label>
+                        {{ form.email|add_class:"form-control" }}
+                        {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-12">
+                        <div class="card form-section">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <div class="eyebrow">Location</div>
+                                        <div class="fw-semibold">Address & city</div>
+                                    </div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label text-muted small" for="{{ form.address.id_for_label }}">Address</label>
+                                        {{ form.address|add_class:"form-control" }}
+                                        {% for error in form.address.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small" for="{{ form.city.id_for_label }}">City</label>
+                                        {{ form.city|add_class:"form-control" }}
+                                        {% for error in form.city.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small" for="{{ form.state.id_for_label }}">State</label>
+                                        {{ form.state|add_class:"form-control" }}
+                                        {% for error in form.state.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small" for="{{ form.postal_code.id_for_label }}">Postal code</label>
+                                        {{ form.postal_code|add_class:"form-control" }}
+                                        {% for error in form.postal_code.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    <div class="col-12">
+                        <label class="form-label text-muted small" for="{{ form.notes.id_for_label }}">Notes</label>
+                        {{ form.notes|add_class:"form-control" }}
+                        {% if form.notes.help_text %}<div class="form-text">{{ form.notes.help_text }}</div>{% endif %}
+                        {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-12 d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Save client</button>
+                        <button type="submit" name="next" value="project" class="btn btn-outline-secondary flex-grow-1">Save & add project</button>
+                    </div>
+                </form>
             </div>
-            <div class="col-12">
-                <label class="form-label text-muted small" for="{{ form.notes.id_for_label }}">Notes</label>
-                {{ form.notes|add_class:"form-control" }}
-                {% if form.notes.help_text %}<div class="form-text">{{ form.notes.help_text }}</div>{% endif %}
-                {% for error in form.notes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="col-12 d-flex flex-wrap gap-2 sticky-footer">
-                <button type="submit" class="btn btn-primary flex-grow-1">Save client</button>
-                <button type="submit" name="next" value="project" class="btn btn-outline-secondary flex-grow-1">Save & add project</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 <script>
@@ -278,10 +282,10 @@ document.addEventListener('DOMContentLoaded', function () {
     input.addEventListener('input', () => filter(input.value));
 
     {% if form.errors %}
-    const addOffcanvasEl = document.getElementById('addClientOffcanvas');
-    if (addOffcanvasEl) {
-        const oc = new bootstrap.Offcanvas(addOffcanvasEl);
-        oc.show();
+    const modalEl = document.getElementById('addClientModal');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
     }
     {% endif %}
 });

@@ -959,51 +959,27 @@ textarea.form-control:focus {
     padding: 0.9rem 1.1rem;
 }
 
-.offcanvas-glow {
-    background: var(--bg-elevated);
-    border-left: 1px solid var(--border-color);
-    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.08);
-    max-width: 420px;
+.modal-elevated .modal-content {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
 }
 
-.offcanvas-glow .form-control,
-.offcanvas-glow .form-select {
+.modal-elevated .form-control,
+.modal-elevated .form-select {
     border-radius: var(--radius-md);
     border-color: var(--border-color);
 }
 
-.offcanvas-glow .form-control:focus,
-.offcanvas-glow .form-select:focus {
+.modal-elevated .form-control:focus,
+.modal-elevated .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: var(--focus-ring);
 }
 
-.sticky-footer {
-    position: sticky;
-    bottom: 0;
-    padding-top: 0.5rem;
-    background: linear-gradient(180deg, transparent 0%, var(--bg-elevated) 40%);
-    padding-bottom: 0.75rem;
-}
-
-.offcanvas-glow .card.form-section {
+.modal-elevated .card.form-section {
     border: 1px dashed var(--border-color);
     background: var(--bg-surface);
-}
-
-.offcanvas-glow .offcanvas-body {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    padding-bottom: 1rem;
-}
-
-.offcanvas-glow .offcanvas-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--bg-elevated);
-    padding-bottom: 0.75rem;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 .summary-grid {
     display: grid;
