@@ -108,9 +108,8 @@
             {% for client in clients %}
                 <article class="client-card" data-search="{{ client.name }} {{ client.city }} {{ client.state }} {{ client.phone }} {{ client.email }}">
                     <div class="d-flex justify-content-between gap-3">
-                        <div class="d-flex gap-3 flex-grow-1">
-                            <div class="client-avatar">{{ client.name|first|default:"C"|upper }}</div>
-                            <div class="flex-grow-1">
+                        <div class="flex-grow-1">
+                            <div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                     <div class="client-name mb-0">{{ client.name }}</div>
                                     {% if client.city or client.state %}
