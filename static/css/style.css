@@ -926,6 +926,33 @@ textarea.form-control:focus {
     margin-top: 0;
 }
 
+.filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1rem;
+}
+
+.filter-bar .chip {
+    margin: 0;
+}
+
+.fab-add {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    z-index: 30;
+    border-radius: 999px;
+    box-shadow: var(--shadow-lg);
+    padding: 0.9rem 1.1rem;
+}
+
 .table th,
 .table td {
     vertical-align: middle;
