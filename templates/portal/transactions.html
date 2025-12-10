@@ -34,7 +34,7 @@
                     <tbody>
                     {% for txn in filter.qs %}
                         <tr>
-                            <td>{{ txn.date|date:"d-m-Y" }}</td>
+                            <td>{{ txn.date|date:"d M Y" }}</td>
                             <td>{{ txn.description }}</td>
                             <td>{{ txn.related_project }}</td>
                             <td>{{ txn.debit|rupee }}</td>

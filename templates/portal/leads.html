@@ -21,7 +21,7 @@
 </div>
 <div class="card shadow-sm">
     <div class="table-responsive">
-        <table class="table mb-0">
+        <table class="table mb-0 align-middle table-stack">
             <thead>
             <tr>
                 <th>Title</th>
@@ -35,17 +35,17 @@
             <tbody>
             {% for lead in leads %}
                 <tr class="lead-row" data-search="{{ lead.title }} {{ lead.client.name }} {{ lead.lead_source }} {{ lead.get_status_display }}">
-                    <td class="fw-semibold text-uppercase">{{ lead.title }}</td>
-                    <td>{{ lead.client.name }}</td>
-                    <td>
+                    <td data-label="Title" class="fw-semibold text-uppercase">{{ lead.title }}</td>
+                    <td data-label="Client">{{ lead.client.name }}</td>
+                    <td data-label="Status">
                         <span class="badge badge-status {% if lead.status == 'won' %}badge-won{% elif lead.status == 'lost' %}badge-lost{% elif lead.status == 'discussion' %}badge-discussion{% else %}badge-new{% endif %}">
                             {{ lead.get_status_display }}
                         </span>
                     </td>
-                    <td class="text-muted text-uppercase">{{ lead.lead_source }}</td>
-                    <td class="text-end fw-semibold">{{ lead.estimated_value|rupee }}</td>
-                    <td class="text-end">
-                        <div class="d-flex justify-content-end gap-2">
+                    <td data-label="Source" class="text-muted text-uppercase">{{ lead.lead_source }}</td>
+                    <td data-label="Value" class="text-end fw-semibold">{{ lead.estimated_value|rupee }}</td>
+                    <td data-label="Actions" class="text-end">
+                        <div class="stack-inline justify-content-end">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
                             {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
                                 <button class="btn btn-sm btn-converted" disabled>Converted</button>
@@ -58,13 +58,24 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-4">No leads yet. Click “New Lead” to add one.</td></tr>
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state text-center py-5">
+                            <div class="eyebrow mb-2">No leads yet</div>
+                            <p class="text-muted mb-3">Start tracking your pipeline by adding your first lead.</p>
+                            <a class="btn btn-primary" href="{% url 'lead_create' %}">New Lead</a>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
             <tr id="leadEmptyState" class="d-none"><td colspan="6" class="text-center text-muted py-4">No matches for this search.</td></tr>
             </tbody>
         </table>
     </div>
 </div>
+
+{% include "includes/pagination.html" %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('leadSearch');

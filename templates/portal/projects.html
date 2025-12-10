@@ -27,28 +27,21 @@
     </div>
 </div>
 
-<button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#projectFilters" aria-expanded="false" aria-controls="projectFilters">
-    Filters
-</button>
-<div class="card shadow-sm mb-3 collapse show d-lg-block" id="projectFilters">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            {% for field in filter.form %}
-                <div class="col-12 col-md-6 col-lg-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field|add_class:"form-select" }}
-                </div>
-            {% endfor %}
-            <div class="col-12 col-md-3 col-lg-2 d-flex align-items-end">
-                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <div class="filter-bar">
-    <form class="d-flex align-items-center gap-2 flex-grow-1" onsubmit="return false;">
-        <input id="projectSearch" type="search" class="form-control" placeholder="Live search by code, client, manager" aria-label="Search projects">
+    <form class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap" method="get">
+        <input id="projectSearch" type="search" class="form-control" style="max-width: 280px;" placeholder="Live search by code, client, manager" aria-label="Search projects">
+        <details class="filter-details">
+            <summary class="btn btn-outline-secondary btn-sm">More filters</summary>
+            <div class="filter-dropdown">
+                {% for field in filter.form %}
+                    <div class="filter-field">
+                        <label class="form-label text-muted small mb-1">{{ field.label }}</label>
+                        {{ field|add_class:"form-select form-select-sm" }}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary btn-sm w-100 mt-2" type="submit">Apply</button>
+            </div>
+        </details>
     </form>
     <div class="d-flex align-items-center gap-3">
         <div class="d-flex align-items-center gap-2 flex-wrap" aria-label="Health quick filters">
@@ -88,8 +81,8 @@
                     <td data-label="Health"><span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
                         {{ project.get_health_status_display }}
                     </span></td>
-                    <td data-label="Start">{{ project.start_date|date:"d-m-Y" }}</td>
-                    <td data-label="Handover">{{ project.expected_handover|date:"d-m-Y" }}</td>
+                    <td data-label="Start">{{ project.start_date|date:"d M Y" }}</td>
+                    <td data-label="Handover">{{ project.expected_handover|date:"d M Y" }}</td>
                     <td data-label="Actions" class="text-end">
                         <div class="stack-inline justify-content-end">
                             <a class="btn btn-sm btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>

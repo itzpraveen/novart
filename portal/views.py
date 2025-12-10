@@ -10,6 +10,7 @@ from django.contrib.staticfiles import finders
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import (
     Count,
     Q,
@@ -33,6 +34,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db.models.functions import Coalesce, Greatest, Cast
+
+ITEMS_PER_PAGE = 25
 from xhtml2pdf import pisa
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -130,26 +133,63 @@ def _formset_line_total(formset) -> Decimal:
 def dashboard(request):
     today = timezone.localdate()
     start_month = today.replace(day=1)
+    perms = get_permissions_for_user(request.user)
+    show_finance = request.user.is_superuser or perms.get('finance') or perms.get('invoices')
+
     projects = Project.objects.select_related('client')
+    if not show_finance:
+        projects = projects.filter(
+            Q(project_manager=request.user)
+            | Q(site_engineer=request.user)
+            | Q(tasks__assigned_to=request.user)
+        ).distinct()
+
     total_active = projects.exclude(current_stage=Project.Stage.CLOSED).count()
     stage_counts = projects.values('current_stage').annotate(total=Count('id')).order_by('current_stage')
 
-    site_visits_this_month = SiteVisit.objects.filter(visit_date__gte=start_month).count()
-    upcoming_tasks = Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]).order_by('due_date')[:5]
+    site_visits_scope = SiteVisit.objects.filter(visit_date__gte=start_month)
+    if not show_finance:
+        site_visits_scope = site_visits_scope.filter(
+            Q(visited_by=request.user)
+            | Q(project__project_manager=request.user)
+            | Q(project__site_engineer=request.user)
+        )
+    site_visits_this_month = site_visits_scope.count()
+
+    tasks_scope = Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS])
+    if not show_finance:
+        tasks_scope = tasks_scope.filter(
+            Q(assigned_to=request.user)
+            | Q(project__project_manager=request.user)
+            | Q(project__site_engineer=request.user)
+        )
+    upcoming_tasks = tasks_scope.order_by('due_date')[:5]
+    my_open_tasks_count = tasks_scope.count()
+
     upcoming_handover = projects.filter(expected_handover__gte=today, expected_handover__lte=today + timedelta(days=30))
 
-    invoices_this_month = Invoice.objects.filter(invoice_date__gte=start_month).prefetch_related('lines')
-    total_invoiced = sum((invoice.total_with_tax for invoice in invoices_this_month), Decimal('0'))
-    payments_this_month = Payment.objects.filter(payment_date__gte=start_month)
-    total_received = payments_this_month.aggregate(total=Sum('amount'))['total'] or 0
+    financial_context = {}
+    top_projects = Project.objects.none()
+    if show_finance:
+        invoices_this_month = Invoice.objects.filter(invoice_date__gte=start_month).prefetch_related('lines')
+        total_invoiced = sum((invoice.total_with_tax for invoice in invoices_this_month), Decimal('0'))
+        payments_this_month = Payment.objects.filter(payment_date__gte=start_month)
+        total_received = payments_this_month.aggregate(total=Sum('amount'))['total'] or 0
 
-    top_projects = (
-        projects.annotate(revenue=Sum('invoices__amount'))
-        .order_by('-revenue')[:5]
-        .select_related('client')
-    )
+        top_projects = (
+            projects.annotate(revenue=Sum('invoices__amount'))
+            .order_by('-revenue')[:5]
+            .select_related('client')
+        )
 
-    cash_gap_value = (total_invoiced or 0) - (total_received or 0)
+        cash_gap_value = (total_invoiced or 0) - (total_received or 0)
+        financial_context = {
+            'total_invoiced_month': total_invoiced,
+            'total_received_month': total_received,
+            'cash_gap': cash_gap_value,
+            'cash_gap_rupee': f"Rs. {cash_gap_value:,.2f}",
+            'top_projects': top_projects,
+        }
 
     context = _get_default_context() | {
         'total_projects': projects.count(),
@@ -158,12 +198,10 @@ def dashboard(request):
         'site_visits_this_month': site_visits_this_month,
         'upcoming_tasks': upcoming_tasks,
         'upcoming_handover': upcoming_handover,
-        'total_invoiced_month': total_invoiced,
-        'total_received_month': total_received,
-        'cash_gap': cash_gap_value,
-        'cash_gap_rupee': f"Rs. {cash_gap_value:,.2f}",
         'top_projects': top_projects,
-    }
+        'show_finance': show_finance,
+        'my_open_tasks_count': my_open_tasks_count,
+    } | financial_context
     return render(request, 'portal/dashboard.html', context)
 
 
@@ -318,7 +356,18 @@ def lead_list(request):
     status = request.GET.get('status')
     if status:
         leads = leads.filter(status=status)
-    return render(request, 'portal/leads.html', {'leads': leads, 'statuses': Lead.Status.choices, 'selected_status': status})
+
+    # Pagination
+    paginator = Paginator(leads, ITEMS_PER_PAGE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'portal/leads.html', {
+        'leads': page_obj,
+        'page_obj': page_obj,
+        'statuses': Lead.Status.choices,
+        'selected_status': status,
+    })
 
 
 @login_required
@@ -670,8 +719,17 @@ def invoice_list(request):
         _refresh_invoice_status(invoice)
     # Re-apply filter to reflect any status changes after refresh.
     invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
-    invoices = list(invoice_filter.qs)
-    return render(request, 'portal/invoices.html', {'filter': invoice_filter, 'invoices': invoices})
+
+    # Pagination
+    paginator = Paginator(invoice_filter.qs, ITEMS_PER_PAGE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'portal/invoices.html', {
+        'filter': invoice_filter,
+        'invoices': page_obj,
+        'page_obj': page_obj,
+    })
 
 
 @login_required

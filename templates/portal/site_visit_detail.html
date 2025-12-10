@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card shadow-sm mb-3">
     <div class="card-body">
-        <h3>{{ visit.project.name }} · {{ visit.visit_date|date:"d-m-Y" }}</h3>
+        <h3>{{ visit.project.name }} · {{ visit.visit_date|date:"d M Y" }}</h3>
         <p class="text-muted">Visited by {{ visit.visited_by }} · {{ visit.location }}</p>
         <p>{{ visit.notes }}</p>
         <p>Expenses: {{ visit.expenses|rupee }}</p>

@@ -41,7 +41,7 @@
                             <td>{{ doc.file_name }}</td>
                             <td>{{ doc.project.code }}</td>
                             <td>{{ doc.get_file_type_display }}</td>
-                            <td>{{ doc.created_at|date:"d-m-Y" }}</td>
+                            <td>{{ doc.created_at|date:"d M Y" }}</td>
                             <td>
                                 {% if doc.file %}
                                     <a href="{{ doc.file.url }}" target="_blank">Open</a>

@@ -1,62 +1,277 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h3>{% if invoice %}Edit Invoice · {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}</h3>
-        <p class="text-muted small">Link to a project or lead (including Lost) so billing works for proposals.</p>
-        {% if invoice %}<p class="text-muted mb-3">Status: {{ invoice.get_status_display }}</p>{% endif %}
-        <form method="post">
-            {% csrf_token %}
-            <div class="row g-3">
-                {% for field in form %}
-                    <div class="col-md-4">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                    </div>
-                {% endfor %}
-            </div>
-            <hr class="my-4">
-            <h5 class="mb-3">Line items</h5>
-            {{ formset.management_form }}
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th style="width: 140px;">Qty</th>
-                            <th style="width: 180px;">Unit Price</th>
-                            {% if formset.can_delete %}<th style="width: 90px;">Remove</th>{% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for form in formset.forms %}
-                        <tr>
-                            {{ form.id }}
-                            <td>{{ form.description|add_class:"form-control" }}{% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
-                            <td>{{ form.quantity|add_class:"form-control" }}{% for error in form.quantity.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
-                            <td>{{ form.unit_price|add_class:"form-control" }}{% for error in form.unit_price.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
-                            {% if formset.can_delete %}
-                            <td class="text-center">
-                                {% if form.instance.pk %}
-                                    <div class="form-check">
-                                        {{ form.DELETE|add_class:"form-check-input" }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <p class="text-muted small">Leave line items blank to issue a single-line invoice using the total amount above.</p>
-            <div class="mt-3">
-                <button class="btn btn-primary">Save</button>
-                <a class="btn btn-link" href="{% url 'invoice_list' %}">Back</a>
-            </div>
-        </form>
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Finance / Invoices</div>
+        <h2 class="mb-0">{% if invoice %}Edit Invoice · {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}</h2>
+        {% if invoice %}<span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %} mt-2">{{ invoice.get_status_display }}</span>{% endif %}
     </div>
+    <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to Invoices</a>
 </div>
+
+<form method="post" id="invoiceForm">
+    {% csrf_token %}
+    <div class="row g-4">
+        <!-- Main Form Section -->
+        <div class="col-lg-8">
+            <!-- Billing Target -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <div class="eyebrow">Step 1</div>
+                            <h5 class="mb-0">Billing Target</h5>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary">Required</span>
+                    </div>
+                    <p class="text-muted small mb-3">Link this invoice to a project or lead (including Lost leads) for proper billing attribution.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Project</label>
+                            {{ form.project|add_class:"form-select" }}
+                            {% for error in form.project.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Or Lead</label>
+                            {{ form.lead|add_class:"form-select" }}
+                            {% for error in form.lead.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Details -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <div class="eyebrow">Step 2</div>
+                            <h5 class="mb-0">Invoice Details</h5>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Invoice Number</label>
+                            {{ form.invoice_number|add_class:"form-control" }}
+                            {% for error in form.invoice_number.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Invoice Date</label>
+                            {{ form.invoice_date|add_class:"form-control" }}
+                            {% for error in form.invoice_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Due Date</label>
+                            {{ form.due_date|add_class:"form-control" }}
+                            {% for error in form.due_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Status</label>
+                            {{ form.status|add_class:"form-select" }}
+                            {% for error in form.status.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Description</label>
+                            {{ form.description|add_class:"form-control" }}
+                            {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <div class="eyebrow">Step 3</div>
+                            <h5 class="mb-0">Line Items</h5>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="addLineItem">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Line
+                        </button>
+                    </div>
+                    {{ formset.management_form }}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" id="lineItemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Description</th>
+                                    <th style="width: 100px;">Qty</th>
+                                    <th style="width: 140px;">Unit Price</th>
+                                    <th style="width: 120px;" class="text-end">Line Total</th>
+                                    {% if formset.can_delete %}<th style="width: 60px;"></th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody id="lineItemsBody">
+                                {% for form in formset.forms %}
+                                <tr class="line-item-row">
+                                    {{ form.id }}
+                                    <td>{{ form.description|add_class:"form-control form-control-sm line-desc" }}{% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+                                    <td>{{ form.quantity|add_class:"form-control form-control-sm line-qty" }}{% for error in form.quantity.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+                                    <td>{{ form.unit_price|add_class:"form-control form-control-sm line-price" }}{% for error in form.unit_price.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+                                    <td class="text-end fw-semibold line-total">-</td>
+                                    {% if formset.can_delete %}
+                                    <td class="text-center">
+                                        {% if form.instance.pk %}
+                                        <label class="visually-hidden" for="{{ form.DELETE.id_for_label }}">Delete line</label>
+                                        {{ form.DELETE|add_class:"form-check-input" }}
+                                        {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-line" title="Remove line">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">Leave line items blank to issue a single-line invoice using the base amount.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Summary -->
+        <div class="col-lg-4">
+            <div class="card position-sticky" style="top: 88px;">
+                <div class="card-body">
+                    <div class="eyebrow mb-2">Invoice Summary</div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small">Base Amount</label>
+                        {{ form.amount|add_class:"form-control" }}
+                        {% for error in form.amount.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        <div class="form-text">Used if no line items are specified</div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label text-muted small">Discount %</label>
+                            {{ form.discount_percent|add_class:"form-control" }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small">Tax %</label>
+                            {{ form.tax_percent|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Line Items Subtotal</span>
+                        <span class="fw-semibold" id="linesSubtotal">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Discount</span>
+                        <span id="discountAmount">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Tax</span>
+                        <span id="taxAmount">-</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Total</span>
+                        <span class="h4 mb-0 text-primary" id="grandTotal">-</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-top">
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        {% if invoice %}Update Invoice{% else %}Create Invoice{% endif %}
+                    </button>
+                    <a class="btn btn-outline-secondary w-100" href="{% url 'invoice_list' %}">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('invoiceForm');
+    const tbody = document.getElementById('lineItemsBody');
+    const addBtn = document.getElementById('addLineItem');
+    const totalFormsInput = document.querySelector('[name$="-TOTAL_FORMS"]');
+
+    // Calculate line totals and grand total
+    function calculateTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('.line-item-row').forEach(row => {
+            const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
+            const price = parseFloat(row.querySelector('.line-price')?.value) || 0;
+            const lineTotal = qty * price;
+            const lineTotalCell = row.querySelector('.line-total');
+            if (lineTotalCell) {
+                lineTotalCell.textContent = lineTotal > 0 ? '₹' + lineTotal.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '-';
+            }
+            subtotal += lineTotal;
+        });
+
+        // If no line items, use base amount
+        const baseAmount = parseFloat(document.querySelector('[name="amount"]')?.value) || 0;
+        const effectiveSubtotal = subtotal > 0 ? subtotal : baseAmount;
+
+        const discountPct = parseFloat(document.querySelector('[name="discount_percent"]')?.value) || 0;
+        const taxPct = parseFloat(document.querySelector('[name="tax_percent"]')?.value) || 0;
+
+        const discountAmt = effectiveSubtotal * (discountPct / 100);
+        const afterDiscount = effectiveSubtotal - discountAmt;
+        const taxAmt = afterDiscount * (taxPct / 100);
+        const grandTotal = afterDiscount + taxAmt;
+
+        document.getElementById('linesSubtotal').textContent = subtotal > 0 ? '₹' + subtotal.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '(using base)';
+        document.getElementById('discountAmount').textContent = discountAmt > 0 ? '-₹' + discountAmt.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '-';
+        document.getElementById('taxAmount').textContent = taxAmt > 0 ? '+₹' + taxAmt.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '-';
+        document.getElementById('grandTotal').textContent = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+
+    // Add event listeners for recalculation
+    form.addEventListener('input', function(e) {
+        if (e.target.matches('.line-qty, .line-price, [name="amount"], [name="discount_percent"], [name="tax_percent"]')) {
+            calculateTotals();
+        }
+    });
+
+    // Add new line item
+    if (addBtn && totalFormsInput) {
+        addBtn.addEventListener('click', function() {
+            const totalForms = parseInt(totalFormsInput.value);
+            const lastRow = tbody.querySelector('.line-item-row:last-child');
+            if (lastRow) {
+                const newRow = lastRow.cloneNode(true);
+                // Update field names and IDs
+                newRow.querySelectorAll('input, select, textarea').forEach(input => {
+                    const name = input.name;
+                    if (name) {
+                        input.name = name.replace(/-\d+-/, '-' + totalForms + '-');
+                        input.id = input.id.replace(/-\d+-/, '-' + totalForms + '-');
+                        input.value = '';
+                    }
+                });
+                newRow.querySelector('.line-total').textContent = '-';
+                tbody.appendChild(newRow);
+                totalFormsInput.value = totalForms + 1;
+
+                // Focus first input in new row
+                const firstInput = newRow.querySelector('input:not([type="hidden"])');
+                if (firstInput) firstInput.focus();
+            }
+        });
+    }
+
+    // Remove line item (for new, unsaved lines)
+    tbody.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-line')) {
+            const row = e.target.closest('.line-item-row');
+            if (row && tbody.querySelectorAll('.line-item-row').length > 1) {
+                row.remove();
+                calculateTotals();
+            }
+        }
+    });
+
+    // Initial calculation
+    calculateTotals();
+});
+</script>
 {% endblock %}

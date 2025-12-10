@@ -59,8 +59,8 @@
                             <span class="text-muted">Unassigned</span>
                         {% endif %}
                     </td>
-                    <td data-label="Date">{{ invoice.invoice_date|date:"d-m-Y" }}</td>
-                    <td data-label="Due">{{ invoice.due_date|date:"d-m-Y" }}</td>
+                    <td data-label="Date">{{ invoice.invoice_date|date:"d M Y" }}</td>
+                    <td data-label="Due">{{ invoice.due_date|date:"d M Y" }}</td>
                     <td class="text-end fw-semibold" data-label="Amount">{{ invoice.total_with_tax|rupee }}</td>
                     <td data-label="Status"><span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %}">{{ invoice.get_status_display }}</span></td>
                     <td class="text-end" data-label="Actions">
@@ -99,10 +99,20 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No invoices found.</td></tr>
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state text-center py-5">
+                            <div class="eyebrow mb-2">No invoices found</div>
+                            <p class="text-muted mb-3">Create your first invoice to start tracking payments.</p>
+                            <a class="btn btn-primary" href="{% url 'invoice_create' %}">New Invoice</a>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+{% include "includes/pagination.html" %}
 {% endblock %}

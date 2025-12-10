@@ -21,7 +21,7 @@
                             {% for task in column %}
                                 <div class="kanban-task mb-2">
                                     <div class="fw-semibold">{{ task.title }}</div>
-                                    <div class="small text-muted">{{ task.assigned_to|default:"Unassigned" }}{% if task.due_date %} · due {{ task.due_date|date:"d-m-Y" }}{% endif %}</div>
+                                    <div class="small text-muted">{{ task.assigned_to|default:"Unassigned" }}{% if task.due_date %} · due {{ task.due_date|date:"d M Y" }}{% endif %}</div>
                                     <div class="mt-2">
                                         <a href="{% url 'task_edit' task.pk %}" class="btn btn-sm btn-outline-secondary">Update</a>
                                     </div>

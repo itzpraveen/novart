@@ -41,7 +41,7 @@
             <tbody>
             {% for visit in filter.qs %}
                 <tr>
-                    <td data-label="Date">{{ visit.visit_date|date:"d-m-Y" }}</td>
+                    <td data-label="Date">{{ visit.visit_date|date:"d M Y" }}</td>
                     <td data-label="Project">{{ visit.project.name }}</td>
                     <td data-label="Visited By">{{ visit.visited_by }}</td>
                     <td data-label="Notes">{{ visit.notes|truncatewords:10 }}</td>

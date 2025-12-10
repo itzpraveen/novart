@@ -60,7 +60,7 @@
                             <span class="text-muted">Unassigned</span>
                         {% endif %}
                     </td>
-                    <td data-label="Date">{{ receipt.receipt_date|date:"d-m-Y" }}</td>
+                    <td data-label="Date">{{ receipt.receipt_date|date:"d M Y" }}</td>
                     <td class="text-end fw-semibold" data-label="Amount">{{ receipt.amount|rupee }}</td>
                     <td data-label="Method">{{ receipt.method|default:"—" }}</td>
                     <td data-label="Ref">{{ receipt.reference|default:"—" }}</td>
