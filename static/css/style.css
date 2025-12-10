@@ -385,14 +385,93 @@ a:hover {
 
 .nav-container {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    max-width: 1320px;
+}
+
+.nav-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
     gap: 1rem;
+}
+
+.nav-shell {
+    width: 100%;
+}
+
+.nav-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .nav-rail {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.85rem;
+    }
 }
 
 .nav-utility {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.nav-utility-desktop {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 0.3rem 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-utility-mobile {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-pill-track {
+    flex: 1;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 0.35rem 0.45rem;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-pills-scroll {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scroll-snap-type: x mandatory;
+    padding-right: 0.5rem;
+}
+
+.nav-pills-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.nav-pills-scroll::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.15);
+    border-radius: 999px;
+}
+
+[data-theme="dark"] .nav-pills-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
 }
 
 .app-nav .nav-links .nav-link {
@@ -436,34 +515,31 @@ a:hover {
 
 .nav-links {
     gap: 0.25rem;
+    flex-wrap: nowrap;
 }
 
 .nav-link {
     color: var(--text-muted) !important;
     font-weight: 600;
-    padding: 0.6rem 0.95rem !important;
-    border-radius: 999px;
+    padding: 0.55rem 0.95rem !important;
+    border-radius: 12px;
     transition: var(--transition-fast);
     font-size: 0.95rem;
     position: relative;
+    border: 1px solid transparent;
+    scroll-snap-align: start;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
 .nav-link.active {
     color: var(--primary-color) !important;
     background: rgba(13, 148, 136, 0.08);
+    border-color: rgba(13, 148, 136, 0.2);
 }
 
 .nav-link.active::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: -6px;
-    transform: translateX(-50%);
-    width: 12px;
-    height: 4px;
-    border-radius: 999px;
-    background: var(--primary-color);
+    display: none;
 }
 
 .nav-icon {

@@ -1,0 +1,39 @@
+name: novart
+region: blr
+services:
+  - name: web
+    github:
+      repo: itzpraveen/novart
+      branch: main
+      deploy_on_push: true
+    build_command: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    run_command: gunicorn studioflow.wsgi:application --bind 0.0.0.0:8080
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: DJANGO_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: DJANGO_DEBUG
+        scope: RUN_TIME
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        scope: RUN_TIME
+        value: "${APP_DOMAIN}"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        scope: RUN_TIME
+        value: "https://${APP_DOMAIN}"
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: "${db.DATABASE_URL}"
+
+databases:
+  - name: db
+    engine: PG
+    production: false
+    cluster_name: novart-db
+    db_name: novart
+    db_user: novart

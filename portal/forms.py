@@ -28,6 +28,12 @@ from .models import (
 class DateInput(forms.DateInput):
     input_type = 'date'
 
+    def __init__(self, *args, **kwargs):
+        attrs = kwargs.setdefault('attrs', {})
+        attrs.setdefault('type', 'date')  # ensure browsers render native picker
+        attrs.setdefault('placeholder', 'YYYY-MM-DD')
+        super().__init__(*args, **kwargs)
+
 
 class ClientForm(forms.ModelForm):
     class Meta:
