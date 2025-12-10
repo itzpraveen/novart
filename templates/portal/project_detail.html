@@ -1,9 +1,35 @@
 {% extends "base.html" %}
 {% load portal_extras %}
+
+{% block subnav %}
+<div class="subnav">
+    <div class="container subnav-inner">
+        <div class="subnav-title">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'client_edit' project.client.pk %}">{{ project.client.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ project.code }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="subnav-tabs">
+            <a class="subnav-link active" href="{% url 'project_detail' project.pk %}">Overview</a>
+            <a class="subnav-link" href="{% url 'project_tasks' project.pk %}">Tasks</a>
+            <a class="subnav-link" href="{% url 'invoice_list' %}?project={{ project.pk }}">Invoices</a>
+            <a class="subnav-link" href="{% url 'site_visit_list' %}?project={{ project.pk }}">Visits</a>
+            <a class="subnav-link" href="{% url 'document_list' %}?project={{ project.pk }}">Docs</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-header page-header-sticky">
     <div>
-        <p class="text-muted mb-1">{{ project.client.name }}{% if project.location %} · {{ project.location }}{% endif %}</p>
+        <a href="{% url 'client_edit' project.client.pk %}" class="text-muted mb-1 d-block text-decoration-none">
+            {{ project.client.name }}{% if project.location %} · {{ project.location }}{% endif %}
+        </a>
         <h2 class="mb-2">{{ project.code }} · {{ project.name }}</h2>
         <div class="d-flex flex-wrap gap-2">
             <span class="badge bg-{% if project.health_status == 'delayed' %}danger{% elif project.health_status == 'at_risk' %}warning{% else %}success{% endif %}">
@@ -15,6 +41,7 @@
     </div>
     <div class="actions">
         <a class="btn btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+        <a class="btn btn-outline-primary" href="{% url 'invoice_create' %}?project={{ project.pk }}">+ Invoice</a>
         <a class="btn btn-primary" href="{% url 'project_tasks' project.pk %}">Kanban</a>
     </div>
  </div>

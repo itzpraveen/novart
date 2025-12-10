@@ -53,6 +53,23 @@ class ClientForm(forms.ModelForm):
 
 
 class LeadForm(forms.ModelForm):
+    # Option to create a new client inline
+    new_client_name = forms.CharField(
+        required=False,
+        label='New client name',
+        widget=forms.TextInput(attrs={'placeholder': 'Enter new client name'}),
+    )
+    new_client_phone = forms.CharField(
+        required=False,
+        label='Phone',
+        widget=forms.TextInput(attrs={'placeholder': 'Contact number'}),
+    )
+    new_client_email = forms.EmailField(
+        required=False,
+        label='Email',
+        widget=forms.EmailInput(attrs={'placeholder': 'email@example.com'}),
+    )
+
     class Meta:
         model = Lead
         fields = ['client', 'title', 'lead_source', 'status', 'estimated_value', 'notes', 'planning_details']
@@ -60,6 +77,8 @@ class LeadForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['client'].required = False
+        self.fields['client'].help_text = 'Select an existing client OR create a new one below'
         self.fields['title'].label = 'Lead title'
         placeholders = {
             'title': 'Short summary (e.g., Kitchen remodel)',
@@ -70,6 +89,18 @@ class LeadForm(forms.ModelForm):
         }
         for field, text in placeholders.items():
             self.fields[field].widget.attrs.setdefault('placeholder', text)
+
+    def clean(self):
+        cleaned = super().clean()
+        client = cleaned.get('client')
+        new_client_name = cleaned.get('new_client_name')
+
+        # Must have either existing client or new client name
+        if not client and not new_client_name:
+            raise forms.ValidationError('Select an existing client or enter a new client name.')
+        if client and new_client_name:
+            raise forms.ValidationError('Either select an existing client OR enter a new client name, not both.')
+        return cleaned
 
 
 class ProjectForm(forms.ModelForm):
@@ -336,30 +367,18 @@ class PaymentForm(forms.ModelForm):
 
 
 class ReceiptForm(forms.ModelForm):
-    def __init__(self, *args, invoice=None, **kwargs):
-        self.invoice = invoice
-        super().__init__(*args, **kwargs)
-        if invoice:
-            outstanding = invoice.outstanding
-            self.fields['amount'].widget.attrs.setdefault('max', str(outstanding))
-            self.fields['amount'].widget.attrs.setdefault('min', '0.01')
-
+    """
+    Form for generating a receipt from a payment.
+    Receipt is proof of payment - generated AFTER payment is recorded.
+    """
     class Meta:
         model = Receipt
-        fields = ['receipt_date', 'amount', 'method', 'reference', 'notes', 'attachment', 'received_by']
-        widgets = {'receipt_date': DateInput()}
+        fields = ['notes']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional notes to print on receipt'})}
 
-    def clean_amount(self):
-        amount = self.cleaned_data.get('amount') or Decimal('0')
-        if amount <= 0:
-            raise forms.ValidationError('Amount must be greater than zero.')
-        if self.invoice:
-            outstanding = self.invoice.outstanding
-            if outstanding <= 0:
-                raise forms.ValidationError('This invoice is already settled.')
-            if amount > outstanding:
-                raise forms.ValidationError(f'Cannot record more than the outstanding balance ({outstanding}).')
-        return amount
+    def __init__(self, *args, payment=None, **kwargs):
+        self.payment = payment
+        super().__init__(*args, **kwargs)
 
 
 class TransactionForm(forms.ModelForm):

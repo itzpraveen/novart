@@ -330,6 +330,18 @@ def lead_create(request):
         if form.is_valid():
             lead = form.save(commit=False)
             lead.created_by = request.user
+
+            # Handle inline client creation
+            new_client_name = form.cleaned_data.get('new_client_name')
+            if new_client_name:
+                client = Client.objects.create(
+                    name=new_client_name,
+                    phone=form.cleaned_data.get('new_client_phone', ''),
+                    email=form.cleaned_data.get('new_client_email', ''),
+                )
+                lead.client = client
+                messages.success(request, f'Client "{client.name}" created.')
+
             lead.save()
             messages.success(request, 'Lead created.')
             return redirect('lead_list')
@@ -873,9 +885,12 @@ def payment_create(request, invoice_pk):
             payment.save()
             _refresh_invoice_status(invoice)
             messages.success(request, 'Payment recorded.')
+            # Offer to generate receipt
+            if 'generate_receipt' in request.POST:
+                return redirect('receipt_create', payment_pk=payment.pk)
             return redirect('invoice_list')
     else:
-        form = PaymentForm(initial={'received_by': request.user}, invoice=invoice)
+        form = PaymentForm(initial={'received_by': request.user, 'payment_date': timezone.now().date()}, invoice=invoice)
     return render(request, 'portal/payment_form.html', {'form': form, 'invoice': invoice})
 
 
@@ -883,7 +898,7 @@ def payment_create(request, invoice_pk):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
 @module_required('finance')
 def receipt_list(request):
-    receipts = Receipt.objects.select_related('invoice', 'project', 'client').order_by('-receipt_date', '-created_at')
+    receipts = Receipt.objects.select_related('payment', 'invoice', 'project', 'client').order_by('-receipt_date', '-created_at')
     q = request.GET.get('q')
     if q:
         receipts = receipts.filter(
@@ -892,7 +907,7 @@ def receipt_list(request):
             | Q(client__name__icontains=q)
             | Q(project__code__icontains=q)
         )
-    total_amount = receipts.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    total_amount = receipts.aggregate(total=Sum('payment__amount'))['total'] or Decimal('0')
     return render(
         request,
         'portal/receipts.html',
@@ -903,44 +918,122 @@ def receipt_list(request):
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
 @module_required('finance')
-def receipt_create(request, invoice_pk):
-    invoice = get_object_or_404(Invoice.objects.select_related('project', 'lead__client'), pk=invoice_pk)
-    if invoice.outstanding <= 0:
-        messages.info(request, 'This invoice is already settled.')
-        return redirect('invoice_list')
+def receipt_create(request, payment_pk):
+    """
+    Generate a receipt for an existing payment.
+    Receipt = proof of payment given to client.
+    Flow: Invoice → Record Payment → Generate Receipt
+    """
+    payment = get_object_or_404(
+        Payment.objects.select_related('invoice__project__client', 'invoice__lead__client'),
+        pk=payment_pk
+    )
+    # Check if receipt already exists for this payment
+    if hasattr(payment, 'receipt') and payment.receipt:
+        messages.info(request, f'Receipt {payment.receipt.receipt_number} already exists for this payment.')
+        return redirect('receipt_pdf', receipt_pk=payment.receipt.pk)
+
     if request.method == 'POST':
-        form = ReceiptForm(request.POST, request.FILES, invoice=invoice)
+        form = ReceiptForm(request.POST, payment=payment)
         if form.is_valid():
             receipt = form.save(commit=False)
-            receipt.invoice = invoice
-            if not receipt.received_by:
-                receipt.received_by = request.user
-            payment = Payment.objects.create(
-                invoice=invoice,
-                payment_date=receipt.receipt_date,
-                amount=receipt.amount,
-                method=receipt.method,
-                reference=receipt.reference,
-                received_by=receipt.received_by,
-            )
             receipt.payment = payment
+            receipt.generated_by = request.user
             receipt.save()
-            _refresh_invoice_status(invoice)
-            messages.success(request, f"Receipt {receipt.receipt_number} recorded.")
-            return redirect('invoice_list')
+            messages.success(request, f"Receipt {receipt.receipt_number} generated.")
+            return redirect('receipt_pdf', receipt_pk=receipt.pk)
     else:
-        form = ReceiptForm(
-            initial={
-                'receipt_date': timezone.now().date(),
-                'amount': invoice.outstanding,
-                'received_by': request.user,
-            },
-            invoice=invoice,
-        )
-    return render(request, 'portal/receipt_form.html', {'form': form, 'invoice': invoice})
+        form = ReceiptForm(payment=payment)
+
+    return render(request, 'portal/receipt_form.html', {
+        'form': form,
+        'payment': payment,
+        'invoice': payment.invoice,
+    })
 
 
 @login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def receipt_pdf(request, receipt_pk):
+    """Generate a PDF receipt to give to the client as proof of payment."""
+    receipt = get_object_or_404(
+        Receipt.objects.select_related(
+            'payment__invoice__project__client',
+            'payment__invoice__lead__client',
+            'payment__received_by',
+            'client',
+            'project',
+            'generated_by',
+        ),
+        pk=receipt_pk,
+    )
+    payment = receipt.payment
+    invoice = payment.invoice
+    client = receipt.client
+    firm = FirmProfile.objects.first()
+
+    def _encode_image(path: str | None) -> str | None:
+        if not path:
+            return None
+        try:
+            mime, _ = mimetypes.guess_type(path)
+            with open(path, 'rb') as f:
+                encoded = b64encode(f.read()).decode('utf-8')
+                return f"data:{mime or 'image/png'};base64,{encoded}"
+        except Exception:
+            return None
+
+    logo_data = None
+    if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
+        logo_data = _encode_image(firm.logo.path)
+    if not logo_data:
+        fallback_logo = finders.find('img/novart.png')
+        logo_data = _encode_image(fallback_logo)
+
+    font_candidates = [
+        finders.find('fonts/DejaVuSans.ttf'),
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/opt/studioflow/static/fonts/DejaVuSans.ttf',
+    ]
+    font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
+    font_data_b64 = None
+    if font_path:
+        try:
+            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
+            with open(font_path, 'rb') as f:
+                font_data_b64 = b64encode(f.read()).decode('utf-8')
+        except Exception:
+            logger.exception("Failed to register PDF font at %s", font_path)
+            font_path = None
+
+    html = render_to_string(
+        'portal/receipt_pdf.html',
+        {
+            'receipt': receipt,
+            'payment': payment,
+            'invoice': invoice,
+            'client': client,
+            'project': receipt.project,
+            'firm': firm,
+            'firm_logo_data': logo_data,
+            'font_path': font_path,
+            'font_data': font_data_b64,
+            'generated_on': timezone.localtime(),
+        },
+    )
+    pdf_file = BytesIO()
+    result = pisa.CreatePDF(html, dest=pdf_file, encoding='UTF-8')
+    if result.err:
+        logger.exception("Receipt PDF render failed for %s", receipt_pk)
+        messages.error(request, 'Unable to generate PDF right now. Please try again.')
+        return redirect('receipt_list')
+    pdf_file.seek(0)
+    response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename=\"receipt-{receipt.receipt_number}.pdf\"'
+    return response
+
+
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 @module_required('finance')

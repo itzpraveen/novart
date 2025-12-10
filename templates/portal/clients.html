@@ -307,6 +307,15 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.show();
     }
     {% endif %}
+
+    // Auto-open modal if ?add=1 in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') === '1' && addModal) {
+        const modal = bootstrap.Modal.getOrCreateInstance(addModal);
+        modal.show();
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+    }
 });
 </script>
 {% endblock %}

@@ -82,9 +82,9 @@
                                     Edit
                                 </a>
                                 {% if invoice.outstanding > 0 and module_perms.finance %}
-                                <a class="btn btn-sm btn-outline-success" href="{% url 'receipt_create' invoice.pk %}">
+                                <a class="btn btn-sm btn-outline-success" href="{% url 'payment_create' invoice.pk %}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>
-                                    Add receipt
+                                    Record payment
                                 </a>
                                 {% endif %}
                                 <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline w-100" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">

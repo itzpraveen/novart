@@ -1,22 +1,84 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h3>Record payment · {{ invoice.invoice_number }}</h3>
-        <p class="text-muted">Outstanding: {{ invoice.outstanding|rupee }}</p>
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
-                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-            {% endfor %}
-            <button class="btn btn-success">Save</button>
-            <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
-        </form>
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Finance</div>
+        <h2 class="mb-0">Record Payment</h2>
+        <div class="text-muted small">Invoice #{{ invoice.invoice_number }}</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to invoices</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Invoice Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted">Invoice</td>
+                        <td class="fw-semibold">#{{ invoice.invoice_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Client</td>
+                        <td>{% if invoice.project %}{{ invoice.project.client.name }}{% elif invoice.lead %}{{ invoice.lead.client.name }}{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Project</td>
+                        <td>{% if invoice.project %}{{ invoice.project.code }}{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Invoice Total</td>
+                        <td>{{ invoice.total_with_tax|rupee }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Already Paid</td>
+                        <td>{{ invoice.amount_received|rupee }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Outstanding</td>
+                        <td class="fw-semibold text-warning">{{ invoice.outstanding|rupee }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Payment Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <div class="col-12">
+                        <hr>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-success" name="save" type="submit">Save Payment</button>
+                            <button class="btn btn-primary" name="generate_receipt" type="submit">Save & Generate Receipt</button>
+                            <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-3 small">
+            <strong>Receipt Flow:</strong> After recording payment, you can generate a receipt PDF to give to the client as proof of payment.
+        </div>
     </div>
 </div>
 {% endblock %}

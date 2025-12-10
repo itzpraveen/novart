@@ -403,22 +403,26 @@ class Payment(TimeStampedModel):
 
 
 class Receipt(TimeStampedModel):
+    """
+    Receipt = Proof of payment given to client.
+
+    Correct flow: Invoice → Client pays → Record Payment → Generate Receipt (proof for client)
+    Receipt is generated FROM a Payment, not the other way around.
+    """
     receipt_number = models.CharField(max_length=64, unique=True)
     receipt_date = models.DateField(default=timezone.now)
+    # Receipt is generated from a payment (required)
+    payment = models.OneToOneField(
+        Payment, on_delete=models.CASCADE, related_name='receipt'
+    )
+    # Denormalized fields for easy access (auto-populated from payment)
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='receipts')
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
-    lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    method = models.CharField(max_length=50, blank=True)
-    reference = models.CharField(max_length=100, blank=True)
-    notes = models.TextField(blank=True)
-    attachment = models.FileField(upload_to='receipts/', blank=True, null=True)
-    payment = models.OneToOneField(
-        Payment, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipt'
-    )
-    received_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts_received'
+    # Receipt-specific fields
+    notes = models.TextField(blank=True, help_text='Additional notes to print on receipt')
+    generated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='receipts_generated'
     )
 
     class Meta:
@@ -427,19 +431,35 @@ class Receipt(TimeStampedModel):
     def __str__(self) -> str:
         return self.receipt_number
 
+    @property
+    def amount(self):
+        """Amount comes from the linked payment."""
+        return self.payment.amount if self.payment else None
+
+    @property
+    def method(self):
+        """Payment method comes from the linked payment."""
+        return self.payment.method if self.payment else ''
+
+    @property
+    def reference(self):
+        """Reference comes from the linked payment."""
+        return self.payment.reference if self.payment else ''
+
     def save(self, *args, **kwargs):
         if not self.receipt_date:
-            self.receipt_date = timezone.now().date()
-        if self.invoice:
-            if not self.project:
-                self.project = self.invoice.project
-            if not self.lead:
-                self.lead = self.invoice.lead
-            if not self.client:
-                if self.invoice.project and self.invoice.project.client:
-                    self.client = self.invoice.project.client
-                elif self.invoice.lead:
-                    self.client = self.invoice.lead.client
+            self.receipt_date = self.payment.payment_date if self.payment else timezone.now().date()
+        # Auto-populate from payment
+        if self.payment:
+            if not self.invoice_id:
+                self.invoice = self.payment.invoice
+            if not self.project_id and self.payment.invoice.project:
+                self.project = self.payment.invoice.project
+            if not self.client_id:
+                if self.payment.invoice.project and self.payment.invoice.project.client:
+                    self.client = self.payment.invoice.project.client
+                elif self.payment.invoice.lead:
+                    self.client = self.payment.invoice.lead.client
         if not self.receipt_number:
             self.receipt_number = self._generate_receipt_number()
         super().save(*args, **kwargs)
@@ -449,8 +469,8 @@ class Receipt(TimeStampedModel):
         prefix_code = None
         if self.project and getattr(self.project, 'code', None):
             prefix_code = self.project.code
-        elif self.invoice and self.invoice.project and getattr(self.invoice.project, 'code', None):
-            prefix_code = self.invoice.project.code
+        elif self.payment and self.payment.invoice.project:
+            prefix_code = self.payment.invoice.project.code
         prefix = f"{prefix_code or 'RCPT'}-{receipt_date:%Y%m%d}"
         base_qs = Receipt.objects.filter(receipt_number__startswith=prefix)
         seq = base_qs.count() + 1

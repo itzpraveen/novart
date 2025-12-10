@@ -5,11 +5,15 @@
     <div>
         <div class="eyebrow text-uppercase">Finance</div>
         <h2 class="mb-0">Receipts</h2>
-        <div class="text-muted small">Separate receipt numbers with allocations to invoices.</div>
+        <div class="text-muted small">Payment receipts generated for clients as proof of payment.</div>
     </div>
     <div class="actions">
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_list' %}">Invoices</a>
     </div>
+</div>
+
+<div class="alert alert-info small">
+    <strong>How receipts work:</strong> Record a payment on an invoice, then generate a receipt PDF to give to the client as proof of payment.
 </div>
 
 <div class="filter-bar">
@@ -61,13 +65,11 @@
                     <td data-label="Method">{{ receipt.method|default:"—" }}</td>
                     <td data-label="Ref">{{ receipt.reference|default:"—" }}</td>
                     <td class="text-end" data-label="Actions">
-                        {% if receipt.attachment %}
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ receipt.attachment.url }}" target="_blank" rel="noopener">File</a>
-                        {% endif %}
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'receipt_pdf' receipt.pk %}">PDF</a>
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet. Record payments on invoices, then generate receipts.</td></tr>
             {% endfor %}
             </tbody>
         </table>

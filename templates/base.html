@@ -92,6 +92,22 @@
                     </li>
                 </ul>
                 <div class="nav-utility ms-md-3">
+                    <!-- Quick Actions Dropdown -->
+                    {% if request.user.is_authenticated %}
+                    <div class="dropdown d-none d-md-inline-block me-2">
+                        <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            + New
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                            {% if module_perms.leads %}<li><a class="dropdown-item" href="{% url 'lead_create' %}">New Lead</a></li>{% endif %}
+                            {% if module_perms.clients %}<li><a class="dropdown-item" href="{% url 'client_list' %}?add=1">New Client</a></li>{% endif %}
+                            {% if module_perms.projects %}<li><a class="dropdown-item" href="{% url 'project_create' %}">New Project</a></li>{% endif %}
+                            {% if module_perms.invoices %}<li><a class="dropdown-item" href="{% url 'invoice_create' %}">New Invoice</a></li>{% endif %}
+                            {% if module_perms.site_visits %}<li><a class="dropdown-item" href="{% url 'site_visit_create' %}">New Site Visit</a></li>{% endif %}
+                            <li><a class="dropdown-item" href="{% url 'task_create' %}">New Task</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
                     <!-- Theme Toggle -->
                     <button class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
                         <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
