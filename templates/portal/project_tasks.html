@@ -36,26 +36,30 @@
         </div>
     {% endfor %}
 </div>
-<div class="card shadow-sm mt-4">
-    <div class="card-body">
-        <h5 class="mb-3">Add Task</h5>
-        <form method="post">
-            {% csrf_token %}
-            <div class="row g-3">
-                {% for field in form %}
-                    <div class="col-md-4">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                    </div>
-                {% endfor %}
-            </div>
-            <div class="mt-3">
-                <button class="btn btn-primary">Add Task</button>
-            </div>
-        </form>
+{% if can_manage_tasks %}
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="mb-3">Add Task</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    {% for field in form %}
+                        <div class="col-md-4">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary">Add Task</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+{% else %}
+    <div class="alert alert-info mt-4">Only admins can create or edit project tasks.</div>
+{% endif %}
 {% if task_templates_json %}
     {{ task_templates_json|json_script:"task-templates-data" }}
     <script>

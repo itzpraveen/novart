@@ -87,6 +87,15 @@ from .models import (
 from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
 
 
+def _can_view_all_tasks(user) -> bool:
+    """Admins and superusers can view every task; others are limited to their own."""
+    return bool(user and (user.is_superuser or getattr(user, 'role', None) == User.Roles.ADMIN))
+
+
+def _visible_tasks_for_user(user, queryset):
+    return queryset if _can_view_all_tasks(user) else queryset.filter(assigned_to=user)
+
+
 def _get_default_context():
     return {'currency': '₹'}
 
@@ -156,13 +165,9 @@ def dashboard(request):
         )
     site_visits_this_month = site_visits_scope.count()
 
-    tasks_scope = Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS])
-    if not show_finance:
-        tasks_scope = tasks_scope.filter(
-            Q(assigned_to=request.user)
-            | Q(project__project_manager=request.user)
-            | Q(project__site_engineer=request.user)
-        )
+    tasks_scope = _visible_tasks_for_user(
+        request.user, Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS])
+    )
     upcoming_tasks = tasks_scope.order_by('due_date')[:5]
     my_open_tasks_count = tasks_scope.count()
 
@@ -518,7 +523,13 @@ def project_detail(request, pk):
     project = get_object_or_404(
         Project.objects.select_related('client', 'lead', 'lead__client', 'project_manager', 'site_engineer'), pk=pk
     )
-    tasks = project.tasks.exclude(status=Task.Status.DONE).select_related('assigned_to')
+    visible_tasks = _visible_tasks_for_user(
+        request.user, project.tasks.select_related('assigned_to')
+    )
+    open_tasks = visible_tasks.exclude(status=Task.Status.DONE)
+    visible_open_tasks = open_tasks.count()
+    visible_total_tasks = visible_tasks.count()
+    tasks = open_tasks
     site_visits = project.site_visits.order_by('-visit_date')[:5]
     issues = project.issues.order_by('-raised_on')[:5]
     documents = project.documents.all()[:5]
@@ -535,6 +546,8 @@ def project_detail(request, pk):
             'documents': documents,
             'stage_history': stage_history,
             'stage_form': stage_form,
+            'visible_open_tasks': visible_open_tasks,
+            'visible_total_tasks': visible_total_tasks,
             'currency': '₹',
         },
     )
@@ -560,13 +573,14 @@ def project_stage_update(request, pk):
 @login_required
 def project_tasks(request, pk):
     project = get_object_or_404(Project, pk=pk)
-    task_list = list(project.tasks.select_related('assigned_to'))
+    task_list = list(_visible_tasks_for_user(request.user, project.tasks.select_related('assigned_to')))
     columns = {code: [] for code, _ in Task.Status.choices}
     for task in task_list:
         columns.setdefault(task.status, []).append(task)
+    can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
     form = TaskForm(initial={'project': project})
     if request.method == 'POST':
-        if request.user.role not in [User.Roles.ADMIN, User.Roles.ARCHITECT]:
+        if not can_manage_tasks:
             return HttpResponseForbidden("You do not have permission to add tasks.")
         form = TaskForm(request.POST)
         if form.is_valid():
@@ -580,6 +594,7 @@ def project_tasks(request, pk):
             'project': project,
             'columns': columns,
             'form': form,
+            'can_manage_tasks': can_manage_tasks,
             'statuses': Task.Status.choices,
             'task_templates_json': _task_template_data(),
         },

@@ -74,7 +74,7 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <p class="text-muted">Tasks</p>
-                <h3>{{ project.open_tasks }} open of {{ project.total_tasks }}</h3>
+                <h3>{{ visible_open_tasks }} open of {{ visible_total_tasks }}</h3>
                 <div class="small text-muted">
                     <div>Manager: <strong>{{ project.project_manager|default:"—" }}</strong></div>
                     <div>Site Engineer: <strong>{{ project.site_engineer|default:"—" }}</strong></div>
