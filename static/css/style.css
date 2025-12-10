@@ -747,6 +747,34 @@ textarea.form-control:focus {
     box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
 }
 
+/* Ensure date inputs stay visible in both themes */
+input[type="date"],
+input[type="date"].form-control {
+    background: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-md);
+}
+
+input[type="date"]:focus,
+input[type="date"].form-control:focus {
+    border-color: rgba(13, 148, 136, 0.5);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.9;
+    cursor: pointer;
+}
+
+[data-theme="dark"] input[type="date"] {
+    border-color: var(--border-color-strong);
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
 .table > :not(caption) > * > * {
     padding: 0.9rem 0.75rem;
 }
