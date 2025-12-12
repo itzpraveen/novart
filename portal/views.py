@@ -33,6 +33,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models.functions import Coalesce, Greatest, Cast
 
 ITEMS_PER_PAGE = 25
@@ -126,18 +127,7 @@ def _task_template_data():
 
 
 def _refresh_invoice_status(invoice: Invoice) -> Invoice:
-    today = timezone.localdate()
-    outstanding = invoice.outstanding
-    new_status = invoice.status
-    if outstanding <= 0:
-        new_status = Invoice.Status.PAID
-    elif invoice.due_date < today:
-        new_status = Invoice.Status.OVERDUE
-    elif invoice.status == Invoice.Status.DRAFT:
-        new_status = Invoice.Status.SENT
-    if new_status != invoice.status:
-        invoice.status = new_status
-        invoice.save(update_fields=['status'])
+    invoice.refresh_status()
     return invoice
 
 
@@ -444,9 +434,6 @@ def lead_convert(request, pk):
     lead = get_object_or_404(Lead.objects.select_related('client'), pk=pk)
     if lead.status == Lead.Status.LOST:
         messages.warning(request, 'Lost leads cannot be converted. Please reopen the lead first.')
-        return redirect('lead_list')
-    if lead.status == Lead.Status.WON and not lead.is_converted:
-        messages.info(request, 'This lead is already marked as won. Link or view the project directly.')
         return redirect('lead_list')
     if lead.is_converted:
         project = lead.projects.first()
@@ -826,11 +813,6 @@ def invoice_list(request):
         'lines', 'payments'
     )
     invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
-    invoices = list(invoice_filter.qs)
-    for invoice in invoices:
-        _refresh_invoice_status(invoice)
-    # Re-apply filter to reflect any status changes after refresh.
-    invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
 
     # Pagination
     paginator = Paginator(invoice_filter.qs, ITEMS_PER_PAGE)
@@ -854,7 +836,7 @@ def invoice_pdf(request, invoice_pk):
         ).prefetch_related('lines', 'payments'),
         pk=invoice_pk,
     )
-    invoice = _refresh_invoice_status(invoice)
+    invoice.refresh_status(save=False)
     lines = list(invoice.lines.all())
     tax_value = max(invoice.total_with_tax - invoice.taxable_amount, Decimal('0'))
     client = invoice.project.client if invoice.project else (invoice.lead.client if invoice.lead else None)
@@ -1006,7 +988,7 @@ def invoice_aging(request):
     buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}
     totals = {key: Decimal('0') for key in buckets}
     for invoice in invoices:
-        invoice = _refresh_invoice_status(invoice)
+        invoice.refresh_status(save=False, today=today)
         outstanding = invoice.outstanding
         if outstanding <= 0:
             continue
@@ -1228,7 +1210,10 @@ def transaction_list(request):
 @login_required
 @module_required('docs')
 def document_list(request):
+    visible_projects = _visible_projects_for_user(request.user)
     documents = Document.objects.select_related('project').order_by('-created_at')
+    if not _can_view_all_projects(request.user):
+        documents = documents.filter(project__in=visible_projects)
     doc_type = request.GET.get('file_type')
     project_id = request.GET.get('project')
     if doc_type:
@@ -1237,15 +1222,21 @@ def document_list(request):
         documents = documents.filter(project_id=project_id)
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
         if form.is_valid():
             document = form.save(commit=False)
+            if not visible_projects.filter(pk=document.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to upload documents to that project.")
             document.uploaded_by = request.user
             document.save()
             messages.success(request, 'Document added.')
             return redirect('document_list')
     else:
         form = DocumentForm()
-    projects = Project.objects.order_by('name')
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
+    projects = visible_projects.order_by('name') if not _can_view_all_projects(request.user) else Project.objects.order_by('name')
     return render(
         request,
         'portal/documents.html',
@@ -1280,6 +1271,7 @@ def finance_dashboard(request):
 
 @login_required
 @role_required(User.Roles.ADMIN)
+@module_required('settings')
 def firm_profile(request):
     profile, _ = FirmProfile.objects.get_or_create(singleton=True, defaults={'name': 'Your Architecture Studio'})
     if request.method == 'POST':
@@ -1298,6 +1290,7 @@ def firm_profile(request):
 
 @login_required
 @role_required(User.Roles.ADMIN)
+@module_required('settings')
 def reminder_settings(request):
     if request.method == 'POST':
         instance_id = request.POST.get('instance_id')
@@ -1324,7 +1317,11 @@ def notification_mark_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk, user=request.user)
     notification.is_read = True
     notification.save(update_fields=['is_read'])
-    if notification.related_url:
+    if notification.related_url and url_has_allowed_host_and_scheme(
+        notification.related_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
         return redirect(notification.related_url)
     return redirect('notification_list')
 

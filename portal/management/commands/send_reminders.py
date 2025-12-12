@@ -64,7 +64,7 @@ class Command(BaseCommand):
         count = 0
         for task in tasks:
             message = f'Task "{task.title}" is due on {task.due_date.strftime("%d-%m-%Y")}'
-            url = reverse('task_edit', args=[task.pk])
+            url = reverse('my_tasks')
             recipients = self._recipients(setting, task.assigned_to, admins)
             count += self._notify(recipients, message, setting.category, url)
         return count
@@ -83,6 +83,7 @@ class Command(BaseCommand):
         invoices = Invoice.objects.filter(due_date__lte=horizon).exclude(status=Invoice.Status.PAID)
         count = 0
         for invoice in invoices:
+            invoice.refresh_status(today=today)
             owner = invoice.project.project_manager if invoice.project else None
             message = f'Invoice {invoice.invoice_number} due on {invoice.due_date.strftime("%d-%m-%Y")}'
             url = reverse('invoice_list')
@@ -94,6 +95,7 @@ class Command(BaseCommand):
         invoices = Invoice.objects.filter(due_date__lt=today).exclude(status=Invoice.Status.PAID)
         count = 0
         for invoice in invoices:
+            invoice.refresh_status(today=today)
             owner = invoice.project.project_manager if invoice.project else None
             message = f'Invoice {invoice.invoice_number} is overdue'
             recipients = self._recipients(setting, owner, admins)

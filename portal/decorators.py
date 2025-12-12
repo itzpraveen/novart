@@ -2,8 +2,6 @@ from functools import wraps
 
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
-from django.contrib import messages
-
 from .permissions import guard_module
 
 
@@ -44,7 +42,6 @@ def module_required(module: str):
         def _wrapped(request, *args, **kwargs):
             if guard_module(request, module):
                 return view_func(request, *args, **kwargs)
-            messages.error(request, "You don't have access to this area.")
             return redirect('dashboard')
 
         return _wrapped

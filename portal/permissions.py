@@ -33,7 +33,7 @@ MODULE_LABELS: Dict[str, str] = {
     'settings': 'Settings',
 }
 
-DEFAULT_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
+BASE_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
     User.Roles.ADMIN: {key: True for key in MODULE_KEYS},
     User.Roles.ARCHITECT: {
         'clients': True,
@@ -134,8 +134,38 @@ DEFAULT_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
 }
 
 
+ROLE_ALIASES: Dict[str, str] = {
+    # Architect variants
+    User.Roles.SENIOR_ARCHITECT: User.Roles.ARCHITECT,
+    User.Roles.JUNIOR_ARCHITECT: User.Roles.ARCHITECT,
+    User.Roles.MANAGING_DIRECTOR: User.Roles.ARCHITECT,
+    # Site engineer variants
+    User.Roles.SENIOR_CIVIL_ENGINEER: User.Roles.SITE_ENGINEER,
+    User.Roles.JUNIOR_CIVIL_ENGINEER: User.Roles.SITE_ENGINEER,
+    # Designer / drafting variants
+    User.Roles.SENIOR_INTERIOR_DESIGNER: User.Roles.DESIGNER,
+    User.Roles.JUNIOR_INTERIOR_DESIGNER: User.Roles.DESIGNER,
+    User.Roles.VISUALISER_3D: User.Roles.DESIGNER,
+    # Finance variants
+    User.Roles.ACCOUNTANT: User.Roles.FINANCE,
+}
+
+
+def _default_perms_for_role(role: str) -> Dict[str, bool] | None:
+    """Return default module permissions for a role, honoring aliases."""
+    if role in BASE_ROLE_PERMS:
+        return BASE_ROLE_PERMS[role]
+    base_role = ROLE_ALIASES.get(role)
+    if base_role and base_role in BASE_ROLE_PERMS:
+        return BASE_ROLE_PERMS[base_role]
+    return None
+
+
 def ensure_role_permissions() -> None:
-    for role, defaults in DEFAULT_ROLE_PERMS.items():
+    for role in User.Roles.values:
+        defaults = _default_perms_for_role(role)
+        if defaults is None:
+            continue
         RolePermission.objects.get_or_create(role=role, defaults=defaults)
 
 
@@ -144,10 +174,16 @@ def get_permissions_for_user(user: User) -> Dict[str, bool]:
         return {key: False for key in MODULE_KEYS}
     if user.is_superuser:
         return {key: True for key in MODULE_KEYS}
-    ensure_role_permissions()
     rp = RolePermission.objects.filter(role=user.role).first()
     if not rp:
-        return {key: False for key in MODULE_KEYS}
+        base_role = ROLE_ALIASES.get(user.role)
+        if base_role:
+            rp = RolePermission.objects.filter(role=base_role).first()
+        if not rp:
+            defaults = _default_perms_for_role(user.role)
+            if defaults is None:
+                return {key: False for key in MODULE_KEYS}
+            return dict(defaults)
     perms = {key: bool(getattr(rp, key, False)) for key in MODULE_KEYS}
     if user.role == User.Roles.VIEWER:
         perms['docs'] = False

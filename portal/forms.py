@@ -326,7 +326,6 @@ class InvoiceForm(forms.ModelForm):
             self.add_error('project', 'Select a project or a lead to bill.')
             self.add_error('lead', 'Select a project or a lead to bill.')
         return cleaned
-        return cleaned
 
 
 class InvoiceLineForm(forms.ModelForm):

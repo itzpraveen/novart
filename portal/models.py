@@ -338,6 +338,23 @@ class Invoice(TimeStampedModel):
         if not self.project and not self.lead:
             raise ValidationError('Select a project or a lead to bill.')
 
+    def refresh_status(self, *, save: bool = True, today=None) -> str:
+        """Update invoice.status based on due date and payments."""
+        today = today or timezone.localdate()
+        outstanding = self.outstanding
+        new_status = self.status
+        if outstanding <= 0:
+            new_status = self.Status.PAID
+        elif self.due_date < today:
+            new_status = self.Status.OVERDUE
+        elif self.status == self.Status.DRAFT:
+            new_status = self.Status.SENT
+        if new_status != self.status:
+            self.status = new_status
+            if save:
+                self.save(update_fields=['status'])
+        return new_status
+
     @property
     def subtotal(self) -> Decimal:
         lines_total = sum((line.line_total for line in self.lines.all()), Decimal('0'))

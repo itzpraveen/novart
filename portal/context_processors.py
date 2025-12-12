@@ -5,7 +5,6 @@ def notifications(request):
 
 
 def module_perms(request):
-    from .permissions import ensure_role_permissions, get_permissions_for_user
+    from .permissions import get_permissions_for_user
 
-    ensure_role_permissions()
     return {'module_perms': get_permissions_for_user(request.user)}
