@@ -274,7 +274,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% if request.user.is_authenticated %}
+    {% if request.user.is_authenticated and request.resolver_match.url_name != 'login' %}
     <!-- Bottom Navigation Bar (Mobile/Tablet) -->
     <nav class="bottom-nav" aria-label="Mobile navigation">
         <div class="bottom-nav-inner">

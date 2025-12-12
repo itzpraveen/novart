@@ -1872,6 +1872,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .auth-page-minimal {
     background: var(--bg-body);
+    justify-content: center;
 }
 
 .auth-card-minimal {
@@ -1936,6 +1937,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .auth-page-minimal .btn-primary {
     box-shadow: none;
+}
+
+@media (max-width: 480px) {
+    .auth-card-minimal {
+        padding: 1.75rem 1.4rem 1.25rem;
+        border-radius: 18px;
+    }
+
+    .auth-brand-logo {
+        height: 40px;
+    }
+
+    .auth-title {
+        font-size: 1.45rem;
+    }
 }
 
 .auth-grid {
