@@ -124,7 +124,7 @@ DEFAULT_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
         'leads': True,
         'projects': True,
         'site_visits': True,
-        'docs': True,
+        'docs': False,
         'team': False,
         'finance': False,
         'invoices': False,
@@ -148,7 +148,10 @@ def get_permissions_for_user(user: User) -> Dict[str, bool]:
     rp = RolePermission.objects.filter(role=user.role).first()
     if not rp:
         return {key: False for key in MODULE_KEYS}
-    return {key: bool(getattr(rp, key, False)) for key in MODULE_KEYS}
+    perms = {key: bool(getattr(rp, key, False)) for key in MODULE_KEYS}
+    if user.role == User.Roles.VIEWER:
+        perms['docs'] = False
+    return perms
 
 
 def guard_module(request: HttpRequest, module: str) -> bool:

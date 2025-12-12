@@ -96,6 +96,23 @@ def _visible_tasks_for_user(user, queryset):
     return queryset if _can_view_all_tasks(user) else queryset.filter(assigned_to=user)
 
 
+def _can_view_all_projects(user) -> bool:
+    """Users with finance/invoice access can view all projects."""
+    if not user or not user.is_authenticated:
+        return False
+    perms = get_permissions_for_user(user)
+    return bool(user.is_superuser or perms.get('finance') or perms.get('invoices'))
+
+
+def _visible_projects_for_user(user, queryset=None):
+    qs = queryset or Project.objects.all()
+    if _can_view_all_projects(user):
+        return qs
+    return qs.filter(
+        Q(project_manager=user) | Q(site_engineer=user) | Q(tasks__assigned_to=user)
+    ).distinct()
+
+
 def _get_default_context():
     return {'currency': '₹'}
 
@@ -422,6 +439,7 @@ def lead_edit(request, pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('leads')
 def lead_convert(request, pk):
     lead = get_object_or_404(Lead.objects.select_related('client'), pk=pk)
     if lead.status == Lead.Status.LOST:
@@ -470,9 +488,11 @@ def lead_convert(request, pk):
 @login_required
 @module_required('projects')
 def project_list(request):
-    project_filter = ProjectFilter(
-        request.GET, queryset=Project.objects.select_related('client', 'project_manager', 'site_engineer')
+    base_qs = _visible_projects_for_user(
+        request.user,
+        Project.objects.select_related('client', 'project_manager', 'site_engineer'),
     )
+    project_filter = ProjectFilter(request.GET, queryset=base_qs)
     qs = project_filter.qs
     context = {
         'filter': project_filter,
@@ -506,7 +526,7 @@ def project_create(request):
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
 @module_required('projects')
 def project_edit(request, pk):
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
     if request.method == 'POST':
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
@@ -519,10 +539,13 @@ def project_edit(request, pk):
 
 
 @login_required
+@module_required('projects')
 def project_detail(request, pk):
-    project = get_object_or_404(
-        Project.objects.select_related('client', 'lead', 'lead__client', 'project_manager', 'site_engineer'), pk=pk
+    project_qs = _visible_projects_for_user(
+        request.user,
+        Project.objects.select_related('client', 'lead', 'lead__client', 'project_manager', 'site_engineer'),
     )
+    project = get_object_or_404(project_qs, pk=pk)
     visible_tasks = _visible_tasks_for_user(
         request.user, project.tasks.select_related('assigned_to')
     )
@@ -555,8 +578,9 @@ def project_detail(request, pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('projects')
 def project_stage_update(request, pk):
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
     if request.method == 'POST':
         form = StageUpdateForm(request.POST)
         if form.is_valid():
@@ -571,20 +595,28 @@ def project_stage_update(request, pk):
 
 
 @login_required
+@module_required('projects')
 def project_tasks(request, pk):
-    project = get_object_or_404(Project, pk=pk)
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
     task_list = list(_visible_tasks_for_user(request.user, project.tasks.select_related('assigned_to')))
     columns = {code: [] for code, _ in Task.Status.choices}
     for task in task_list:
         columns.setdefault(task.status, []).append(task)
     can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
     form = TaskForm(initial={'project': project})
+    if not _can_view_all_projects(request.user):
+        form.fields['project'].queryset = _visible_projects_for_user(request.user)
     if request.method == 'POST':
         if not can_manage_tasks:
             return HttpResponseForbidden("You do not have permission to add tasks.")
         form = TaskForm(request.POST)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = _visible_projects_for_user(request.user)
         if form.is_valid():
-            task = form.save()
+            task = form.save(commit=False)
+            if task.project_id != project.pk:
+                return HttpResponseForbidden("You do not have permission to add tasks to this project.")
+            task.save()
             messages.success(request, 'Task added.')
             return redirect('project_tasks', pk=pk)
     return render(
@@ -603,20 +635,28 @@ def project_tasks(request, pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('projects')
 def task_create(request):
     project_id = request.GET.get('project')
     project = None
     if project_id:
-        project = get_object_or_404(Project, pk=project_id)
+        project = get_object_or_404(_visible_projects_for_user(request.user), pk=project_id)
     initial = {'project': project} if project else None
     if request.method == 'POST':
         form = TaskForm(request.POST)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = _visible_projects_for_user(request.user)
         if form.is_valid():
-            task = form.save()
+            task = form.save(commit=False)
+            if not _visible_projects_for_user(request.user).filter(pk=task.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to add tasks to that project.")
+            task.save()
             messages.success(request, 'Task created.')
             return redirect('project_detail', pk=task.project.pk)
     else:
         form = TaskForm(initial=initial)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = _visible_projects_for_user(request.user)
     return render(
         request,
         'portal/task_form.html',
@@ -626,16 +666,28 @@ def task_create(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT)
+@module_required('projects')
 def task_edit(request, pk):
-    task = get_object_or_404(Task, pk=pk)
+    visible_projects = _visible_projects_for_user(request.user)
+    task_qs = Task.objects.select_related('project')
+    if not _can_view_all_projects(request.user):
+        task_qs = task_qs.filter(project__in=visible_projects)
+    task = get_object_or_404(task_qs, pk=pk)
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
         if form.is_valid():
-            form.save()
+            updated_task = form.save(commit=False)
+            if not visible_projects.filter(pk=updated_task.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to move this task to that project.")
+            updated_task.save()
             messages.success(request, 'Task updated.')
-            return redirect('project_detail', pk=task.project.pk)
+            return redirect('project_detail', pk=updated_task.project.pk)
     else:
         form = TaskForm(instance=task)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
     return render(
         request,
         'portal/task_form.html',
@@ -644,6 +696,7 @@ def task_edit(request, pk):
 
 
 @login_required
+@module_required('projects')
 def my_tasks(request):
     task_filter = TaskFilter(request.GET, queryset=Task.objects.filter(assigned_to=request.user))
     return render(request, 'portal/my_tasks.html', {'filter': task_filter})
@@ -652,43 +705,72 @@ def my_tasks(request):
 @login_required
 @module_required('site_visits')
 def site_visit_list(request):
-    visit_filter = SiteVisitFilter(request.GET, queryset=SiteVisit.objects.select_related('project', 'visited_by'))
+    visits_qs = SiteVisit.objects.select_related('project', 'visited_by')
+    if not _can_view_all_projects(request.user):
+        visits_qs = visits_qs.filter(project__in=_visible_projects_for_user(request.user))
+    visit_filter = SiteVisitFilter(request.GET, queryset=visits_qs)
     return render(request, 'portal/site_visits.html', {'filter': visit_filter})
 
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
+@module_required('site_visits')
 def site_visit_create(request):
+    visible_projects = _visible_projects_for_user(request.user)
     if request.method == 'POST':
         form = SiteVisitForm(request.POST, request.FILES)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
         if form.is_valid():
-            visit = form.save()
+            visit = form.save(commit=False)
+            if not visible_projects.filter(pk=visit.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to log visits for that project.")
+            visit.save()
             messages.success(request, 'Site visit logged.')
             return redirect('site_visit_list')
     else:
         form = SiteVisitForm(initial={'visited_by': request.user})
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
     return render(request, 'portal/site_visit_form.html', {'form': form})
 
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
+@module_required('site_visits')
 def site_visit_edit(request, pk):
-    visit = get_object_or_404(SiteVisit, pk=pk)
+    visible_projects = _visible_projects_for_user(request.user)
+    visit_qs = SiteVisit.objects.select_related('project', 'visited_by')
+    if not _can_view_all_projects(request.user):
+        visit_qs = visit_qs.filter(project__in=visible_projects)
+    visit = get_object_or_404(visit_qs, pk=pk)
     if request.method == 'POST':
         form = SiteVisitForm(request.POST, instance=visit)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
         if form.is_valid():
-            form.save()
+            updated_visit = form.save(commit=False)
+            if not visible_projects.filter(pk=updated_visit.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to move this visit to that project.")
+            updated_visit.save()
             messages.success(request, 'Site visit updated.')
             return redirect('site_visit_list')
     else:
         form = SiteVisitForm(instance=visit)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
     return render(request, 'portal/site_visit_form.html', {'form': form, 'visit': visit})
 
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
+@module_required('site_visits')
 def site_visit_detail(request, pk):
-    visit = get_object_or_404(SiteVisit, pk=pk)
+    visible_projects = _visible_projects_for_user(request.user)
+    visit_qs = SiteVisit.objects.select_related('project', 'visited_by')
+    if not _can_view_all_projects(request.user):
+        visit_qs = visit_qs.filter(project__in=visible_projects)
+    visit = get_object_or_404(visit_qs, pk=pk)
     attachment_form = SiteVisitAttachmentForm()
     if request.method == 'POST':
         attachment_form = SiteVisitAttachmentForm(request.POST, request.FILES)
@@ -709,15 +791,30 @@ def site_visit_detail(request, pk):
 @role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
 @module_required('site_visits')
 def issue_list(request):
-    issue_filter = SiteIssueFilter(request.GET, queryset=SiteIssue.objects.select_related('project', 'site_visit'))
+    visible_projects = _visible_projects_for_user(request.user)
+    issues_qs = SiteIssue.objects.select_related('project', 'site_visit')
+    if not _can_view_all_projects(request.user):
+        issues_qs = issues_qs.filter(project__in=visible_projects)
+    issue_filter = SiteIssueFilter(request.GET, queryset=issues_qs)
     if request.method == 'POST':
         form = SiteIssueForm(request.POST)
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
+            form.fields['site_visit'].queryset = SiteVisit.objects.filter(project__in=visible_projects)
         if form.is_valid():
-            form.save()
+            issue = form.save(commit=False)
+            if not visible_projects.filter(pk=issue.project_id).exists():
+                return HttpResponseForbidden("You do not have permission to log issues for that project.")
+            if issue.site_visit_id and not SiteVisit.objects.filter(pk=issue.site_visit_id, project__in=visible_projects).exists():
+                return HttpResponseForbidden("You do not have permission to link that site visit.")
+            issue.save()
             messages.success(request, 'Issue logged.')
             return redirect('issue_list')
     else:
         form = SiteIssueForm()
+        if not _can_view_all_projects(request.user):
+            form.fields['project'].queryset = visible_projects
+            form.fields['site_visit'].queryset = SiteVisit.objects.filter(project__in=visible_projects)
     return render(request, 'portal/issues.html', {'filter': issue_filter, 'form': form})
 
 
@@ -838,6 +935,7 @@ def invoice_pdf(request, invoice_pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_create(request):
     if request.method == 'POST':
         form = InvoiceForm(request.POST)
@@ -867,6 +965,7 @@ def invoice_create(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_edit(request, invoice_pk):
     invoice = get_object_or_404(Invoice.objects.prefetch_related('lines', 'payments'), pk=invoice_pk)
     if request.method == 'POST':
@@ -896,6 +995,7 @@ def invoice_edit(request, invoice_pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_aging(request):
     today = timezone.localdate()
     invoices = (
@@ -931,6 +1031,7 @@ def invoice_aging(request):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def invoice_delete(request, invoice_pk):
     invoice = get_object_or_404(Invoice.objects.prefetch_related('payments'), pk=invoice_pk)
     if request.method != 'POST':
@@ -945,6 +1046,7 @@ def invoice_delete(request, invoice_pk):
 
 @login_required
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('invoices')
 def payment_create(request, invoice_pk):
     invoice = get_object_or_404(Invoice, pk=invoice_pk)
     if invoice.outstanding <= 0:
