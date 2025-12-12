@@ -718,8 +718,11 @@ def project_detail(request, pk):
         .annotate(total=Sum('amount'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['invoiced'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['invoiced'] += row['total'] or Decimal('0')
     for row in (
         Transaction.objects.filter(related_project=project)
         .annotate(month=TruncMonth('date'))
@@ -727,8 +730,11 @@ def project_detail(request, pk):
         .annotate(total=Sum('debit'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['expenses'] += row['total'] or Decimal('0')
     for row in (
         SiteVisit.objects.filter(project=project)
         .annotate(month=TruncMonth('visit_date'))
@@ -736,8 +742,11 @@ def project_detail(request, pk):
         .annotate(total=Sum('expenses'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['expenses'] += row['total'] or Decimal('0')
 
     months_sorted = sorted(month_buckets.keys())
     profit_chart_data = {
@@ -1768,8 +1777,11 @@ def finance_dashboard(request):
         .annotate(total=Sum('amount'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['invoiced'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['invoiced'] += row['total'] or Decimal('0')
 
     for row in (
         Payment.objects.annotate(month=TruncMonth('payment_date'))
@@ -1777,8 +1789,11 @@ def finance_dashboard(request):
         .annotate(total=Sum('amount'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['received'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['received'] += row['total'] or Decimal('0')
 
     for row in (
         Transaction.objects.annotate(month=TruncMonth('date'))
@@ -1786,8 +1801,11 @@ def finance_dashboard(request):
         .annotate(total=Sum('debit'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['expenses'] += row['total'] or Decimal('0')
 
     for row in (
         SiteVisit.objects.annotate(month=TruncMonth('visit_date'))
@@ -1795,8 +1813,11 @@ def finance_dashboard(request):
         .annotate(total=Sum('expenses'))
         .order_by('month')
     ):
-        if row['month']:
-            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+        month = row['month']
+        if month:
+            if hasattr(month, 'date'):
+                month = month.date()
+            month_buckets[month]['expenses'] += row['total'] or Decimal('0')
 
     months_sorted = sorted(month_buckets.keys())
     chart_data = {
