@@ -179,9 +179,12 @@ def dashboard(request):
     site_visits_this_month = site_visits_scope.count()
 
     tasks_scope = _visible_tasks_for_user(
-        request.user, Task.objects.filter(status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS])
+        request.user,
+        Task.objects.select_related('project', 'project__client').filter(
+            status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]
+        ),
     )
-    upcoming_tasks = tasks_scope.order_by('due_date')[:5]
+    upcoming_tasks = tasks_scope.filter(due_date__isnull=False).order_by('due_date')[:5]
     my_open_tasks_count = tasks_scope.count()
 
     upcoming_handover = projects.filter(expected_handover__gte=today, expected_handover__lte=today + timedelta(days=30))

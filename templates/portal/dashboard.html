@@ -148,11 +148,23 @@
                 {% for task in upcoming_tasks %}
                 <a class="list-group-item list-group-item-action border-0 border-bottom"
                     href="{% url 'project_tasks' task.project.pk %}">
-                    <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                        <h6 class="mb-0 text-truncate" style="max-width: 70%;">{{ task.title }}</h6>
-                        <small class="text-danger fw-medium">{{ task.due_date|date:"d M" }}</small>
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="me-2" style="max-width: 70%;">
+                            <h6 class="mb-0 text-truncate">{{ task.title }}</h6>
+                            <small class="text-muted d-block text-truncate">
+                                {{ task.project.code }} · {{ task.project.client.name }}
+                            </small>
+                            {% if task.description %}
+                            <small class="text-muted d-block text-truncate">
+                                {{ task.description|truncatewords:10 }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <small class="text-danger fw-medium d-block">{{ task.due_date|date:"d M" }}</small>
+                            <span class="badge bg-light text-dark border small mt-1">{{ task.project.current_stage }}</span>
+                        </div>
                     </div>
-                    <small class="text-muted">{{ task.project.code }}</small>
                 </a>
                 {% empty %}
                 <div class="list-group-item text-center py-4">
