@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<div class="row g-3">
-    <div class="col-md-8">
-        <h2>Cashbook</h2>
+<div class="page-header">
+    <h2 class="mb-0">Cashbook</h2>
+    <div class="actions">
+        <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">New entry</a>
+    </div>
+</div>
+<div class="d-md-flex gap-3 align-items-start">
+    <div class="flex-grow-1">
         <div class="card shadow-sm mb-3">
             <div class="card-body">
                 <form method="get" class="row g-3">
                     {% for field in filter.form %}
                         <div class="col-md-6">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                         </div>
                     {% endfor %}
@@ -41,29 +46,31 @@
                             <td>{{ txn.credit|rupee }}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="5" class="text-center">No entries.</td></tr>
+                        {% include "includes/empty_state.html" with colspan=5 title="No cashbook entries" description="Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label="New entry" cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5>New entry</h5>
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field|add_class:"form-control" }}
-                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                    {% endfor %}
-                    <button class="btn btn-primary w-100">Save</button>
-                </form>
-            </div>
+    <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">New entry</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">Save</button>
+            </form>
         </div>
     </div>
 </div>

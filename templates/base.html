@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="{% if request.resolver_match.url_name == 'login' %}light{% else %}light dark{% endif %}" />
     <title>Novart Architecture</title>
+    <link rel="icon" href="/favicon.ico">
     <!-- Google Fonts - optimized weights -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -313,7 +314,8 @@
                 <span class="bottom-nav-label">Invoices</span>
             </a>
             {% endif %}
-            <div class="bottom-nav-item bottom-nav-more" role="button" tabindex="0" aria-label="More options" aria-expanded="false" aria-haspopup="true">
+            <div class="bottom-nav-more">
+                <button type="button" class="bottom-nav-item bottom-nav-more-toggle" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="bottomNavMoreMenu">
                 <svg class="bottom-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="1"></circle>
                     <circle cx="12" cy="5" r="1"></circle>
@@ -321,7 +323,8 @@
                 </svg>
                 <span class="bottom-nav-label">More</span>
                 {% if unread_notifications %}<span class="bottom-nav-badge" aria-hidden="true"></span>{% endif %}
-                <div class="bottom-nav-menu" role="menu">
+                </button>
+                <div id="bottomNavMoreMenu" class="bottom-nav-menu" role="menu">
                     {% if module_perms.leads %}
                     <a href="{% url 'lead_list' %}" class="bottom-nav-menu-item" role="menuitem">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -440,29 +443,31 @@
 
         // Bottom Nav More Menu
         (function() {
-            const moreBtn = document.querySelector('.bottom-nav-more');
-            if (!moreBtn) return;
+            const moreWrap = document.querySelector('.bottom-nav-more');
+            if (!moreWrap) return;
+
+            const toggle = moreWrap.querySelector('.bottom-nav-more-toggle');
+            if (!toggle) return;
+
+            function setOpen(open) {
+                moreWrap.classList.toggle('open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
 
             function toggleMenu(e) {
                 e.stopPropagation();
-                const isOpen = moreBtn.classList.toggle('open');
-                moreBtn.setAttribute('aria-expanded', isOpen);
+                setOpen(!moreWrap.classList.contains('open'));
             }
 
-            moreBtn.addEventListener('click', toggleMenu);
-            moreBtn.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleMenu(e);
-                }
+            toggle.addEventListener('click', toggleMenu);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') setOpen(false);
             });
 
             // Close menu when clicking outside
             document.addEventListener('click', function(e) {
-                if (!moreBtn.contains(e.target)) {
-                    moreBtn.classList.remove('open');
-                    moreBtn.setAttribute('aria-expanded', 'false');
-                }
+                if (!moreWrap.contains(e.target)) setOpen(false);
             });
         })();
 
@@ -479,18 +484,31 @@
 
         // Action Dropdown Toggle
         (function() {
+            function closeDropdown(dropdown) {
+                dropdown.classList.remove('open');
+                const toggle = dropdown.querySelector('.action-dropdown-toggle');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            }
+
             document.querySelectorAll('.action-dropdown-toggle').forEach(function(toggle) {
                 toggle.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const dropdown = this.closest('.action-dropdown');
-                    dropdown.classList.toggle('open');
+                    const isOpen = dropdown.classList.toggle('open');
+                    this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                    document.querySelectorAll('.action-dropdown.open').forEach(function(d) {
+                        if (d !== dropdown) closeDropdown(d);
+                    });
                 });
             });
 
             document.addEventListener('click', function() {
-                document.querySelectorAll('.action-dropdown.open').forEach(function(d) {
-                    d.classList.remove('open');
-                });
+                document.querySelectorAll('.action-dropdown.open').forEach(closeDropdown);
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Escape') return;
+                document.querySelectorAll('.action-dropdown.open').forEach(closeDropdown);
             });
         })();
 

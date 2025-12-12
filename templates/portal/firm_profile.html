@@ -13,55 +13,55 @@
         <form method="post" enctype="multipart/form-data" class="row g-3">
             {% csrf_token %}
             <div class="col-md-6">
-                <label class="form-label">Firm Name</label>
+                <label class="form-label" for="{{ form.name.id_for_label }}">Firm Name</label>
                 {{ form.name|add_class:"form-control" }}
                 {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Tax ID / GSTIN</label>
+                <label class="form-label" for="{{ form.tax_id.id_for_label }}">Tax ID / GSTIN</label>
                 {{ form.tax_id|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Email</label>
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
                 {{ form.email|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Phone</label>
+                <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
                 {{ form.phone|add_class:"form-control" }}
             </div>
             <div class="col-md-12">
-                <label class="form-label">Address</label>
+                <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
                 {{ form.address|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Bank name</label>
+                <label class="form-label" for="{{ form.bank_name.id_for_label }}">Bank name</label>
                 {{ form.bank_name|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Account holder</label>
+                <label class="form-label" for="{{ form.bank_account_name.id_for_label }}">Account holder</label>
                 {{ form.bank_account_name|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Account number</label>
+                <label class="form-label" for="{{ form.bank_account_number.id_for_label }}">Account number</label>
                 {{ form.bank_account_number|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">IFSC</label>
+                <label class="form-label" for="{{ form.bank_ifsc.id_for_label }}">IFSC</label>
                 {{ form.bank_ifsc|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">UPI ID</label>
+                <label class="form-label" for="{{ form.upi_id.id_for_label }}">UPI ID</label>
                 {{ form.upi_id|add_class:"form-control" }}
             </div>
             <div class="col-md-6">
-                <label class="form-label">Logo</label>
-                {{ form.logo }}
+                <label class="form-label" for="{{ form.logo.id_for_label }}">Logo</label>
+                {{ form.logo|add_class:"form-control" }}
                 {% if logo_url %}
                     <div class="mt-2"><img src="{{ logo_url }}" alt="Logo" style="height: 60px;"></div>
                 {% endif %}
             </div>
             <div class="col-12">
-                <label class="form-label">Payment Terms</label>
+                <label class="form-label" for="{{ form.terms.id_for_label }}">Payment Terms</label>
                 {{ form.terms|add_class:"form-control" }}
             </div>
             <div class="col-12 mt-2">

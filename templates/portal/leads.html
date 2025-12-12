@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
+{% url 'lead_create' as lead_create_url %}
 <div class="page-header">
     <h2 class="mb-0">Leads</h2>
     <div class="actions flex-wrap">
         <form method="get" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="view" value="{{ view|default:'table' }}">
             <select name="status" class="form-select" style="min-width: 140px;">
                 <option value="">All statuses</option>
                 {% for value,label in statuses %}
@@ -13,87 +15,150 @@
             </select>
             <button class="btn btn-outline-secondary">Filter</button>
         </form>
+        <div class="btn-group" role="group" aria-label="View">
+            <a class="btn btn-outline-secondary{% if view != 'pipeline' %} active{% endif %}" href="{% url 'lead_list' %}?{% if selected_status %}status={{ selected_status }}&{% endif %}view=table">Table</a>
+            <a class="btn btn-outline-secondary{% if view == 'pipeline' %} active{% endif %}" href="{% url 'lead_list' %}?{% if selected_status %}status={{ selected_status }}&{% endif %}view=pipeline">Pipeline</a>
+        </div>
         <div class="searchbar" style="min-width: 260px;">
             <input id="leadSearch" type="search" class="form-control" placeholder="Live search leads..." aria-label="Search leads">
         </div>
         <a class="btn btn-primary" href="{% url 'lead_create' %}">New Lead</a>
     </div>
 </div>
-<div class="card shadow-sm">
-    <div class="table-responsive">
-        <table class="table mb-0 align-middle table-stack">
-            <thead>
-            <tr>
-                <th>Title</th>
-                <th>Client</th>
-                <th>Status</th>
-                <th>Source</th>
-                <th class="text-end">Value</th>
-                <th class="text-end">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for lead in leads %}
-                <tr class="lead-row" data-search="{{ lead.title }} {{ lead.client.name }} {{ lead.lead_source }} {{ lead.get_status_display }}">
-                    <td data-label="Title" class="fw-semibold text-uppercase">{{ lead.title }}</td>
-                    <td data-label="Client">{{ lead.client.name }}</td>
-                    <td data-label="Status">
-                        <span class="badge badge-status {% if lead.status == 'won' %}badge-won{% elif lead.status == 'lost' %}badge-lost{% elif lead.status == 'discussion' %}badge-discussion{% else %}badge-new{% endif %}">
-                            {{ lead.get_status_display }}
-                        </span>
-                    </td>
-                    <td data-label="Source" class="text-muted text-uppercase">{{ lead.lead_source }}</td>
-                    <td data-label="Value" class="text-end fw-semibold">{{ lead.estimated_value|rupee }}</td>
-                    <td data-label="Actions" class="text-end">
-                        <div class="stack-inline justify-content-end">
-                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
-                            {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
-                                <button class="btn btn-sm btn-converted" disabled>Converted</button>
-                            {% elif lead.status == 'lost' %}
-                                <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
+{% if view == 'pipeline' %}
+    {% if leads %}
+        <div class="kanban-board mb-4">
+            {% for value,label in statuses %}
+                <div class="kanban-column">
+                    {% with column=columns|get_item:value %}
+                    <div class="card shadow-sm h-100 kanban-col">
+                        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                            <span>{{ label }}</span>
+                            <span class="badge bg-light text-dark border small">{{ column|length }}</span>
+                        </div>
+                        <div class="card-body" style="min-height: 240px;">
+                            {% if column %}
+                                {% for lead in column %}
+                                    <div class="kanban-task mb-2 lead-card" data-search="{{ lead.title }} {{ lead.client.name }} {{ lead.lead_source }} {{ lead.get_status_display }}">
+                                        <div class="fw-semibold text-uppercase">{{ lead.title }}</div>
+                                        <div class="small text-muted mt-1">
+                                            {{ lead.client.name }}
+                                            {% if lead.estimated_value %} · {{ lead.estimated_value|rupee }}{% endif %}
+                                            {% if lead.lead_source %} · {{ lead.lead_source }}{% endif %}
+                                        </div>
+                                        <div class="mt-2 d-flex gap-2 flex-wrap">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
+                                            {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
+                                                <button class="btn btn-sm btn-converted" disabled>Converted</button>
+                                            {% elif lead.status == 'lost' %}
+                                                <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
+                                            {% else %}
+                                                <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
                             {% else %}
-                                <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                                <p class="text-muted small mb-0">No leads in this stage.</p>
                             {% endif %}
                         </div>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state text-center py-5">
-                            <div class="eyebrow mb-2">No leads yet</div>
-                            <p class="text-muted mb-3">Start tracking your pipeline by adding your first lead.</p>
-                            <a class="btn btn-primary" href="{% url 'lead_create' %}">New Lead</a>
-                        </div>
-                    </td>
-                </tr>
+                    </div>
+                    {% endwith %}
+                </div>
             {% endfor %}
-            <tr id="leadEmptyState" class="d-none"><td colspan="6" class="text-center text-muted py-4">No matches for this search.</td></tr>
-            </tbody>
-        </table>
+        </div>
+        <div id="leadPipelineEmptyState" class="d-none text-center text-muted py-4">No matches for this search.</div>
+    {% else %}
+        <div class="card shadow-sm">
+            {% include "includes/empty_state.html" with title="No leads yet" description="Start tracking your pipeline by adding your first lead." cta_url=lead_create_url cta_label="New Lead" %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle table-stack">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Client</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th class="text-end">Value</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for lead in leads %}
+                    <tr class="lead-row" data-search="{{ lead.title }} {{ lead.client.name }} {{ lead.lead_source }} {{ lead.get_status_display }}">
+                        <td data-label="Title" class="fw-semibold text-uppercase">{{ lead.title }}</td>
+                        <td data-label="Client">{{ lead.client.name }}</td>
+                        <td data-label="Status">
+                            <span class="badge badge-status {% if lead.status == 'won' %}badge-won{% elif lead.status == 'lost' %}badge-lost{% elif lead.status == 'discussion' %}badge-discussion{% else %}badge-new{% endif %}">
+                                {{ lead.get_status_display }}
+                            </span>
+                        </td>
+                        <td data-label="Source" class="text-muted text-uppercase">{{ lead.lead_source }}</td>
+                        <td data-label="Value" class="text-end fw-semibold">{{ lead.estimated_value|rupee }}</td>
+                        <td data-label="Actions" class="text-end">
+                            <div class="stack-inline justify-content-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'lead_edit' lead.pk %}">Edit</a>
+                                {% if lead.is_converted or lead.project_count or lead.status == 'won' %}
+                                    <button class="btn btn-sm btn-converted" disabled>Converted</button>
+                                {% elif lead.status == 'lost' %}
+                                    <button class="btn btn-sm btn-locked" disabled>Not eligible</button>
+                                {% else %}
+                                    <a class="btn btn-sm btn-convert" href="{% url 'lead_convert' lead.pk %}">Convert</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state text-center py-5">
+                                <div class="eyebrow mb-2">No leads yet</div>
+                                <p class="text-muted mb-3">Start tracking your pipeline by adding your first lead.</p>
+                                <a class="btn btn-primary" href="{% url 'lead_create' %}">New Lead</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr id="leadEmptyState" class="d-none"><td colspan="6" class="text-center text-muted py-4">No matches for this search.</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-{% include "includes/pagination.html" %}
+    {% include "includes/pagination.html" %}
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('leadSearch');
     if (!input) return;
     const rows = Array.from(document.querySelectorAll('.lead-row'));
+    const cards = Array.from(document.querySelectorAll('.lead-card'));
     const emptyRow = document.getElementById('leadEmptyState');
+    const emptyPipeline = document.getElementById('leadPipelineEmptyState');
 
     const filterRows = (term) => {
         const query = term.trim().toLowerCase();
         let visible = 0;
-        rows.forEach(row => {
-            const text = row.dataset.search.toLowerCase();
-            const match = !query || text.includes(query);
-            row.style.display = match ? '' : 'none';
-            if (match) visible += 1;
-        });
+        const filterEls = (els) => {
+            els.forEach(el => {
+                const text = (el.dataset.search || '').toLowerCase();
+                const match = !query || text.includes(query);
+                el.style.display = match ? '' : 'none';
+                if (match) visible += 1;
+            });
+        };
+        filterEls(rows);
+        filterEls(cards);
         if (emptyRow) {
             emptyRow.classList.toggle('d-none', visible !== 0);
+        }
+        if (emptyPipeline) {
+            emptyPipeline.classList.toggle('d-none', visible !== 0);
         }
     };
 

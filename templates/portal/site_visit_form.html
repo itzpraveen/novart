@@ -10,16 +10,17 @@
                 {% for field in form %}
                     {% if field.name == 'attachments' %}
                         <div class="col-12">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
                     {% else %}
                         <div class="col-md-4">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endif %}
                 {% endfor %}

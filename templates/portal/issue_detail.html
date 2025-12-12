@@ -51,23 +51,26 @@
                         {% endif %}
                     </div>
                 {% empty %}
-                    <div class="list-group-item text-muted">No attachments.</div>
+                    <div class="list-group-item">
+                        {% include "includes/empty_state.html" with title="No attachments yet" description="Add photos or files to help the team resolve faster." cta_url="#addAttachment" cta_label="Add attachment" compact=True %}
+                    </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 
     <div class="col-lg-6">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm" id="addAttachment">
             <div class="card-header bg-white fw-semibold">Add attachment</div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% for field in attachment_form %}
                         <div class="mb-3">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endfor %}
                     <button class="btn btn-primary">Upload</button>
@@ -77,4 +80,3 @@
     </div>
 </div>
 {% endblock %}
-

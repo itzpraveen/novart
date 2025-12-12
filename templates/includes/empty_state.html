@@ -1,0 +1,69 @@
+{#-
+  Reusable empty-state component.
+
+  Params (via {% include ... with ... %}):
+    - title (required)
+    - description (optional)
+    - cta_url (optional)
+    - cta_label (optional)
+    - cta_class (optional, default: "btn btn-primary")
+    - cta_attrs (optional; extra attributes for CTA link)
+    - colspan (optional; renders a <tr><td colspan=...>)
+    - as_list_item (optional; renders a <li>)
+    - compact (optional; reduces padding for tighter contexts)
+-#}
+
+{% with btn_class=cta_class|default:"btn btn-primary" %}
+    {% if colspan %}
+        <tr>
+            <td colspan="{{ colspan }}">
+                <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
+                    <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 4h16v12H4z"></path>
+                        <path d="M22 20H2"></path>
+                        <path d="M8 8h8"></path>
+                        <path d="M8 12h5"></path>
+                    </svg>
+                    <div class="empty-state-title">{{ title }}</div>
+                    {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
+                    {% if cta_url and cta_label %}
+                        <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    {% elif as_list_item %}
+        <li class="list-group-item">
+            <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
+                <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 4h16v12H4z"></path>
+                    <path d="M22 20H2"></path>
+                    <path d="M8 8h8"></path>
+                    <path d="M8 12h5"></path>
+                </svg>
+                <div class="empty-state-title">{{ title }}</div>
+                {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
+                {% if cta_url and cta_label %}
+                    <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
+                {% endif %}
+            </div>
+        </li>
+    {% else %}
+        <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
+            <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16v12H4z"></path>
+                <path d="M22 20H2"></path>
+                <path d="M8 8h8"></path>
+                <path d="M8 12h5"></path>
+            </svg>
+            <div class="empty-state-title">{{ title }}</div>
+            {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
+            {% if cta_url and cta_label %}
+                <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endwith %}

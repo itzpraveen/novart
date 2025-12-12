@@ -59,9 +59,10 @@
                     {% csrf_token %}
                     {% for field in form %}
                         <div class="col-md-6">
-                            <label class="form-label text-muted small">{{ field.label }}</label>
+                            <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endfor %}
                     <div class="col-12">

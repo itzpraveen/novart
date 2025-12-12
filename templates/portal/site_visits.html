@@ -1,25 +1,26 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
+{% url 'site_visit_create' as site_visit_create_url %}
 <div class="page-header page-header-sticky">
-    <h2 class="mb-0">Site Visits</h2>
-    <div class="actions">
-        <a class="btn btn-primary" href="{% url 'site_visit_create' %}">Log Visit</a>
-    </div>
+	    <h2 class="mb-0">Site Visits</h2>
+	    <div class="actions">
+	        <a class="btn btn-primary" href="{% url 'site_visit_create' %}">Log Visit</a>
+	    </div>
 </div>
 <button class="btn btn-outline-secondary w-100 d-lg-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#visitFilters" aria-expanded="false" aria-controls="visitFilters">
     Filters
 </button>
 <div class="card shadow-sm mb-3 collapse show d-lg-block" id="visitFilters">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            {% for field in filter.form %}
-                <div class="col-12 col-md-4 col-lg-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
-                </div>
-            {% endfor %}
-            <div class="col-12 col-md-3 d-flex align-items-end">
+	        <form method="get" class="row g-3">
+	            {% for field in filter.form %}
+	                <div class="col-12 col-md-4 col-lg-3">
+	                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+	                    {{ field|add_class:"form-control" }}
+	                </div>
+	            {% endfor %}
+	            <div class="col-12 col-md-3 d-flex align-items-end">
                 <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
             </div>
         </form>
@@ -39,20 +40,20 @@
             </tr>
             </thead>
             <tbody>
-            {% for visit in filter.qs %}
-                <tr>
-                    <td data-label="Date">{{ visit.visit_date|date:"d M Y" }}</td>
-                    <td data-label="Project">{{ visit.project.name }}</td>
-                    <td data-label="Visited By">{{ visit.visited_by }}</td>
-                    <td data-label="Notes">{{ visit.notes|truncatewords:10 }}</td>
-                    <td data-label="Expenses">{{ visit.expenses|rupee }}</td>
-                    <td data-label="Actions"><a href="{% url 'site_visit_detail' visit.pk %}">View</a></td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="6" class="text-center">No visits logged.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+	            {% for visit in filter.qs %}
+	                <tr>
+	                    <td data-label="Date">{{ visit.visit_date|date:"d M Y" }}</td>
+	                    <td data-label="Project">{{ visit.project.name }}</td>
+	                    <td data-label="Visited By">{{ visit.visited_by }}</td>
+	                    <td data-label="Notes">{{ visit.notes|truncatewords:10 }}</td>
+	                    <td data-label="Expenses">{{ visit.expenses|rupee }}</td>
+	                    <td data-label="Actions"><a href="{% url 'site_visit_detail' visit.pk %}">View</a></td>
+	                </tr>
+	            {% empty %}
+	                {% include "includes/empty_state.html" with colspan=6 title="No site visits yet" description="Log your first visit to capture progress, notes, and expenses." cta_url=site_visit_create_url cta_label="Log Visit" compact=True %}
+	            {% endfor %}
+	            </tbody>
+	        </table>
+	    </div>
+	</div>
 {% endblock %}

@@ -25,40 +25,54 @@
         <div class="card shadow-sm mb-3">
             <div class="card-header bg-white fw-semibold">Task brief</div>
             <div class="card-body">
-                {% if task.description %}
-                    <div class="mb-3">
-                        <div class="text-muted small mb-1">Description</div>
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Description</div>
+                    {% if task.description %}
                         <div style="white-space: pre-wrap;">{{ task.description }}</div>
-                    </div>
-                {% endif %}
-                {% if task.objective %}
-                    <div class="mb-3">
-                        <div class="text-muted small mb-1">Objective</div>
+                    {% else %}
+                        <div class="text-muted">No description added yet.</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Objective</div>
+                    {% if task.objective %}
                         <div style="white-space: pre-wrap;">{{ task.objective }}</div>
-                    </div>
-                {% endif %}
+                    {% else %}
+                        <div class="text-muted">No objective added yet.</div>
+                    {% endif %}
+                </div>
                 <div class="mb-3">
                     <div class="text-muted small mb-1">Expected output</div>
-                    <div style="white-space: pre-wrap;">{{ task.expected_output }}</div>
+                    {% if task.expected_output %}
+                        <div style="white-space: pre-wrap;">{{ task.expected_output }}</div>
+                    {% else %}
+                        <div class="text-muted">No expected output defined yet.</div>
+                    {% endif %}
                 </div>
-                {% if task.deliverables %}
-                    <div class="mb-3">
-                        <div class="text-muted small mb-1">Deliverables / checklist</div>
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Deliverables / checklist</div>
+                    {% if task.deliverables %}
                         <div style="white-space: pre-wrap;">{{ task.deliverables }}</div>
-                    </div>
-                {% endif %}
-                {% if task.references %}
-                    <div class="mb-3">
-                        <div class="text-muted small mb-1">References / links</div>
+                    {% else %}
+                        <div class="text-muted">No deliverables added yet.</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">References / links</div>
+                    {% if task.references %}
                         <div style="white-space: pre-wrap;">{{ task.references }}</div>
-                    </div>
-                {% endif %}
-                {% if task.constraints %}
-                    <div class="mb-0">
-                        <div class="text-muted small mb-1">Constraints</div>
+                    {% else %}
+                        <div class="text-muted">No references added yet.</div>
+                    {% endif %}
+                </div>
+                <div class="mb-0">
+                    <div class="text-muted small mb-1">Constraints</div>
+                    {% if task.constraints %}
                         <div style="white-space: pre-wrap;">{{ task.constraints }}</div>
-                    </div>
-                {% endif %}
+                    {% else %}
+                        <div class="text-muted">No constraints added yet.</div>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -90,12 +104,12 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-2">
-                        <label class="form-label">{{ form.body.label }}</label>
+                        <label class="form-label" for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
                         {{ form.body|add_class:"form-control" }}
                         {% for error in form.body.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Attachments</label>
+                        <label class="form-label" for="{{ form.attachments.id_for_label }}">Attachments</label>
                         {{ form.attachments|add_class:"form-control" }}
                         {% for error in form.attachments.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         <div class="form-text">{{ form.attachments.help_text }}</div>
@@ -130,4 +144,3 @@
     </div>
 </div>
 {% endblock %}
-

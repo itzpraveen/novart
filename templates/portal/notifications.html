@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Notifications</h2>
+{% url 'reminder_settings' as reminder_settings_url %}
+<div class="page-header">
+    <h2 class="mb-0">Notifications</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{{ reminder_settings_url }}">Reminder settings</a>
+    </div>
+</div>
 <div class="card shadow-sm">
     <ul class="list-group list-group-flush">
         {% for notification in notifications %}
@@ -13,7 +19,7 @@
                 </div>
             </li>
         {% empty %}
-            <li class="list-group-item">Nothing to show.</li>
+            {% include "includes/empty_state.html" with as_list_item=True title="You’re all caught up" description="Notifications appear when tasks, invoices, or reminders need your attention." cta_url=reminder_settings_url cta_label="Configure reminders" compact=True %}
         {% endfor %}
     </ul>
 </div>

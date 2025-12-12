@@ -33,7 +33,7 @@
             {% csrf_token %}
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Username</label>
+                <label class="form-label fw-semibold" for="{{ form.username.id_for_label }}">Username</label>
                 {{ form.username|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:Username"|attr:"autocomplete:username" }}
                 {% if form.username.errors %}
                 <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
@@ -41,8 +41,12 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label fw-semibold">Password</label>
-                {{ form.password|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:Password"|attr:"autocomplete:current-password" }}
+                <label class="form-label fw-semibold" for="{{ form.password.id_for_label }}">Password</label>
+                <div class="input-group input-group-lg">
+                    {{ form.password|add_class:"form-control input-flat"|attr:"placeholder:Password"|attr:"autocomplete:current-password" }}
+                    <button type="button" class="btn btn-outline-secondary" id="togglePassword" aria-label="Show password" aria-pressed="false">Show</button>
+                </div>
+                <div id="capsLockHint" class="form-text text-warning d-none">Caps Lock is on.</div>
                 {% if form.password.errors %}
                 <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
                 {% endif %}
@@ -58,4 +62,35 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+    const toggleBtn = document.getElementById('togglePassword');
+    const capsHint = document.getElementById('capsLockHint');
+
+    if (!passwordInput || !toggleBtn) return;
+
+    const updateCapsLock = (e) => {
+        if (!capsHint || !e?.getModifierState) return;
+        const on = e.getModifierState('CapsLock');
+        capsHint.classList.toggle('d-none', !on);
+    };
+
+    passwordInput.addEventListener('keydown', updateCapsLock);
+    passwordInput.addEventListener('keyup', updateCapsLock);
+    passwordInput.addEventListener('focus', updateCapsLock);
+    passwordInput.addEventListener('blur', () => {
+        if (capsHint) capsHint.classList.add('d-none');
+    });
+
+    toggleBtn.addEventListener('click', () => {
+        const show = passwordInput.type === 'password';
+        passwordInput.type = show ? 'text' : 'password';
+        toggleBtn.textContent = show ? 'Hide' : 'Show';
+        toggleBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        passwordInput.focus();
+    });
+});
+</script>
 {% endblock %}

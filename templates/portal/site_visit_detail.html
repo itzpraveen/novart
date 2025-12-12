@@ -18,25 +18,26 @@
                 {% for attachment in attachments %}
                     <li class="list-group-item d-flex justify-content-between">
                         <span>{{ attachment.caption|default:attachment.file.name }}</span>
-                        {% if attachment.file %}<a href="{{ attachment.file.url }}" target="_blank">Open</a>{% endif %}
+                        {% if attachment.file %}<a href="{{ attachment.file.url }}" target="_blank" rel="noopener">Open</a>{% endif %}
                     </li>
                 {% empty %}
-                    <li class="list-group-item">No attachments.</li>
+                    {% include "includes/empty_state.html" with as_list_item=True title="No attachments yet" description="Add photos or files from this visit for quick reference." cta_url="#addAttachment" cta_label="Add attachment" compact=True %}
                 {% endfor %}
             </ul>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">Add attachment</div>
+        <div class="card shadow-sm" id="addAttachment">
+            <div class="card-header bg-white fw-semibold">Add attachment</div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% for field in attachment_form %}
                         <div class="mb-3">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endfor %}
                     <button class="btn btn-primary">Upload</button>

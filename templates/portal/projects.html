@@ -36,7 +36,7 @@
             <div class="filter-dropdown">
                 {% for field in filter.form %}
                     <div class="filter-field">
-                        <label class="form-label text-muted small mb-1">{{ field.label }}</label>
+                        <label class="form-label text-muted small mb-1" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field|add_class:"form-select form-select-sm" }}
                     </div>
                 {% endfor %}

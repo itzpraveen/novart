@@ -178,6 +178,20 @@
     color: var(--text-light);
 }
 
+[data-theme="dark"] .table {
+    /* Prevent Bootstrap tables from defaulting to white cell backgrounds in dark mode */
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-color);
+}
+
+[data-theme="dark"] .table-light {
+    /* If used, keep "light" table variants readable in dark mode */
+    --bs-table-bg: rgba(30, 41, 59, 0.75);
+    --bs-table-color: var(--text-muted);
+    --bs-table-border-color: var(--border-color);
+}
+
 [data-theme="dark"] .table thead th {
     background: rgba(30, 41, 59, 0.8);
     color: var(--text-muted);
@@ -2308,6 +2322,13 @@ button:focus-visible,
     position: relative;
 }
 
+.bottom-nav-more-toggle {
+    background: none;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
 .bottom-nav-menu {
     display: none;
     position: absolute;
@@ -2358,12 +2379,13 @@ button:focus-visible,
 
     /* Add padding to body to prevent content from being hidden behind bottom nav */
     body {
-        padding-bottom: var(--bottom-nav-height);
+        /* bottom-nav has height + vertical padding (1rem total) */
+        padding-bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
     }
 
     /* Adjust sticky form actions to sit above bottom nav */
     .form-actions-sticky {
-        bottom: var(--bottom-nav-height);
+        bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

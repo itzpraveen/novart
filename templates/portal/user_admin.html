@@ -22,8 +22,16 @@
                     <div class="row g-3">
                         {% for field in form %}
                         <div class="col-md-12">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field|add_class:"form-control" }}
+                            {% if field.field.widget.input_type == "checkbox" %}
+                                <div class="form-check form-switch">
+                                    {{ field|add_class:"form-check-input" }}
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                </div>
+                            {% else %}
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field|add_class:"form-control" }}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            {% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
                         {% endfor %}
@@ -107,32 +115,43 @@
         <small class="text-muted">Toggle modules per role (applies to all users in that role)</small>
     </div>
     <div class="card-body">
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+            <input id="rolePermSearch" type="search" class="form-control" style="max-width: 320px;" placeholder="Search roles/modules…" aria-label="Search roles and modules">
+            <button id="rolePermSearchClear" type="button" class="btn btn-outline-secondary btn-sm">Clear</button>
+        </div>
         <div class="row g-3">
             {% for role, perm_form in role_forms.items %}
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4 role-perm-card">
                     <div class="border rounded p-3 h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <div class="fw-semibold">{{ perm_form.instance.get_role_display }}</div>
+                                <div class="fw-semibold role-perm-role">{{ perm_form.instance.get_role_display }}</div>
                                 <div class="text-muted small">{{ perm_form.fields|length }} modules</div>
                             </div>
-                            {% if perm_form.instance.role == 'admin' %}
-                                <span class="badge bg-primary">All access</span>
-                            {% endif %}
-                        </div>
-                        <form method="post" class="role-perm-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="perm_role" value="{{ perm_form.instance.role }}">
-                            <div class="d-grid gap-2">
-                                {% for field in perm_form %}
-                                    <label class="form-check form-switch d-flex justify-content-between align-items-center">
-                                        <span class="text-muted small">{{ field.label }}</span>
-                                        {{ field }}
-                                    </label>
-                                {% endfor %}
+                            <div class="d-flex align-items-center gap-2">
+                                {% if perm_form.instance.role == 'admin' %}
+                                    <span class="badge bg-primary">All access</span>
+                                {% endif %}
+                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#rolePerms-{{ perm_form.instance.role }}" aria-expanded="{% if perm_form.errors %}true{% else %}false{% endif %}" aria-controls="rolePerms-{{ perm_form.instance.role }}">
+                                    Edit
+                                </button>
                             </div>
-                            <button class="btn btn-outline-secondary btn-sm w-100 mt-3">Save</button>
-                        </form>
+                        </div>
+                        <div class="collapse role-perm-collapse{% if perm_form.errors %} show{% endif %}" id="rolePerms-{{ perm_form.instance.role }}">
+                            <form method="post" class="role-perm-form mt-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="perm_role" value="{{ perm_form.instance.role }}">
+                                <div class="d-grid gap-2">
+                                    {% for field in perm_form %}
+                                        <label class="form-check form-switch d-flex justify-content-between align-items-center role-module-row">
+                                            <span class="text-muted small role-module-label">{{ field.label }}</span>
+                                            {{ field }}
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                                <button class="btn btn-outline-secondary btn-sm w-100 mt-3">Save</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
@@ -148,4 +167,54 @@
         <li>Need per-user overrides? Tell me and I’ll add a user-specific toggle row.</li>
     </ul>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('rolePermSearch');
+    const clearBtn = document.getElementById('rolePermSearchClear');
+    const cards = Array.from(document.querySelectorAll('.role-perm-card'));
+    if (!input || !cards.length) return;
+
+    const applyFilter = () => {
+        const q = (input.value || '').trim().toLowerCase();
+        cards.forEach(card => {
+            const roleEl = card.querySelector('.role-perm-role');
+            const roleText = (roleEl?.textContent || '').toLowerCase();
+            const roleMatch = !!q && roleText.includes(q);
+
+            const rows = Array.from(card.querySelectorAll('.role-module-row'));
+            let anyRowVisible = false;
+            rows.forEach(row => {
+                const label = (row.querySelector('.role-module-label')?.textContent || '').toLowerCase();
+                const match = !q || roleMatch || label.includes(q);
+                row.classList.toggle('d-none', !match);
+                if (match) anyRowVisible = true;
+            });
+
+            const showCard = !q || roleMatch || anyRowVisible;
+            card.classList.toggle('d-none', !showCard);
+
+            if (q && showCard) {
+                const collapseEl = card.querySelector('.role-perm-collapse');
+                if (collapseEl && window.bootstrap?.Collapse) {
+                    const inst = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                    inst.show();
+                } else if (collapseEl) {
+                    collapseEl.classList.add('show');
+                }
+            }
+        });
+    };
+
+    input.addEventListener('input', applyFilter);
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            applyFilter();
+            input.focus();
+        });
+    }
+    applyFilter();
+});
+</script>
 {% endblock %}

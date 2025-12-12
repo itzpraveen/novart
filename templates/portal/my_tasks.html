@@ -7,7 +7,7 @@
         <form method="get" class="row g-3">
             {% for field in filter.form %}
                 <div class="col-md-3">
-                    <label class="form-label">{{ field.label }}</label>
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field|add_class:"form-control" }}
                 </div>
             {% endfor %}
@@ -37,11 +37,11 @@
                     <td>{{ task.project.name }}</td>
                     <td><span class="badge bg-info">{{ task.get_status_display }}</span></td>
                     <td>{{ task.get_priority_display }}</td>
-                    <td>{{ task.due_date|date:"d M Y" }}</td>
+                    <td>{{ task.due_date|date:"d M Y"|default:"—" }}</td>
                     <td><a href="{% url 'project_tasks' task.project.pk %}">Open</a></td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6" class="text-center">Nothing assigned!</td></tr>
+                {% include "includes/empty_state.html" with colspan=6 title="No tasks assigned" description="When you’re assigned tasks, they’ll show up here." compact=True %}
             {% endfor %}
             </tbody>
         </table>

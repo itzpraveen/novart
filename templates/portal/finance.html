@@ -37,7 +37,8 @@
 <div class="card shadow-sm mb-3">
     <div class="card-header bg-white fw-semibold">Monthly Cashflow</div>
     <div class="card-body">
-        <canvas id="financeChart" height="120"></canvas>
+        <div id="financeChartEmpty" class="text-muted small text-center py-4">No cashflow data yet.</div>
+        <canvas id="financeChart" height="120" class="d-none"></canvas>
     </div>
 </div>
 <div class="card shadow-sm">
@@ -73,9 +74,23 @@
 <script>
 (() => {
     const payload = {{ chart_data|safe }};
-    const ctx = document.getElementById('financeChart');
-    if (!ctx || !payload || !payload.labels) return;
-    new Chart(ctx, {
+    const canvas = document.getElementById('financeChart');
+    const empty = document.getElementById('financeChartEmpty');
+    if (!canvas) return;
+
+    const hasLabels = payload && Array.isArray(payload.labels) && payload.labels.length;
+    if (!hasLabels) {
+        if (empty) empty.classList.remove('d-none');
+        canvas.classList.add('d-none');
+        return;
+    }
+    if (empty) empty.classList.add('d-none');
+    canvas.classList.remove('d-none');
+
+    const fmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+    const fmtRupee = (value) => '₹' + fmt.format(Number(value) || 0);
+
+    new Chart(canvas, {
         type: 'line',
         data: {
             labels: payload.labels,
@@ -109,8 +124,21 @@
         options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.dataset.label}: ${fmtRupee(ctx.parsed.y)}`,
+                    },
+                },
+            },
             scales: {
-                y: { beginAtZero: true },
+                x: { title: { display: true, text: 'Month' } },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '₹' },
+                    ticks: { callback: (v) => fmtRupee(v) },
+                },
             },
         },
     });

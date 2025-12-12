@@ -44,6 +44,12 @@ class DateInput(forms.DateInput):
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
+    def __init__(self, *args, **kwargs):
+        attrs = kwargs.setdefault('attrs', {})
+        existing = attrs.get('class', '')
+        attrs['class'] = (existing + ' form-control').strip()
+        super().__init__(*args, **kwargs)
+
 
 class MultipleFileField(forms.FileField):
     widget = MultipleFileInput
@@ -299,8 +305,16 @@ class TaskCommentForm(forms.ModelForm):
 
 
 class UserForm(forms.ModelForm):
-    password1 = forms.CharField(label='Password', widget=forms.PasswordInput, required=False)
-    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput, required=False)
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        required=False,
+    )
+    password2 = forms.CharField(
+        label='Confirm password',
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+        required=False,
+    )
 
     class Meta:
         model = User
@@ -308,6 +322,11 @@ class UserForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.setdefault('autocomplete', 'username')
+        self.fields['first_name'].widget.attrs.setdefault('autocomplete', 'given-name')
+        self.fields['last_name'].widget.attrs.setdefault('autocomplete', 'family-name')
+        self.fields['email'].widget.attrs.setdefault('autocomplete', 'email')
+        self.fields['phone'].widget.attrs.setdefault('autocomplete', 'tel')
         if not self.instance.pk:
             self.fields['password1'].required = True
             self.fields['password2'].required = True

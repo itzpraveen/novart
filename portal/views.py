@@ -536,8 +536,23 @@ def client_edit(request, pk):
 def lead_list(request):
     leads = Lead.objects.select_related('client').annotate(project_count=Count('projects')).order_by('-created_at')
     status = request.GET.get('status')
+    view = request.GET.get('view') or 'table'
+    if view not in {'table', 'pipeline'}:
+        view = 'table'
     if status:
         leads = leads.filter(status=status)
+
+    if view == 'pipeline':
+        columns = {value: [] for value, _ in Lead.Status.choices}
+        for lead in leads:
+            columns.setdefault(lead.status, []).append(lead)
+        return render(request, 'portal/leads.html', {
+            'leads': leads,
+            'columns': columns,
+            'statuses': Lead.Status.choices,
+            'selected_status': status,
+            'view': view,
+        })
 
     # Pagination
     paginator = Paginator(leads, ITEMS_PER_PAGE)
@@ -549,6 +564,7 @@ def lead_list(request):
         'page_obj': page_obj,
         'statuses': Lead.Status.choices,
         'selected_status': status,
+        'view': view,
     })
 
 
@@ -1914,11 +1930,24 @@ def notification_mark_read(request, pk):
 @login_required
 @module_required('team')
 def team_list(request):
+    today = timezone.localdate()
+    due_soon = today + timedelta(days=7)
+    open_statuses = [Task.Status.TODO, Task.Status.IN_PROGRESS]
     team = (
         User.objects.order_by('role', 'first_name', 'last_name')
         .annotate(
             open_tasks_count=Count(
-                'tasks', filter=Q(tasks__status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]), distinct=True
+                'tasks', filter=Q(tasks__status__in=open_statuses), distinct=True
+            ),
+            overdue_tasks_count=Count(
+                'tasks',
+                filter=Q(tasks__status__in=open_statuses, tasks__due_date__lt=today),
+                distinct=True,
+            ),
+            due_soon_tasks_count=Count(
+                'tasks',
+                filter=Q(tasks__status__in=open_statuses, tasks__due_date__gte=today, tasks__due_date__lte=due_soon),
+                distinct=True,
             ),
             managed_projects_count=Count('managed_projects', distinct=True),
             visits_count=Count('site_visits', distinct=True),

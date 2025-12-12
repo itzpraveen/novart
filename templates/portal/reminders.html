@@ -17,11 +17,12 @@
                                         {% if field.field.widget.input_type == 'checkbox' %}
                                             <div class="form-check form-switch">
                                                 {{ field }}
-                                                <label class="form-check-label">{{ field.label }}</label>
+                                                <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             </div>
                                         {% else %}
-                                            <label class="form-label">{{ field.label }}</label>
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             {{ field|add_class:"form-control" }}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                                         {% endif %}
                                     </div>
                                 {% endfor %}
@@ -31,7 +32,9 @@
                     </div>
                 </div>
             {% empty %}
-                <p>No reminder rules configured yet.</p>
+                <div class="col-12">
+                    {% include "includes/empty_state.html" with title="No reminder rules yet" description="Create a rule to automatically notify the right people at the right time." compact=True %}
+                </div>
             {% endfor %}
         </div>
     </div>
@@ -46,11 +49,12 @@
                             {% if field.field.widget.input_type == 'checkbox' %}
                                 <div class="form-check form-switch">
                                     {{ field }}
-                                    <label class="form-check-label">{{ field.label }}</label>
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                 </div>
                             {% else %}
-                                <label class="form-label">{{ field.label }}</label>
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                 {{ field|add_class:"form-control" }}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% endif %}
                         </div>
                     {% endfor %}

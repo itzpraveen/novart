@@ -6,14 +6,20 @@
         <p class="text-muted mb-1">{{ project.code }}</p>
         <h2 class="mb-0">{{ project.name }} · Tasks</h2>
     </div>
-    <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back</a>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back</a>
+        {% if can_manage_tasks %}
+            <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#addTaskOffcanvas" role="button" aria-controls="addTaskOffcanvas">Add Task</a>
+            <a class="btn btn-primary d-none d-md-inline-block" href="#addTaskOffcanvas">Add Task</a>
+        {% endif %}
+    </div>
 </div>
 <div class="card shadow-sm mb-3">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Assignee</label>
-                <select class="form-select" name="assigned_to">
+                <label class="form-label" for="assignedToFilter">Assignee</label>
+                <select class="form-select" name="assigned_to" id="assignedToFilter">
                     <option value="">All</option>
                     <option value="unassigned" {% if assigned_to_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
                     {% for user in assignees %}
@@ -22,8 +28,8 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Priority</label>
-                <select class="form-select" name="priority">
+                <label class="form-label" for="priorityFilter">Priority</label>
+                <select class="form-select" name="priority" id="priorityFilter">
                     <option value="">All</option>
                     {% for code,label in priority_choices %}
                         <option value="{{ code }}" {% if priority_filter == code %}selected{% endif %}>{{ label }}</option>
@@ -150,17 +156,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {% if can_manage_tasks %}
-    <div class="card shadow-sm mt-4">
-        <div class="card-body">
-            <h5 class="mb-3">Add Task</h5>
+    <div class="offcanvas-md offcanvas-end offcanvas-glow mt-md-4" tabindex="-1" id="addTaskOffcanvas" aria-labelledby="addTaskOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 100%;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="addTaskOffcanvasLabel">Add Task</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
             <form method="post">
                 {% csrf_token %}
                 <div class="row g-3">
                     {% for field in form %}
                         <div class="col-md-4">
-                            <label class="form-label">{{ field.label }}</label>
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endfor %}
                 </div>

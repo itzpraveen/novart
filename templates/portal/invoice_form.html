@@ -25,19 +25,19 @@
                         </div>
                         <span class="badge bg-primary-subtle text-primary">Required</span>
                     </div>
-                    <p class="text-muted small mb-3">Link this invoice to a project or lead (including Lost leads) for proper billing attribution.</p>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small">Project</label>
-                            {{ form.project|add_class:"form-select" }}
-                            {% for error in form.project.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small">Or Lead</label>
-                            {{ form.lead|add_class:"form-select" }}
-                            {% for error in form.lead.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                    </div>
+	                    <p class="text-muted small mb-3">Link this invoice to a project or lead (including Lost leads) for proper billing attribution.</p>
+	                    <div class="row g-3">
+	                        <div class="col-md-6">
+	                            <label class="form-label text-muted small" for="{{ form.project.id_for_label }}">Project</label>
+	                            {{ form.project|add_class:"form-select" }}
+	                            {% for error in form.project.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                        <div class="col-md-6">
+	                            <label class="form-label text-muted small" for="{{ form.lead.id_for_label }}">Or Lead</label>
+	                            {{ form.lead|add_class:"form-select" }}
+	                            {% for error in form.lead.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                    </div>
                 </div>
             </div>
 
@@ -59,28 +59,28 @@
                                 <div class="form-control bg-light text-muted">Auto-generated on save</div>
                                 <div class="form-text">Format: NVRT/&lt;project&gt;/&lt;bill&gt;</div>
                             {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small">Invoice Date</label>
-                            {{ form.invoice_date|add_class:"form-control" }}
-                            {% for error in form.invoice_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small">Due Date</label>
-                            {{ form.due_date|add_class:"form-control" }}
-                            {% for error in form.due_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small">Status</label>
-                            {{ form.status|add_class:"form-select" }}
-                            {% for error in form.status.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label text-muted small">Description</label>
-                            {{ form.description|add_class:"form-control" }}
-                            {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        </div>
-                    </div>
+	                        </div>
+	                        <div class="col-md-4">
+	                            <label class="form-label text-muted small" for="{{ form.invoice_date.id_for_label }}">Invoice Date</label>
+	                            {{ form.invoice_date|add_class:"form-control" }}
+	                            {% for error in form.invoice_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                        <div class="col-md-4">
+	                            <label class="form-label text-muted small" for="{{ form.due_date.id_for_label }}">Due Date</label>
+	                            {{ form.due_date|add_class:"form-control" }}
+	                            {% for error in form.due_date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                        <div class="col-md-4">
+	                            <label class="form-label text-muted small" for="{{ form.status.id_for_label }}">Status</label>
+	                            {{ form.status|add_class:"form-select" }}
+	                            {% for error in form.status.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                        <div class="col-12">
+	                            <label class="form-label text-muted small" for="{{ form.description.id_for_label }}">Description</label>
+	                            {{ form.description|add_class:"form-control" }}
+	                            {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        </div>
+	                    </div>
                 </div>
             </div>
 
@@ -142,24 +142,24 @@
         <!-- Sidebar Summary -->
         <div class="col-lg-4">
             <div class="card position-sticky" style="top: 88px;">
-                <div class="card-body">
-                    <div class="eyebrow mb-2">Invoice Summary</div>
-                    <div class="mb-4">
-                        <label class="form-label text-muted small">Base Amount</label>
-                        {{ form.amount|add_class:"form-control" }}
-                        {% for error in form.amount.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        <div class="form-text">Used if no line items are specified</div>
-                    </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-6">
-                            <label class="form-label text-muted small">Discount %</label>
-                            {{ form.discount_percent|add_class:"form-control" }}
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted small">Tax %</label>
-                            {{ form.tax_percent|add_class:"form-control" }}
-                        </div>
-                    </div>
+	                <div class="card-body">
+	                    <div class="eyebrow mb-2">Invoice Summary</div>
+	                    <div class="mb-4">
+	                        <label class="form-label text-muted small" for="{{ form.amount.id_for_label }}">Base Amount</label>
+	                        {{ form.amount|add_class:"form-control" }}
+	                        {% for error in form.amount.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+	                        <div class="form-text">Used if no line items are specified</div>
+	                    </div>
+	                    <div class="row g-3 mb-4">
+	                        <div class="col-6">
+	                            <label class="form-label text-muted small" for="{{ form.discount_percent.id_for_label }}">Discount %</label>
+	                            {{ form.discount_percent|add_class:"form-control" }}
+	                        </div>
+	                        <div class="col-6">
+	                            <label class="form-label text-muted small" for="{{ form.tax_percent.id_for_label }}">Tax %</label>
+	                            {{ form.tax_percent|add_class:"form-control" }}
+	                        </div>
+	                    </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Line Items Subtotal</span>
