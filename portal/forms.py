@@ -254,6 +254,10 @@ class TaskForm(forms.ModelForm):
                 self.fields[field].widget.attrs.setdefault('placeholder', text)
         if 'watchers' in self.fields:
             self.fields['watchers'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
+            self.fields['watchers'].help_text = (
+                'Optional: people to notify about task updates. Hold Ctrl/Cmd to select multiple; deselect to remove.'
+            )
+            self.fields['watchers'].widget.attrs.setdefault('size', 6)
 
     def clean(self):
         cleaned = super().clean()

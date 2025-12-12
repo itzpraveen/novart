@@ -15,6 +15,7 @@
                     <div class="col-md-4">
                         <label class="form-label">{{ field.label }}</label>
                         {{ field|add_class:"form-control" }}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                         {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                     </div>
                 {% endfor %}
