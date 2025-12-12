@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="{% if request.resolver_match.url_name == 'login' %}light{% else %}light dark{% endif %}" />
     <title>Novart Architecture</title>
     <!-- Google Fonts - optimized weights -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,11 @@
     <!-- Theme initialization (prevents flash) -->
     <script>
         (function() {
+            const forceLight = {{ request.resolver_match.url_name == 'login'|yesno:'true,false' }};
+            if (forceLight) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                return;
+            }
             const stored = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             const theme = stored || (prefersDark ? 'dark' : 'light');
@@ -32,6 +37,7 @@
 <body>
     <!-- Skip to main content for accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
+    {% if request.resolver_match.url_name != 'login' %}
     <nav class="navbar navbar-expand-md sticky-top mb-4 app-nav nav-elevated">
         <div class="container nav-container">
             <div class="nav-header w-100">
@@ -256,7 +262,8 @@
         </div>
     </nav>
     {% block subnav %}{% endblock %}
-    <main id="main-content" class="container page-shell mb-5" role="main">
+    {% endif %}
+    <main id="main-content" class="{% if request.resolver_match.url_name == 'login' %}auth-shell{% else %}container page-shell mb-5{% endif %}" role="main">
         {% if messages %}
         <div class="messages-container d-none">
             {% for message in messages %}

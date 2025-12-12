@@ -2,82 +2,59 @@
 {% load static widget_tweaks %}
 
 {% block content %}
-<div class="auth-page">
-    <div class="auth-grid container">
-        <div class="auth-showcase">
-            <div class="auth-chip">Novart OS</div>
-            <h1 class="auth-headline">Run every project with clarity.</h1>
-            <p class="text-muted mb-4">Clients, finances, site visits, and tasks stay synced so your team can keep building.</p>
-            <ul class="auth-points">
-                <li>Project health and site visits in one place.</li>
-                <li>Invoices, receipts, and reminders stay coordinated.</li>
-                <li>Role-aware access for admins, leads, and teams.</li>
-            </ul>
+<div class="auth-page auth-page-minimal">
+    <div class="auth-card-minimal">
+        <div class="auth-brand">
+            <img class="auth-brand-logo" src="{% static 'img/novart.png' %}" alt="Novart Architects">
         </div>
 
-        <div class="auth-card-modern">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="auth-logo-mark">
-                        <img src="{% static 'img/novart.png' %}" alt="Novart logo">
-                    </div>
-                    <div>
-                        <div class="fw-semibold">Novart Workspace</div>
-                        <div class="text-muted small">Secure sign-in</div>
-                    </div>
-                </div>
-                <span class="auth-tag">Workspace access</span>
+        <div class="auth-header">
+            <h1 class="auth-title">Sign in</h1>
+            <p class="auth-subtitle">Use your workspace credentials to continue.</p>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="auth-alert mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate class="auth-form">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Username</label>
+                {{ form.username|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:Username"|attr:"autocomplete:username" }}
+                {% if form.username.errors %}
+                <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                {% endif %}
             </div>
 
             <div class="mb-4">
-                <h2 class="fw-semibold mb-1">Welcome back</h2>
-                <p class="text-muted mb-0">Use your credentials to continue.</p>
+                <label class="form-label fw-semibold">Password</label>
+                {{ form.password|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:Password"|attr:"autocomplete:current-password" }}
+                {% if form.password.errors %}
+                <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                {% endif %}
             </div>
 
-            {% if form.non_field_errors %}
-            <div class="auth-alert mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <div>
-                    {% for error in form.non_field_errors %}
-                    {{ error }}
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold">
+                Continue
+            </button>
+        </form>
 
-            <form method="post" novalidate class="auth-form">
-                {% csrf_token %}
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Username</label>
-                    {{ form.username|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:you@workspace.com"|attr:"autocomplete:username" }}
-                    {% if form.username.errors %}
-                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-semibold">Password</label>
-                    {{ form.password|add_class:"form-control form-control-lg input-flat"|attr:"placeholder:••••••••"|attr:"autocomplete:current-password" }}
-                    {% if form.password.errors %}
-                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold shadow-sm">
-                    Continue
-                </button>
-            </form>
-
-            <div class="auth-meta mt-4">
-                <span class="text-muted">Protected workspace access.</span>
-                <span class="text-muted">Need help? Reach out to your admin.</span>
-            </div>
+        <div class="auth-footer">
+            <span class="text-muted">Need help? Reach out to your admin.</span>
         </div>
     </div>
 </div>
