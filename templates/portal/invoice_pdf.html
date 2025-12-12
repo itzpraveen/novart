@@ -15,7 +15,23 @@
 	            src: url("file://{{ font_path }}");
 	        }
 	        {% endif %}
-	        @page { size: A4; margin: 26mm; }
+	        @page {
+	            size: A4;
+	            margin: 0;
+	            @frame content_frame {
+	                left: 26mm;
+	                top: 26mm;
+	                width: 158mm;
+	                height: 225mm;
+	            }
+	            @frame footer_frame {
+	                -pdf-frame-content: footer_content;
+	                left: 26mm;
+	                top: 251mm;
+	                width: 158mm;
+	                height: 20mm;
+	            }
+	        }
 	        body, table, th, td {
 	            font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif;
 	            color: #0f172a;
@@ -115,11 +131,7 @@
 	        .foot { width: 100%; border-collapse: collapse; }
 	        .thanks { font-size: 11px; font-weight: 800; }
 	        .generated { font-size: 10px; color: #64748b; text-align: right; }
-	        .footer-bottom {
-	            position: fixed;
-	            left: 26mm;
-	            right: 26mm;
-	            bottom: 10mm;
+	        #footer_content {
 	            text-align: center;
 	            color: #64748b;
 	            font-size: 9.5px;
@@ -309,18 +321,16 @@
 	            </table>
 	        </div>
 	    </div>
-	    {% if firm.address or firm.phone or firm.email or firm.tax_id %}
-	        <div class="footer-bottom">
-	            {% if firm.address %}<div style="white-space: pre-line;">{{ firm.address }}</div>{% endif %}
-	            {% if firm.tax_id %}<div>Tax ID: {{ firm.tax_id }}</div>{% endif %}
-	            {% if firm.phone or firm.email %}
-	                <div>
-	                    {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
-	                    {% if firm.phone and firm.email %} · {% endif %}
-	                    {% if firm.email %}{{ firm.email }}{% endif %}
-	                </div>
-	            {% endif %}
-	        </div>
-	    {% endif %}
+	    <div id="footer_content">
+	        {% if firm.address %}<div style="white-space: pre-line;">{{ firm.address }}</div>{% endif %}
+	        {% if firm.tax_id %}<div>Tax ID: {{ firm.tax_id }}</div>{% endif %}
+	        {% if firm.phone or firm.email %}
+	            <div>
+	                {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
+	                {% if firm.phone and firm.email %} · {% endif %}
+	                {% if firm.email %}{{ firm.email }}{% endif %}
+	            </div>
+	        {% endif %}
+	    </div>
 </body>
 </html>
