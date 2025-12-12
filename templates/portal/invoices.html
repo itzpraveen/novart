@@ -48,7 +48,7 @@
             <tbody>
             {% for invoice in invoices %}
                 <tr>
-                    <td class="fw-semibold" data-label="Invoice #">{{ invoice.invoice_number }}</td>
+                    <td class="fw-semibold" data-label="Invoice #">{{ invoice.display_invoice_number }}</td>
                     <td data-label="Project / Lead">
                         {% if invoice.project %}
                             <div>{{ invoice.project.code }} · {{ invoice.project.name }}</div>
@@ -66,7 +66,7 @@
                     <td data-label="Status"><span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %}">{{ invoice.get_status_display }}</span></td>
                     <td class="text-end" data-label="Actions">
                         <div class="action-dropdown">
-                            <button class="action-dropdown-toggle" aria-label="Actions for invoice {{ invoice.invoice_number }}" aria-haspopup="true" aria-expanded="false">
+                            <button class="action-dropdown-toggle" aria-label="Actions for invoice {{ invoice.display_invoice_number }}" aria-haspopup="true" aria-expanded="false">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <circle cx="12" cy="12" r="1"></circle>
                                     <circle cx="19" cy="12" r="1"></circle>
@@ -88,7 +88,7 @@
                                     Record payment
                                 </a>
                                 {% endif %}
-                                <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline w-100" onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}? This cannot be undone.');">
+                                <form method="post" action="{% url 'invoice_delete' invoice.pk %}" class="d-inline w-100" onsubmit="return confirm('Delete invoice {{ invoice.display_invoice_number }}? This cannot be undone.');">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger w-100 text-start">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>

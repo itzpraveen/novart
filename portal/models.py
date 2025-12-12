@@ -380,10 +380,12 @@ class Invoice(TimeStampedModel):
         ordering = ['-invoice_date']
 
     def __str__(self) -> str:
-        return f"Invoice {self.invoice_number}"
+        return f"Invoice {self.display_invoice_number}"
 
     def clean(self):
         super().clean()
+        if self.invoice_date and self.due_date and self.due_date < self.invoice_date:
+            raise ValidationError({'due_date': 'Due date cannot be earlier than the invoice date.'})
         if not self.project and not self.lead:
             raise ValidationError('Select a project or a lead to bill.')
 
@@ -408,12 +410,18 @@ class Invoice(TimeStampedModel):
         pattern = re.compile(rf'^{re.escape(prefix)}/[^/]+/(\d+)$')
         max_seq = 0
         for existing in Invoice.objects.values_list('invoice_number', flat=True):
-            m = pattern.match(existing or '')
+            existing_value = (existing or '').strip()
+            m = pattern.match(existing_value)
             if m:
-                try:
-                    max_seq = max(max_seq, int(m.group(1)))
-                except ValueError:
-                    continue
+                seq_str = m.group(1)
+            elif re.fullmatch(r'\d+', existing_value):
+                seq_str = existing_value
+            else:
+                continue
+            try:
+                max_seq = max(max_seq, int(seq_str))
+            except ValueError:
+                continue
 
         seq = max_seq + 1
         candidate = f"{prefix}/{project_part}/{seq}"
@@ -421,6 +429,31 @@ class Invoice(TimeStampedModel):
             seq += 1
             candidate = f"{prefix}/{project_part}/{seq}"
         return candidate
+
+    @property
+    def display_invoice_number(self) -> str:
+        """Human-friendly invoice number that follows firm scheme."""
+        raw = (self.invoice_number or '').strip()
+        if not raw:
+            return ''
+        if '/' in raw:
+            return raw
+        if not re.fullmatch(r'\d+', raw):
+            return raw
+
+        prefix = (os.environ.get('INVOICE_PREFIX') or 'NVRT').strip() or 'NVRT'
+        project_part = 'GEN'
+        if self.project and getattr(self.project, 'code', None):
+            code = str(self.project.code)
+            match = re.match(r'^(\d+)', code)
+            if match:
+                project_part = match.group(1)
+            else:
+                project_part = code.split('-')[0] or code
+        elif self.lead and self.lead.client_id:
+            project_part = str(self.lead.client_id)
+
+        return f"{prefix}/{project_part}/{raw}"
 
     def refresh_status(self, *, save: bool = True, today=None) -> str:
         """Update invoice.status based on due date and payments."""

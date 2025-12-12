@@ -1,7 +1,10 @@
 from decimal import Decimal
 
+from datetime import timedelta
+
 from django import forms
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from .models import (
     Client,
@@ -373,12 +376,18 @@ class SiteIssueAttachmentForm(forms.ModelForm):
 
 
 class InvoiceForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not getattr(self.instance, 'pk', None):
+            today = timezone.localdate()
+            self.initial.setdefault('invoice_date', today)
+            self.initial.setdefault('due_date', today + timedelta(days=7))
+
     class Meta:
         model = Invoice
         fields = [
             'project',
             'lead',
-            'invoice_number',
             'invoice_date',
             'due_date',
             'amount',

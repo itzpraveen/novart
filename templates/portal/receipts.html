@@ -47,7 +47,7 @@
                 <tr>
                     <td class="fw-semibold" data-label="Receipt #">{{ receipt.receipt_number }}</td>
                     <td data-label="Invoice">
-                        <div>{{ receipt.invoice.invoice_number }}</div>
+                        <div>{{ receipt.invoice.display_invoice_number }}</div>
                         <small class="text-muted">Status: {{ receipt.invoice.get_status_display }}</small>
                     </td>
                     <td data-label="Client / Project">

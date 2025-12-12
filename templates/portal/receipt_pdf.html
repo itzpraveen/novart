@@ -155,10 +155,10 @@
                             <td class="k">Payment Date</td>
                             <td class="v">{{ payment.payment_date|date:"d M Y" }}</td>
                         </tr>
-                        <tr>
-                            <td class="k">Invoice No</td>
-                            <td class="v">{{ invoice.invoice_number }}</td>
-                        </tr>
+	                        <tr>
+	                            <td class="k">Invoice No</td>
+	                            <td class="v">{{ invoice.display_invoice_number }}</td>
+	                        </tr>
                         <tr>
                             <td class="k">Method</td>
                             <td class="v">{{ payment.method|default:"—" }}</td>
@@ -200,7 +200,7 @@
                 </td>
                 <td class="right">
                     <div class="section-label">For</div>
-                    <div style="font-weight: 700;">Invoice {{ invoice.invoice_number }}</div>
+                    <div style="font-weight: 700;">Invoice {{ invoice.display_invoice_number }}</div>
                     <div class="muted">Dated {{ invoice.invoice_date|date:"d M Y" }}</div>
                     {% if project %}
                         <div class="muted">{{ project.code }}{% if project.name %} · {{ project.name }}{% endif %}</div>

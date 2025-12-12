@@ -282,14 +282,21 @@ def global_search(request):
             ).order_by('due_date')[:10]
 
         if perms.get('invoices') or perms.get('finance'):
-            invoices = Invoice.objects.select_related(
-                'project__client', 'lead__client'
-            ).filter(
+            invoice_filters = (
                 Q(invoice_number__icontains=q)
                 | Q(project__code__icontains=q)
                 | Q(project__name__icontains=q)
                 | Q(lead__title__icontains=q)
                 | Q(lead__client__name__icontains=q)
+            )
+            if '/' in q:
+                tail = q.split('/')[-1].strip()
+                if tail.isdigit():
+                    invoice_filters |= Q(invoice_number__icontains=tail)
+            invoices = Invoice.objects.select_related(
+                'project__client', 'lead__client'
+            ).filter(
+                invoice_filters
             ).order_by('-invoice_date')[:10]
 
     return render(
@@ -363,7 +370,7 @@ def export_invoices_csv(request):
     for invoice in invoices.order_by('-invoice_date'):
         client = invoice.project.client if invoice.project else (invoice.lead.client if invoice.lead else None)
         writer.writerow([
-            invoice.invoice_number,
+            invoice.display_invoice_number,
             invoice.project.code if invoice.project else '',
             invoice.lead.title if invoice.lead else '',
             client.name if client else '',
@@ -1392,7 +1399,9 @@ def invoice_pdf(request, invoice_pk):
         return redirect('invoice_list')
     pdf_file.seek(0)
     response = HttpResponse(pdf_file.read(), content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename=\"invoice-{invoice.invoice_number}.pdf\"'
+    display_number = invoice.display_invoice_number or invoice.invoice_number or str(invoice.pk)
+    safe_number = re.sub(r'[^A-Za-z0-9._-]+', '-', display_number).strip('-') or str(invoice.pk)
+    response['Content-Disposition'] = f'inline; filename=\"invoice-{safe_number}.pdf\"'
     return response
 
 
@@ -1540,11 +1549,18 @@ def receipt_list(request):
     receipts = Receipt.objects.select_related('payment', 'invoice', 'project', 'client').order_by('-receipt_date', '-created_at')
     q = request.GET.get('q')
     if q:
-        receipts = receipts.filter(
+        receipt_filters = (
             Q(receipt_number__icontains=q)
             | Q(invoice__invoice_number__icontains=q)
             | Q(client__name__icontains=q)
             | Q(project__code__icontains=q)
+        )
+        if '/' in q:
+            tail = q.split('/')[-1].strip()
+            if tail.isdigit():
+                receipt_filters |= Q(invoice__invoice_number__icontains=tail)
+        receipts = receipts.filter(
+            receipt_filters
         )
     total_amount = receipts.aggregate(total=Sum('payment__amount'))['total'] or Decimal('0')
     return render(
@@ -1582,8 +1598,8 @@ def receipt_create(request, payment_pk):
             client = receipt.client
             receipt_url = request.build_absolute_uri(reverse('receipt_pdf', args=[receipt.pk]))
             message_body = (
-                f"Payment received for invoice #{receipt.invoice.invoice_number}. "
-                f"Receipt #{receipt.receipt_number}: {receipt_url}"
+                f"Payment received for invoice {receipt.invoice.display_invoice_number}. "
+                f"Receipt {receipt.receipt_number}: {receipt_url}"
             )
             if client:
                 try:

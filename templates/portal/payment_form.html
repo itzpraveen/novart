@@ -5,7 +5,7 @@
     <div>
         <div class="eyebrow text-uppercase">Finance</div>
         <h2 class="mb-0">Record Payment</h2>
-        <div class="text-muted small">Invoice #{{ invoice.invoice_number }}</div>
+        <div class="text-muted small">Invoice {{ invoice.display_invoice_number }}</div>
     </div>
     <div class="actions">
         <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to invoices</a>
@@ -22,7 +22,7 @@
                 <table class="table table-sm mb-0">
                     <tr>
                         <td class="text-muted">Invoice</td>
-                        <td class="fw-semibold">#{{ invoice.invoice_number }}</td>
+                        <td class="fw-semibold">{{ invoice.display_invoice_number }}</td>
                     </tr>
                     <tr>
                         <td class="text-muted">Client</td>

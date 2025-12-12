@@ -4,7 +4,7 @@
 <div class="page-header">
     <div>
         <div class="eyebrow">Finance / Invoices</div>
-        <h2 class="mb-0">{% if invoice %}Edit Invoice · {{ invoice.invoice_number }}{% else %}New Invoice{% endif %}</h2>
+        <h2 class="mb-0">{% if invoice %}Edit Invoice · {{ invoice.display_invoice_number }}{% else %}New Invoice{% endif %}</h2>
         {% if invoice %}<span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %} mt-2">{{ invoice.get_status_display }}</span>{% endif %}
     </div>
     <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to Invoices</a>
@@ -53,8 +53,12 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label text-muted small">Invoice Number</label>
-                            {{ form.invoice_number|add_class:"form-control" }}
-                            {% for error in form.invoice_number.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if invoice %}
+                                <div class="form-control bg-light">{{ invoice.display_invoice_number }}</div>
+                            {% else %}
+                                <div class="form-control bg-light text-muted">Auto-generated on save</div>
+                                <div class="form-text">Format: NVRT/&lt;project&gt;/&lt;bill&gt;</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-muted small">Invoice Date</label>

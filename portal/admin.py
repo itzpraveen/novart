@@ -94,9 +94,13 @@ class InvoiceLineInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('invoice_number', 'project', 'invoice_date', 'status', 'total_display')
+    list_display = ('display_invoice_number', 'project', 'invoice_date', 'status', 'total_display')
     list_filter = ('status',)
     inlines = [InvoiceLineInline]
+
+    @admin.display(description='Invoice #')
+    def display_invoice_number(self, obj):
+        return obj.display_invoice_number
 
     @admin.display(description='Total (with tax)')
     def total_display(self, obj):
