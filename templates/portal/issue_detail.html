@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <a href="{% url 'project_detail' issue.project.pk %}" class="text-muted small d-block text-decoration-none">
+            {{ issue.project.code }} · {{ issue.project.name }}
+        </a>
+        <h2 class="mb-1">Issue · {{ issue.title }}</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-{% if issue.status == 'resolved' %}success{% elif issue.status == 'in_progress' %}warning{% else %}danger{% endif %}">
+                {{ issue.get_status_display }}
+            </span>
+            <span class="badge bg-light text-dark border">Raised {{ issue.raised_on|date:"d M Y" }}</span>
+            {% if issue.site_visit %}
+                <a class="badge bg-light text-dark border text-decoration-none" href="{% url 'site_visit_detail' issue.site_visit.pk %}">
+                    Visit {{ issue.site_visit.visit_date|date:"d M" }}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'issue_list' %}">Back</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Description</div>
+                <div style="white-space: pre-wrap;">{{ issue.description|default:"—" }}</div>
+                <div class="mt-3 small text-muted">Raised by {{ issue.raised_by|default:"—" }}</div>
+                {% if issue.resolved_on %}
+                    <div class="small text-muted">Resolved on {{ issue.resolved_on|date:"d M Y" }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Attachments</div>
+            <div class="list-group list-group-flush">
+                {% for attachment in attachments %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">{{ attachment.caption|default:attachment.file.name }}</div>
+                            <div class="small text-muted">{{ attachment.created_at|date:"d M Y" }}</div>
+                        </div>
+                        {% if attachment.file %}
+                            <a href="{{ attachment.file.url }}" target="_blank" rel="noopener">Open</a>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div class="list-group-item text-muted">No attachments.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Add attachment</div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in attachment_form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

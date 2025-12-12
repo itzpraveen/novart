@@ -33,7 +33,7 @@
                     <tbody>
                     {% for issue in filter.qs %}
                         <tr>
-                            <td>{{ issue.title }}</td>
+                            <td><a href="{% url 'issue_detail' issue.pk %}">{{ issue.title }}</a></td>
                             <td>{{ issue.project.name }}</td>
                             <td>{{ issue.get_status_display }}</td>
                             <td>{{ issue.raised_on|date:"d M Y" }}</td>
@@ -50,7 +50,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h5>Log issue</h5>
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% for field in form %}
                         <div class="mb-3">

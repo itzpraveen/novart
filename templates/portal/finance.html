@@ -34,6 +34,12 @@
         </div>
     </div>
 </div>
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">Monthly Cashflow</div>
+    <div class="card-body">
+        <canvas id="financeChart" height="120"></canvas>
+    </div>
+</div>
 <div class="card shadow-sm">
     <div class="table-responsive">
         <table class="table mb-0">
@@ -62,4 +68,52 @@
         </table>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(() => {
+    const payload = {{ chart_data|safe }};
+    const ctx = document.getElementById('financeChart');
+    if (!ctx || !payload || !payload.labels) return;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: payload.labels,
+            datasets: [
+                {
+                    label: 'Invoiced',
+                    data: payload.invoiced,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    tension: 0.25,
+                    fill: true,
+                },
+                {
+                    label: 'Received',
+                    data: payload.received,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    tension: 0.25,
+                    fill: true,
+                },
+                {
+                    label: 'Expenses',
+                    data: payload.expenses,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    tension: 0.25,
+                    fill: true,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { beginAtZero: true },
+            },
+        },
+    });
+})();
+</script>
 {% endblock %}

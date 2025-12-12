@@ -16,6 +16,7 @@ from .models import (
     ProjectStageHistory,
     ReminderSetting,
     SiteIssue,
+    SiteIssueAttachment,
     SiteVisit,
     SiteVisitAttachment,
     Task,
@@ -33,6 +34,21 @@ class DateInput(forms.DateInput):
         attrs.setdefault('type', 'date')  # ensure browsers render native picker
         attrs.setdefault('placeholder', 'YYYY-MM-DD')
         super().__init__(*args, **kwargs)
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+        if isinstance(data, (list, tuple)):
+            return [super().clean(d, initial) for d in data]
+        return [super().clean(data, initial)]
 
 
 class ClientForm(forms.ModelForm):
@@ -270,6 +286,11 @@ class UserForm(forms.ModelForm):
 
 
 class SiteVisitForm(forms.ModelForm):
+    attachments = MultipleFileField(
+        required=False,
+        help_text='Optional photos or files from the site visit.',
+    )
+
     class Meta:
         model = SiteVisit
         fields = ['project', 'visit_date', 'visited_by', 'notes', 'expenses', 'location']
@@ -283,6 +304,11 @@ class SiteVisitAttachmentForm(forms.ModelForm):
 
 
 class SiteIssueForm(forms.ModelForm):
+    attachments = MultipleFileField(
+        required=False,
+        help_text='Optional photos or files related to this issue.',
+    )
+
     class Meta:
         model = SiteIssue
         fields = ['project', 'site_visit', 'title', 'description', 'raised_on', 'raised_by', 'status', 'resolved_on']
@@ -291,6 +317,12 @@ class SiteIssueForm(forms.ModelForm):
             'resolved_on': DateInput(),
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+
+class SiteIssueAttachmentForm(forms.ModelForm):
+    class Meta:
+        model = SiteIssueAttachment
+        fields = ['file', 'caption']
 
 
 class InvoiceForm(forms.ModelForm):

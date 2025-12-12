@@ -4,6 +4,7 @@
 <div class="page-header page-header-sticky">
     <h2 class="mb-0">Invoices</h2>
     <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_invoices_csv' %}">Export CSV</a>
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_aging' %}">Aging report</a>
         {% if request.user.role == 'admin' or request.user.is_superuser %}
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'firm_profile' %}">Firm profile</a>

@@ -1393,6 +1393,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     transform: translateY(-1px);
 }
 
+.kanban-task.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+    transform: scale(0.98);
+}
+
+.kanban-overdue {
+    border-left: 4px solid #ef4444;
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.kanban-dropzone.dragover {
+    outline: 2px dashed var(--border-color-hover);
+    outline-offset: -6px;
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.nav-search-input {
+    width: 220px;
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    padding-left: 0.75rem;
+}
+
+.nav-search-input:focus {
+    background: var(--bg-elevated);
+}
+
 .panel-subtle {
     background: transparent;
     border: 1px solid #e2e8f0;

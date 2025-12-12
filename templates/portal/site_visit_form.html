@@ -4,15 +4,24 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <h3>{{ visit.project.name|default:"New site visit" }}</h3>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row g-3">
                 {% for field in form %}
-                    <div class="col-md-4">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                    </div>
+                    {% if field.name == 'attachments' %}
+                        <div class="col-12">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="col-md-4">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
             <div class="mt-3">

@@ -41,6 +41,9 @@
                 <div class="d-flex align-items-center gap-2">
                     {% if request.user.is_authenticated %}
                     <div class="nav-utility nav-utility-desktop d-none d-md-inline-flex">
+                        <form class="nav-search d-none d-md-flex me-2" method="get" action="{% url 'global_search' %}">
+                            <input type="search" name="q" class="form-control form-control-sm nav-search-input" placeholder="Search…" aria-label="Global search">
+                        </form>
                         <div class="dropdown">
                             <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 + New

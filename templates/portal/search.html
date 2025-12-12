@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky align-items-start">
+    <div>
+        <div class="eyebrow text-uppercase">Workspace</div>
+        <h2 class="mb-0">Search</h2>
+        {% if query %}
+            <div class="text-muted small">Results for "{{ query }}"</div>
+        {% else %}
+            <div class="text-muted small">Search across clients, leads, projects, tasks, and invoices.</div>
+        {% endif %}
+    </div>
+    <form class="searchbar" method="get">
+        <input type="search" name="q" value="{{ query }}" class="form-control" placeholder="Search anything…" aria-label="Global search">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+</div>
+
+{% if query %}
+    <div class="row g-3">
+        {% if clients %}
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-semibold">Clients</div>
+                <ul class="list-group list-group-flush">
+                    {% for client in clients %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="{% url 'client_edit' client.pk %}">{{ client.name }}</a>
+                            <span class="text-muted small">{{ client.phone|default:"" }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if leads %}
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-semibold">Leads</div>
+                <ul class="list-group list-group-flush">
+                    {% for lead in leads %}
+                        <li class="list-group-item">
+                            <div class="fw-semibold"><a href="{% url 'lead_edit' lead.pk %}">{{ lead.title }}</a></div>
+                            <div class="small text-muted">{{ lead.client.name }} · {{ lead.get_status_display }}</div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if projects %}
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-semibold">Projects</div>
+                <ul class="list-group list-group-flush">
+                    {% for project in projects %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold"><a href="{% url 'project_detail' project.pk %}">{{ project.code }} · {{ project.name }}</a></div>
+                                <div class="small text-muted">{{ project.client.name }}</div>
+                            </div>
+                            <span class="badge bg-light text-dark border">{{ project.current_stage }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if tasks %}
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-semibold">Tasks</div>
+                <ul class="list-group list-group-flush">
+                    {% for task in tasks %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ task.title }}</div>
+                                <div class="small text-muted">
+                                    <a href="{% url 'project_detail' task.project.pk %}">{{ task.project.code }}</a>
+                                    · {{ task.get_status_display }}
+                                </div>
+                            </div>
+                            {% if task.due_date %}<span class="small text-muted">Due {{ task.due_date|date:"d M" }}</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if invoices %}
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-semibold">Invoices</div>
+                <ul class="list-group list-group-flush">
+                    {% for invoice in invoices %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">{{ invoice.invoice_number }}</div>
+                                <div class="small text-muted">
+                                    {% if invoice.project %}
+                                        <a href="{% url 'project_detail' invoice.project.pk %}">{{ invoice.project.code }}</a>
+                                        · {{ invoice.project.client.name }}
+                                    {% elif invoice.lead %}
+                                        {{ invoice.lead.title }} · {{ invoice.lead.client.name }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="badge bg-{% if invoice.status == 'overdue' %}danger{% elif invoice.status == 'paid' %}success{% else %}secondary{% endif %}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not clients and not leads and not projects and not tasks and not invoices %}
+        <div class="card shadow-sm empty-state">
+            <div class="card-body text-center py-5">
+                <div class="eyebrow mb-1">No matches</div>
+                <p class="text-muted mb-0">Try another keyword.</p>
+            </div>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="card shadow-sm empty-state">
+        <div class="card-body text-center py-5">
+            <div class="eyebrow mb-1">Search everything</div>
+            <p class="text-muted mb-0">Type a name, code, invoice number, or keyword.</p>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+

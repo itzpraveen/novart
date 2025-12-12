@@ -32,10 +32,21 @@ class Command(BaseCommand):
 
     def _notify(self, users, message, category, url=""):
         created = 0
+        today = timezone.localdate()
         for user in users:
+            if not user:
+                continue
+            already_sent = Notification.objects.filter(
+                user=user,
+                category=category,
+                message=message,
+                created_at__date=today,
+            ).exists()
+            if already_sent:
+                continue
             Notification.objects.create(user=user, message=message, category=category, related_url=url)
             # Best-effort WhatsApp push if enabled and phone is present
-            if user and user.phone:
+            if user.phone:
                 send_whatsapp_text(user.phone, message)
             created += 1
         return created

@@ -38,7 +38,7 @@
                     <td><span class="badge bg-info">{{ task.get_status_display }}</span></td>
                     <td>{{ task.get_priority_display }}</td>
                     <td>{{ task.due_date|date:"d M Y" }}</td>
-                    <td><a href="{% url 'task_edit' task.pk %}">Update</a></td>
+                    <td><a href="{% url 'project_tasks' task.project.pk %}">Open</a></td>
                 </tr>
             {% empty %}
                 <tr><td colspan="6" class="text-center">Nothing assigned!</td></tr>

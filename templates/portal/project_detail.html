@@ -41,6 +41,10 @@
     </div>
     <div class="actions">
         <a class="btn btn-outline-secondary" href="{% url 'project_edit' project.pk %}">Edit</a>
+        {% if module_perms.site_visits %}
+            <a class="btn btn-outline-secondary" href="{% url 'site_visit_create' %}?project={{ project.pk }}">Log Visit</a>
+            <a class="btn btn-outline-secondary" href="{% url 'issue_list' %}?project={{ project.pk }}">Log Issue</a>
+        {% endif %}
         <a class="btn btn-outline-primary" href="{% url 'invoice_create' %}?project={{ project.pk }}">+ Invoice</a>
         <a class="btn btn-primary" href="{% url 'project_tasks' project.pk %}">Kanban</a>
     </div>
@@ -116,7 +120,11 @@
                             <div class="text-muted small">{{ task.get_status_display }} · {{ task.assigned_to }}</div>
                         </div>
                         <div>
-                            <a href="{% url 'task_edit' task.pk %}">Edit</a>
+                            {% if can_manage_tasks %}
+                                <a href="{% url 'task_edit' task.pk %}">Edit</a>
+                            {% else %}
+                                <a href="{% url 'project_tasks' project.pk %}">Open board</a>
+                            {% endif %}
                         </div>
                     </li>
                 {% empty %}

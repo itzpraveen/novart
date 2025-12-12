@@ -309,6 +309,18 @@ class SiteIssue(TimeStampedModel):
         return self.title
 
 
+class SiteIssueAttachment(TimeStampedModel):
+    issue = models.ForeignKey(SiteIssue, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='site_issues/', blank=True, null=True)
+    caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f"Attachment for {self.issue}"
+
+
 class Invoice(TimeStampedModel):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Draft'
@@ -408,6 +420,13 @@ class Payment(TimeStampedModel):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=50, blank=True)
     reference = models.CharField(max_length=100, blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments_recorded',
+    )
     received_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments_received'
     )
@@ -508,6 +527,13 @@ class Transaction(TimeStampedModel):
     related_client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     related_person = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions_recorded',
     )
     remarks = models.TextField(blank=True)
 

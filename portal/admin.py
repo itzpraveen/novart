@@ -14,6 +14,7 @@ from .models import (
     ProjectStageHistory,
     ReminderSetting,
     SiteIssue,
+    SiteIssueAttachment,
     SiteVisit,
     SiteVisitAttachment,
     Task,
@@ -74,10 +75,16 @@ class SiteVisitAttachmentAdmin(admin.ModelAdmin):
     list_display = ('site_visit', 'caption')
 
 
+class SiteIssueAttachmentInline(admin.TabularInline):
+    model = SiteIssueAttachment
+    extra = 0
+
+
 @admin.register(SiteIssue)
 class SiteIssueAdmin(admin.ModelAdmin):
     list_display = ('title', 'project', 'status', 'raised_on')
     list_filter = ('status',)
+    inlines = [SiteIssueAttachmentInline]
 
 
 class InvoiceLineInline(admin.TabularInline):
@@ -98,12 +105,12 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('invoice', 'payment_date', 'amount', 'method')
+    list_display = ('invoice', 'payment_date', 'amount', 'method', 'recorded_by')
 
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('date', 'description', 'debit', 'credit', 'related_project')
+    list_display = ('date', 'description', 'debit', 'credit', 'related_project', 'recorded_by')
 
 
 @admin.register(Document)

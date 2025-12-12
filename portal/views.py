@@ -1,7 +1,10 @@
 from base64 import b64encode
+from collections import defaultdict
+import csv
 from datetime import timedelta
 import datetime as dt
 from decimal import Decimal
+import json
 import logging
 import mimetypes
 import os
@@ -28,13 +31,13 @@ from django.db.models import (
     Case,
     When,
 )
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.db.models.functions import Coalesce, Greatest, Cast
+from django.db.models.functions import Coalesce, Greatest, Cast, TruncMonth
 
 ITEMS_PER_PAGE = 25
 from xhtml2pdf import pisa
@@ -56,6 +59,7 @@ from .forms import (
     PaymentForm,
     ProjectForm,
     SiteIssueForm,
+    SiteIssueAttachmentForm,
     SiteVisitAttachmentForm,
     SiteVisitForm,
     StageUpdateForm,
@@ -78,7 +82,9 @@ from .models import (
     ProjectStageHistory,
     ReminderSetting,
     SiteIssue,
+    SiteIssueAttachment,
     SiteVisit,
+    SiteVisitAttachment,
     Task,
     TaskTemplate,
     Transaction,
@@ -215,6 +221,142 @@ def dashboard(request):
         'my_open_tasks_count': my_open_tasks_count,
     } | financial_context
     return render(request, 'portal/dashboard.html', context)
+
+
+@login_required
+def global_search(request):
+    q = (request.GET.get('q') or '').strip()
+    perms = get_permissions_for_user(request.user)
+
+    clients = Client.objects.none()
+    leads = Lead.objects.none()
+    projects = Project.objects.none()
+    tasks = Task.objects.none()
+    invoices = Invoice.objects.none()
+
+    if q:
+        if perms.get('clients'):
+            clients = Client.objects.filter(
+                Q(name__icontains=q) | Q(phone__icontains=q) | Q(email__icontains=q)
+            ).order_by('name')[:10]
+
+        if perms.get('leads'):
+            leads = Lead.objects.select_related('client').filter(
+                Q(title__icontains=q) | Q(client__name__icontains=q) | Q(lead_source__icontains=q)
+            ).order_by('-created_at')[:10]
+
+        if perms.get('projects'):
+            projects = _visible_projects_for_user(
+                request.user,
+                Project.objects.select_related('client', 'project_manager'),
+            ).filter(
+                Q(name__icontains=q) | Q(code__icontains=q) | Q(client__name__icontains=q)
+            ).order_by('-updated_at')[:10]
+
+            tasks = _visible_tasks_for_user(
+                request.user,
+                Task.objects.select_related('project', 'assigned_to'),
+            ).filter(
+                Q(title__icontains=q) | Q(project__code__icontains=q) | Q(project__name__icontains=q)
+            ).order_by('due_date')[:10]
+
+        if perms.get('invoices') or perms.get('finance'):
+            invoices = Invoice.objects.select_related(
+                'project__client', 'lead__client'
+            ).filter(
+                Q(invoice_number__icontains=q)
+                | Q(project__code__icontains=q)
+                | Q(project__name__icontains=q)
+                | Q(lead__title__icontains=q)
+                | Q(lead__client__name__icontains=q)
+            ).order_by('-invoice_date')[:10]
+
+    return render(
+        request,
+        'portal/search.html',
+        {
+            'query': q,
+            'clients': clients,
+            'leads': leads,
+            'projects': projects,
+            'tasks': tasks,
+            'invoices': invoices,
+            'perms': perms,
+        },
+    )
+
+
+@login_required
+@module_required('clients')
+def export_clients_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="clients.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Name', 'Phone', 'Email', 'City', 'State', 'Address', 'Notes'])
+    for client in Client.objects.order_by('name'):
+        writer.writerow([
+            client.name,
+            client.phone,
+            client.email,
+            client.city,
+            client.state,
+            client.address,
+            client.notes,
+        ])
+    return response
+
+
+@login_required
+@module_required('projects')
+def export_projects_csv(request):
+    projects = _visible_projects_for_user(request.user).select_related('client', 'project_manager', 'site_engineer')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="projects.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Code', 'Name', 'Client', 'Type', 'Stage', 'Health', 'Manager', 'Site Engineer', 'Start Date', 'Expected Handover', 'Location'])
+    for project in projects.order_by('code'):
+        writer.writerow([
+            project.code,
+            project.name,
+            project.client.name if project.client else '',
+            project.get_project_type_display(),
+            project.current_stage,
+            project.get_health_status_display(),
+            project.project_manager.get_full_name() if project.project_manager else '',
+            project.site_engineer.get_full_name() if project.site_engineer else '',
+            project.start_date,
+            project.expected_handover,
+            project.location,
+        ])
+    return response
+
+
+@login_required
+@module_required('invoices')
+def export_invoices_csv(request):
+    invoices = Invoice.objects.select_related('project__client', 'lead__client').prefetch_related('payments', 'lines')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="invoices.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Invoice #', 'Project', 'Lead', 'Client', 'Invoice Date', 'Due Date', 'Status', 'Subtotal', 'Tax %', 'Discount %', 'Total With Tax', 'Amount Received', 'Outstanding'])
+    for invoice in invoices.order_by('-invoice_date'):
+        client = invoice.project.client if invoice.project else (invoice.lead.client if invoice.lead else None)
+        writer.writerow([
+            invoice.invoice_number,
+            invoice.project.code if invoice.project else '',
+            invoice.lead.title if invoice.lead else '',
+            client.name if client else '',
+            invoice.invoice_date,
+            invoice.due_date,
+            invoice.get_status_display(),
+            invoice.subtotal,
+            invoice.tax_percent,
+            invoice.discount_percent,
+            invoice.total_with_tax,
+            invoice.amount_received,
+            invoice.outstanding,
+        ])
+    return response
 
 
 @login_required
@@ -545,6 +687,7 @@ def project_detail(request, pk):
     documents = project.documents.all()[:5]
     stage_history = project.stage_history.all()
     stage_form = StageUpdateForm(initial={'stage': project.current_stage})
+    can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
     return render(
         request,
         'portal/project_detail.html',
@@ -559,6 +702,7 @@ def project_detail(request, pk):
             'visible_open_tasks': visible_open_tasks,
             'visible_total_tasks': visible_total_tasks,
             'currency': '₹',
+            'can_manage_tasks': can_manage_tasks,
         },
     )
 
@@ -616,6 +760,7 @@ def project_tasks(request, pk):
             'can_manage_tasks': can_manage_tasks,
             'statuses': Task.Status.choices,
             'task_templates_json': _task_template_data(),
+            'today': timezone.localdate(),
         },
     )
 
@@ -684,6 +829,44 @@ def task_edit(request, pk):
 
 @login_required
 @module_required('projects')
+def task_quick_update(request, pk):
+    """Lightweight task update for kanban drag/drop and assignee self-updates."""
+    if request.method != 'POST':
+        return HttpResponseForbidden('Update requires POST.')
+
+    visible_projects = _visible_projects_for_user(request.user)
+    task_qs = Task.objects.select_related('project')
+    if not _can_view_all_projects(request.user):
+        task_qs = task_qs.filter(project__in=visible_projects)
+    task = get_object_or_404(task_qs, pk=pk)
+
+    can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
+    can_self_update = task.assigned_to_id == request.user.id
+    if not (can_manage_tasks or can_self_update):
+        return HttpResponseForbidden('You do not have permission to update this task.')
+
+    payload = {}
+    if request.headers.get('Content-Type', '').startswith('application/json'):
+        try:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
+        except ValueError:
+            payload = {}
+    else:
+        payload = request.POST
+
+    new_status = payload.get('status')
+    if new_status not in Task.Status.values:
+        return JsonResponse({'ok': False, 'error': 'Invalid status'}, status=400)
+
+    if new_status != task.status:
+        task.status = new_status
+        task.save(update_fields=['status'])
+
+    return JsonResponse({'ok': True, 'status': task.status})
+
+
+@login_required
+@module_required('projects')
 def my_tasks(request):
     task_filter = TaskFilter(request.GET, queryset=Task.objects.filter(assigned_to=request.user))
     return render(request, 'portal/my_tasks.html', {'filter': task_filter})
@@ -713,10 +896,16 @@ def site_visit_create(request):
             if not visible_projects.filter(pk=visit.project_id).exists():
                 return HttpResponseForbidden("You do not have permission to log visits for that project.")
             visit.save()
+            for file in request.FILES.getlist('attachments'):
+                SiteVisitAttachment.objects.create(site_visit=visit, file=file)
             messages.success(request, 'Site visit logged.')
             return redirect('site_visit_list')
     else:
-        form = SiteVisitForm(initial={'visited_by': request.user})
+        initial = {'visited_by': request.user}
+        project_id = request.GET.get('project')
+        if project_id and visible_projects.filter(pk=project_id).exists():
+            initial['project'] = project_id
+        form = SiteVisitForm(initial=initial)
         if not _can_view_all_projects(request.user):
             form.fields['project'].queryset = visible_projects
     return render(request, 'portal/site_visit_form.html', {'form': form})
@@ -732,7 +921,7 @@ def site_visit_edit(request, pk):
         visit_qs = visit_qs.filter(project__in=visible_projects)
     visit = get_object_or_404(visit_qs, pk=pk)
     if request.method == 'POST':
-        form = SiteVisitForm(request.POST, instance=visit)
+        form = SiteVisitForm(request.POST, request.FILES, instance=visit)
         if not _can_view_all_projects(request.user):
             form.fields['project'].queryset = visible_projects
         if form.is_valid():
@@ -740,6 +929,8 @@ def site_visit_edit(request, pk):
             if not visible_projects.filter(pk=updated_visit.project_id).exists():
                 return HttpResponseForbidden("You do not have permission to move this visit to that project.")
             updated_visit.save()
+            for file in request.FILES.getlist('attachments'):
+                SiteVisitAttachment.objects.create(site_visit=updated_visit, file=file)
             messages.success(request, 'Site visit updated.')
             return redirect('site_visit_list')
     else:
@@ -784,7 +975,7 @@ def issue_list(request):
         issues_qs = issues_qs.filter(project__in=visible_projects)
     issue_filter = SiteIssueFilter(request.GET, queryset=issues_qs)
     if request.method == 'POST':
-        form = SiteIssueForm(request.POST)
+        form = SiteIssueForm(request.POST, request.FILES)
         if not _can_view_all_projects(request.user):
             form.fields['project'].queryset = visible_projects
             form.fields['site_visit'].queryset = SiteVisit.objects.filter(project__in=visible_projects)
@@ -795,14 +986,51 @@ def issue_list(request):
             if issue.site_visit_id and not SiteVisit.objects.filter(pk=issue.site_visit_id, project__in=visible_projects).exists():
                 return HttpResponseForbidden("You do not have permission to link that site visit.")
             issue.save()
+            for file in request.FILES.getlist('attachments'):
+                SiteIssueAttachment.objects.create(issue=issue, file=file)
             messages.success(request, 'Issue logged.')
             return redirect('issue_list')
     else:
-        form = SiteIssueForm()
+        initial = {}
+        project_id = request.GET.get('project')
+        if project_id and visible_projects.filter(pk=project_id).exists():
+            initial['project'] = project_id
+        form = SiteIssueForm(initial=initial)
         if not _can_view_all_projects(request.user):
             form.fields['project'].queryset = visible_projects
             form.fields['site_visit'].queryset = SiteVisit.objects.filter(project__in=visible_projects)
     return render(request, 'portal/issues.html', {'filter': issue_filter, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.ARCHITECT, User.Roles.SITE_ENGINEER)
+@module_required('site_visits')
+def issue_detail(request, pk):
+    visible_projects = _visible_projects_for_user(request.user)
+    issue_qs = SiteIssue.objects.select_related('project', 'site_visit')
+    if not _can_view_all_projects(request.user):
+        issue_qs = issue_qs.filter(project__in=visible_projects)
+    issue = get_object_or_404(issue_qs, pk=pk)
+
+    attachment_form = SiteIssueAttachmentForm()
+    if request.method == 'POST':
+        attachment_form = SiteIssueAttachmentForm(request.POST, request.FILES)
+        if attachment_form.is_valid():
+            attachment = attachment_form.save(commit=False)
+            attachment.issue = issue
+            attachment.save()
+            messages.success(request, 'Attachment added.')
+            return redirect('issue_detail', pk=pk)
+
+    return render(
+        request,
+        'portal/issue_detail.html',
+        {
+            'issue': issue,
+            'attachment_form': attachment_form,
+            'attachments': issue.attachments.all(),
+        },
+    )
 
 
 @login_required
@@ -1039,6 +1267,7 @@ def payment_create(request, invoice_pk):
         if form.is_valid():
             payment = form.save(commit=False)
             payment.invoice = invoice
+            payment.recorded_by = request.user
             payment.save()
             _refresh_invoice_status(invoice)
             messages.success(request, 'Payment recorded.')
@@ -1199,7 +1428,9 @@ def transaction_list(request):
     if request.method == 'POST':
         form = TransactionForm(request.POST)
         if form.is_valid():
-            form.save()
+            txn = form.save(commit=False)
+            txn.recorded_by = request.user
+            txn.save()
             messages.success(request, 'Transaction saved.')
             return redirect('transaction_list')
     else:
@@ -1248,15 +1479,67 @@ def document_list(request):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 @module_required('finance')
 def finance_dashboard(request):
-    projects = Project.objects.all()
+    projects = Project.objects.select_related('client').prefetch_related(
+        'invoices__lines',
+        'invoices__payments',
+        'transactions',
+        'site_visits',
+    )
+
     total_invoiced = sum((invoice.total_with_tax for invoice in Invoice.objects.prefetch_related('lines')), Decimal('0'))
-    total_received = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
-    ledger_expenses = Transaction.objects.aggregate(total=Sum('debit'))['total'] or 0
-    site_expenses = SiteVisit.objects.aggregate(total=Sum('expenses'))['total'] or 0
+    total_received = Payment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    ledger_expenses = Transaction.objects.aggregate(total=Sum('debit'))['total'] or Decimal('0')
+    site_expenses = SiteVisit.objects.aggregate(total=Sum('expenses'))['total'] or Decimal('0')
     totals = {
         'invoiced': total_invoiced,
         'received': total_received,
-        'expenses': (ledger_expenses or 0) + (site_expenses or 0),
+        'expenses': ledger_expenses + site_expenses,
+    }
+
+    month_buckets = defaultdict(lambda: {'invoiced': Decimal('0'), 'received': Decimal('0'), 'expenses': Decimal('0')})
+
+    for row in (
+        Invoice.objects.annotate(month=TruncMonth('invoice_date'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['invoiced'] += row['total'] or Decimal('0')
+
+    for row in (
+        Payment.objects.annotate(month=TruncMonth('payment_date'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['received'] += row['total'] or Decimal('0')
+
+    for row in (
+        Transaction.objects.annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Sum('debit'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+
+    for row in (
+        SiteVisit.objects.annotate(month=TruncMonth('visit_date'))
+        .values('month')
+        .annotate(total=Sum('expenses'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+
+    months_sorted = sorted(month_buckets.keys())
+    chart_data = {
+        'labels': [m.strftime('%b %Y') for m in months_sorted],
+        'invoiced': [float(month_buckets[m]['invoiced']) for m in months_sorted],
+        'received': [float(month_buckets[m]['received']) for m in months_sorted],
+        'expenses': [float(month_buckets[m]['expenses']) for m in months_sorted],
     }
     return render(
         request,
@@ -1265,6 +1548,7 @@ def finance_dashboard(request):
             'projects': projects,
             'totals': totals,
             'currency': '₹',
+            'chart_data': json.dumps(chart_data),
         },
     )
 
