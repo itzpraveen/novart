@@ -15,210 +15,230 @@
             src: url("file://{{ font_path }}");
         }
         {% endif %}
-        @page {
-            size: A4;
-            margin: 26px;
-            font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif;
-        }
+        @page { size: A4; margin: 24px; }
         body, table, th, td {
             font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif;
-            color: #111827;
+            color: #0f172a;
             margin: 0;
             line-height: 1.45;
             font-size: 12px;
         }
-        body { background: #f1f5f9; }
+        body { background: #f8fafc; }
+
         .sheet {
             width: 100%;
             background: #ffffff;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 18px 20px 16px;
+            border-top: 6px solid #0f172a;
+            border-radius: 10px;
+            padding: 20px 22px 16px;
         }
+
         .muted { color: #6b7280; font-size: 10px; }
         .text-right { text-align: right; }
+        .nowrap { white-space: nowrap; }
 
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 16px;
-        }
-        .brand-cell { vertical-align: top; width: 60%; }
-        .title-cell { vertical-align: top; width: 40%; text-align: right; }
-        .invoice-title {
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: 1.6px;
-            margin: 0 0 8px 0;
-        }
-        .meta-box {
-            display: inline-block;
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            border-left: 4px solid #111827;
-            padding: 9px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            text-align: left;
-            min-width: 180px;
-        }
-        .meta-row { width: 100%; border-collapse: collapse; }
-        .meta-row td { padding: 1.5px 0; }
-        .meta-label { font-weight: 600; width: 45%; color: #374151; }
-        .meta-value { text-align: right; }
+        .logo { height: 34px; width: auto; max-width: 240px; }
+        .brand-name { font-size: 14px; font-weight: 800; letter-spacing: 0.4px; }
 
-        .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        .bill-box {
+        .hdr { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        .hdr-left { width: 60%; vertical-align: top; }
+        .hdr-right { width: 40%; vertical-align: top; text-align: right; }
+        .invoice-title { font-size: 26px; font-weight: 800; letter-spacing: 2px; margin: 0 0 8px; }
+
+        .card {
             border: 1px solid #e5e7eb;
             background: #f9fafb;
-            padding: 10px;
-            border-radius: 6px;
-            min-height: 64px;
+            border-radius: 8px;
+            padding: 10px 12px;
         }
-        .bill-title {
-            font-size: 10.5px;
-            font-weight: 700;
+        .card-title {
+            font-size: 10px;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-bottom: 6px;
-            color: #111827;
+            letter-spacing: 0.45px;
+            color: #64748b;
+            margin: 0 0 6px 0;
         }
 
-        .items { width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; }
+        .meta-card { display: inline-block; min-width: 220px; text-align: left; }
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 0; font-size: 11px; }
+        .meta-key { color: #64748b; }
+        .meta-val { text-align: right; font-weight: 700; }
+        .status-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .section-gap { height: 12px; }
+
+        .items {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
         .items th {
-            background: #111827;
-            color: #fff;
-            padding: 7px 6px;
-            font-size: 11px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 9px 8px;
+            font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.55px;
         }
         .items td {
+            padding: 9px 8px;
             border-bottom: 1px solid #e5e7eb;
-            padding: 7px 6px;
             vertical-align: top;
         }
         .items tbody tr:nth-child(even) { background: #f8fafc; }
+        .items tbody tr:last-child td { border-bottom: none; }
 
-        .totals-wrap { width: 100%; margin-top: 10px; }
-        .totals-table {
-            width: 44%;
-            margin-left: 56%;
+        .totals-layout { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .totals-spacer { width: 56%; }
+        .totals-cell { width: 44%; vertical-align: top; }
+        .totals {
+            width: 100%;
             border-collapse: collapse;
             border: 1px solid #e5e7eb;
-            border-radius: 6px;
+            border-radius: 8px;
         }
-        .totals-table td {
-            padding: 6px 8px;
-            font-size: 12px;
+        .totals td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; }
+        .totals tr:last-child td { border-bottom: none; }
+        .totals .label { text-align: right; color: #64748b; }
+        .totals .value { text-align: right; font-weight: 700; }
+        .totals .net td {
+            background: #0f172a;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 14px;
+            padding: 10px 10px;
+            border-bottom: none;
+        }
+        .totals .net .label { color: #ffffff; }
+        .totals .outstanding td { background: #fff7ed; color: #9a3412; font-weight: 800; }
+        .totals .outstanding .label { color: #9a3412; }
+
+        .subhead {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.45px;
+            color: #64748b;
+            margin: 0 0 6px 0;
+        }
+
+        .split { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .split td { width: 50%; vertical-align: top; }
+        .split .left { padding-right: 8px; }
+        .split .right { padding-left: 8px; }
+
+        .payments {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+        .payments th {
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 8px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.45px;
             border-bottom: 1px solid #e5e7eb;
         }
-        .totals-table tr:last-child td { border-bottom: none; }
-        .totals-label { text-align: right; color: #374151; }
-        .totals-value { text-align: right; font-weight: 600; }
-        .grand-total-row td {
-            background: #111827;
-            color: #fff;
-            font-weight: 700;
-            font-size: 15px;
-            padding: 9px 8px;
-        }
-        .grand-total-row .totals-label { color: #fff; }
-        .balance-row td { background: #fff7ed; color: #9a3412; font-weight: 700; }
+        .payments td { padding: 8px 8px; border-bottom: 1px solid #e5e7eb; }
+        .payments tr:last-child td { border-bottom: none; }
 
-        .payment-terms { width: 100%; margin-top: 14px; border-collapse: collapse; }
-        .payment-col { width: 50%; vertical-align: top; }
-        .section-title {
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 0 0 4px 0;
+        .footer {
+            margin-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
         }
-
-        .payment-box {
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            padding: 9px 10px;
-            border-radius: 6px;
-        }
-
-        .hr { border-top: 1px solid #e5e7eb; margin: 16px 0 8px; }
-        .footer { font-size: 10px; color: #6b7280; text-align: center; margin-top: 6px; }
+        .footer-table { width: 100%; border-collapse: collapse; }
+        .thanks { font-size: 11px; font-weight: 800; color: #0f172a; }
+        .generated { font-size: 10px; color: #6b7280; text-align: right; }
     </style>
 </head>
 <body>
     <div class="sheet">
-        <table class="header-table">
+        <table class="hdr">
             <tr>
-                <td class="brand-cell">
+                <td class="hdr-left">
                     {% if firm_logo_data %}
-                        <img src="{{ firm_logo_data }}" alt="Logo" style="height:48px; margin-bottom:6px;">
+                        <img class="logo" src="{{ firm_logo_data }}" alt="Logo">
                     {% elif firm_logo_path %}
-                        <img src="file://{{ firm_logo_path }}" alt="Logo" style="height:48px; margin-bottom:6px;">
+                        <img class="logo" src="file://{{ firm_logo_path }}" alt="Logo">
                     {% else %}
-                        <div style="font-size:18px; font-weight:700;">{{ firm.name|default:"StudioFlow" }}</div>
+                        <div class="brand-name">{{ firm.name|default:"StudioFlow" }}</div>
                     {% endif %}
+                    <div class="section-gap"></div>
                     {% if firm.address %}<div class="muted" style="white-space:pre-line;">{{ firm.address }}</div>{% endif %}
-                    {% if firm.phone %}<div class="muted">Ph: {{ firm.phone }}</div>{% endif %}
-                    {% if firm.email %}<div class="muted">Email: {{ firm.email }}</div>{% endif %}
+                    <div class="muted">
+                        {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
+                        {% if firm.phone and firm.email %} · {% endif %}
+                        {% if firm.email %}{{ firm.email }}{% endif %}
+                    </div>
                     {% if firm.tax_id %}<div class="muted">Tax ID: {{ firm.tax_id }}</div>{% endif %}
                 </td>
-                <td class="title-cell">
+                <td class="hdr-right">
                     <div class="invoice-title">INVOICE</div>
-                    <div class="meta-box">
-                        <table class="meta-row">
-                            <tr><td class="meta-label">Invoice No</td><td class="meta-value">#{{ invoice.invoice_number }}</td></tr>
-                            <tr><td class="meta-label">Date</td><td class="meta-value">{{ invoice.invoice_date|date:"d M Y" }}</td></tr>
-                            <tr><td class="meta-label">Due Date</td><td class="meta-value">{{ invoice.due_date|date:"d M Y" }}</td></tr>
-                            <tr><td class="meta-label">Status</td><td class="meta-value">{{ invoice.get_status_display }}</td></tr>
+                    <div class="card meta-card">
+                        <table class="meta-table">
+                            <tr>
+                                <td class="meta-key">Invoice No</td>
+                                <td class="meta-val">{{ invoice.invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="meta-key">Date</td>
+                                <td class="meta-val">{{ invoice.invoice_date|date:"d M Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="meta-key">Due Date</td>
+                                <td class="meta-val">{{ invoice.due_date|date:"d M Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="meta-key">Status</td>
+                                <td class="meta-val"><span class="status-pill">{{ invoice.get_status_display }}</span></td>
+                            </tr>
                         </table>
                     </div>
                 </td>
             </tr>
         </table>
 
-        <table class="bill-table">
-            <tr>
-                <td style="width:50%; padding-right:8px;">
-                    <div class="bill-box">
-                        <div class="bill-title">Billed To</div>
-                        {% if client %}
-                            <div style="font-weight:700;">{{ client.name }}</div>
-                            {% if client.address %}<div style="white-space:pre-line;">{{ client.address }}</div>{% endif %}
-                            {% if client.city or client.state %}<div>{{ client.city }} {{ client.state }}</div>{% endif %}
-                            {% if client.phone %}<div class="muted">Phone: {{ client.phone }}</div>{% endif %}
-                            {% if client.email %}<div class="muted">Email: {{ client.email }}</div>{% endif %}
-                        {% else %}
-                            <div class="muted">No client linked</div>
-                        {% endif %}
-                    </div>
-                </td>
-                <td style="width:50%; padding-left:8px;">
-                    <div class="bill-box">
-                        <div class="bill-title">Project / Lead</div>
-                        {% if project %}
-                            <div style="font-weight:700;">{{ project.code }} — {{ project.name }}</div>
-                            {% if project.location %}<div class="muted">{{ project.location }}</div>{% endif %}
-                            {% if project.project_manager %}<div class="muted">PM: {{ project.project_manager.get_full_name|default:project.project_manager }}</div>{% endif %}
-                        {% elif lead %}
-                            <div style="font-weight:700;">{{ lead.title }}</div>
-                            <div class="muted">Lead · {{ lead.client.name }}</div>
-                        {% else %}
-                            <div class="muted">No linked project/lead</div>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <div class="card" style="margin-bottom: 12px;">
+            <div class="card-title">Billed To</div>
+            {% if client %}
+                <div style="font-weight:800;">{{ client.name }}</div>
+                {% if client.address %}<div style="white-space:pre-line;">{{ client.address }}</div>{% endif %}
+                {% if client.city or client.state %}<div>{{ client.city }} {{ client.state }}</div>{% endif %}
+                <div class="muted">
+                    {% if client.phone %}Phone: {{ client.phone }}{% endif %}
+                    {% if client.phone and client.email %} · {% endif %}
+                    {% if client.email %}{{ client.email }}{% endif %}
+                </div>
+            {% else %}
+                <div class="muted">No client linked</div>
+            {% endif %}
+        </div>
 
         <table class="items">
             <thead>
                 <tr>
-                    <th style="width:55%;">Item Description</th>
+                    <th style="width:55%;">Item</th>
                     <th style="width:15%;" class="text-right">Qty</th>
                     <th style="width:15%;" class="text-right">Unit Price</th>
-                    <th style="width:15%;" class="text-right">Total</th>
+                    <th style="width:15%;" class="text-right">Amount</th>
                 </tr>
             </thead>
             <tbody>
@@ -226,63 +246,68 @@
                     {% for line in lines %}
                     <tr>
                         <td>{{ line.description }}</td>
-                        <td class="text-right">{{ line.quantity }}</td>
-                        <td class="text-right">{{ line.unit_price|rupee }}</td>
-                        <td class="text-right">{{ line.line_total|rupee }}</td>
+                        <td class="text-right nowrap">{{ line.quantity }}</td>
+                        <td class="text-right nowrap">{{ line.unit_price|rupee }}</td>
+                        <td class="text-right nowrap"><strong>{{ line.line_total|rupee }}</strong></td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
                         <td>{{ invoice.description|default:"Architectural services and deliverables" }}</td>
-                        <td class="text-right">1</td>
-                        <td class="text-right">{{ invoice.amount|rupee }}</td>
-                        <td class="text-right">{{ invoice.amount|rupee }}</td>
+                        <td class="text-right nowrap">1</td>
+                        <td class="text-right nowrap">{{ invoice.amount|rupee }}</td>
+                        <td class="text-right nowrap"><strong>{{ invoice.amount|rupee }}</strong></td>
                     </tr>
                 {% endif %}
             </tbody>
         </table>
 
-        <div class="totals-wrap">
-            <table class="totals-table">
-                <tr>
-                    <td class="totals-label">Sub Total</td>
-                    <td class="totals-value">{{ invoice.subtotal|rupee }}</td>
-                </tr>
-                {% if invoice.discount_percent %}
-                <tr>
-                    <td class="totals-label">Discount ({{ invoice.discount_percent }}%)</td>
-                    <td class="totals-value">-{{ invoice.discount_amount|rupee }}</td>
-                </tr>
-                {% endif %}
-                {% if invoice.tax_percent %}
-                <tr>
-                    <td class="totals-label">Tax ({{ invoice.tax_percent }}%)</td>
-                    <td class="totals-value">{{ tax_amount|rupee }}</td>
-                </tr>
-                {% endif %}
-                <tr class="grand-total-row">
-                    <td class="totals-label">Net Total</td>
-                    <td class="totals-value">{{ invoice.total_with_tax|rupee }}</td>
-                </tr>
-                {% if invoice.amount_received %}
-                <tr>
-                    <td class="totals-label">Advance / Received</td>
-                    <td class="totals-value">-{{ invoice.amount_received|rupee }}</td>
-                </tr>
-                {% endif %}
-                <tr{% if invoice.amount_received %} class="balance-row"{% endif %}>
-                    <td class="totals-label">Outstanding</td>
-                    <td class="totals-value">{{ invoice.outstanding|rupee }}</td>
-                </tr>
-            </table>
-        </div>
+        <table class="totals-layout">
+            <tr>
+                <td class="totals-spacer"></td>
+                <td class="totals-cell">
+                    <table class="totals">
+                        <tr>
+                            <td class="label">Sub Total</td>
+                            <td class="value">{{ invoice.subtotal|rupee }}</td>
+                        </tr>
+                        {% if invoice.discount_percent %}
+                        <tr>
+                            <td class="label">Discount ({{ invoice.discount_percent }}%)</td>
+                            <td class="value">-{{ invoice.discount_amount|rupee }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if invoice.tax_percent %}
+                        <tr>
+                            <td class="label">Tax ({{ invoice.tax_percent }}%)</td>
+                            <td class="value">{{ tax_amount|rupee }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="net">
+                            <td class="label">Net Total</td>
+                            <td class="value">{{ invoice.total_with_tax|rupee }}</td>
+                        </tr>
+                        {% if invoice.amount_received %}
+                        <tr>
+                            <td class="label">Advance / Received</td>
+                            <td class="value">-{{ invoice.amount_received|rupee }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="outstanding">
+                            <td class="label">Outstanding</td>
+                            <td class="value">{{ invoice.outstanding|rupee }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
 
         {% if firm.bank_account_number or firm.upi_id or firm.terms %}
-        <table class="payment-terms">
+        <table class="split">
             <tr>
-                <td class="payment-col" style="padding-right:10px;">
-                    <div class="payment-box">
-                        <div class="section-title">Payment Method</div>
+                <td class="left">
+                    <div class="card">
+                        <div class="card-title">Payment Method</div>
                         {% if firm.bank_name %}<div class="muted"><strong>Bank:</strong> {{ firm.bank_name }}</div>{% endif %}
                         {% if firm.bank_account_name %}<div class="muted"><strong>A/C Name:</strong> {{ firm.bank_account_name }}</div>{% endif %}
                         {% if firm.bank_account_number %}<div class="muted"><strong>A/C No:</strong> {{ firm.bank_account_number }}</div>{% endif %}
@@ -290,12 +315,12 @@
                         {% if firm.upi_id %}<div class="muted"><strong>UPI:</strong> {{ firm.upi_id }}</div>{% endif %}
                     </div>
                 </td>
-                <td class="payment-col" style="padding-left:10px;">
+                <td class="right">
                     {% if firm.terms %}
-                        <div class="payment-box">
-                            <div class="section-title">Terms</div>
-                            <div class="muted" style="white-space:pre-line;">{{ firm.terms }}</div>
-                        </div>
+                    <div class="card">
+                        <div class="card-title">Terms</div>
+                        <div class="muted" style="white-space:pre-line;">{{ firm.terms }}</div>
+                    </div>
                     {% endif %}
                 </td>
             </tr>
@@ -303,24 +328,24 @@
         {% endif %}
 
         {% if payments %}
-        <div style="margin-top:12px;">
-            <div class="section-title">Payment Activity</div>
-            <table class="items" style="margin-top:4px;">
+        <div style="margin-top: 14px;">
+            <div class="subhead">Payment Activity</div>
+            <table class="payments">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Method</th>
-                        <th>Reference</th>
-                        <th class="text-right">Amount</th>
+                        <th style="width:25%;">Date</th>
+                        <th style="width:25%;">Method</th>
+                        <th style="width:30%;">Reference</th>
+                        <th style="width:20%;" class="text-right">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for payment in payments %}
                     <tr>
-                        <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                        <td class="nowrap">{{ payment.payment_date|date:"d M Y" }}</td>
                         <td>{{ payment.method|default:"-" }}</td>
                         <td>{{ payment.reference|default:"-" }}</td>
-                        <td class="text-right">{{ payment.amount|rupee }}</td>
+                        <td class="text-right nowrap">{{ payment.amount|rupee }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -328,10 +353,16 @@
         </div>
         {% endif %}
 
-        <div class="hr"></div>
-        <div style="font-size:11px; font-weight:700;">Thank you for your business</div>
         <div class="footer">
-            Generated on {{ generated_on|date:"d M Y H:i" }}{% if firm.email %} · {{ firm.email }}{% endif %}
+            <table class="footer-table">
+                <tr>
+                    <td class="thanks">Thank you for your business</td>
+                    <td class="generated">Generated on {{ generated_on|date:"d M Y H:i" }}</td>
+                </tr>
+            </table>
+            {% if firm.email %}
+                <div class="muted" style="margin-top: 4px;">For queries: {{ firm.email }}</div>
+            {% endif %}
         </div>
     </div>
 </body>
