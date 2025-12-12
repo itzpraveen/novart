@@ -15,7 +15,7 @@
 	            src: url("file://{{ font_path }}");
 	        }
 	        {% endif %}
-	        @page { size: A4; margin: 22mm; }
+	        @page { size: A4; margin: 26mm; }
 	        body, table, th, td {
 	            font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif;
 	            color: #0f172a;
@@ -115,8 +115,11 @@
 	        .foot { width: 100%; border-collapse: collapse; }
 	        .thanks { font-size: 11px; font-weight: 800; }
 	        .generated { font-size: 10px; color: #64748b; text-align: right; }
-	        .footer-meta {
-	            margin-top: 8px;
+	        .footer-bottom {
+	            position: fixed;
+	            left: 26mm;
+	            right: 26mm;
+	            bottom: 10mm;
 	            text-align: center;
 	            color: #64748b;
 	            font-size: 9.5px;
@@ -137,12 +140,6 @@
 	                    {% else %}
 	                        <div class="brand-name">{{ firm.name|default:"StudioFlow" }}</div>
 	                    {% endif %}
-	                    <div class="muted">
-	                        {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
-	                        {% if firm.phone and firm.email %} · {% endif %}
-	                        {% if firm.email %}{{ firm.email }}{% endif %}
-	                    </div>
-	                    {% if firm.tax_id %}<div class="muted">Tax ID: {{ firm.tax_id }}</div>{% endif %}
 	                </td>
 	                <td class="meta">
 	                    <div class="invoice-title">INVOICE</div>
@@ -310,16 +307,20 @@
 	                    <td class="generated">Generated on {{ generated_on|date:"d M Y H:i" }}</td>
 	                </tr>
 	            </table>
-	            {% if firm.email %}
-	                <div class="muted" style="margin-top: 4px;">For queries: {{ firm.email }}</div>
-	            {% endif %}
-	            {% if firm.address %}
-	                <div class="footer-meta" style="white-space: pre-line;">{{ firm.address }}</div>
-	            {% endif %}
-	            {% if firm.phone %}
-	                <div class="footer-meta">Ph: {{ firm.phone }}{% if firm.email %} · {{ firm.email }}{% endif %}</div>
-	            {% endif %}
 	        </div>
 	    </div>
+	    {% if firm.address or firm.phone or firm.email or firm.tax_id %}
+	        <div class="footer-bottom">
+	            {% if firm.address %}<div style="white-space: pre-line;">{{ firm.address }}</div>{% endif %}
+	            {% if firm.tax_id %}<div>Tax ID: {{ firm.tax_id }}</div>{% endif %}
+	            {% if firm.phone or firm.email %}
+	                <div>
+	                    {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
+	                    {% if firm.phone and firm.email %} · {% endif %}
+	                    {% if firm.email %}{{ firm.email }}{% endif %}
+	                </div>
+	            {% endif %}
+	        </div>
+	    {% endif %}
 </body>
 </html>
