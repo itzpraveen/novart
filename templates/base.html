@@ -21,7 +21,7 @@
     <!-- Theme initialization (prevents flash) -->
     <script>
         (function() {
-            const forceLight = {{ request.resolver_match.url_name == 'login'|yesno:'true,false' }};
+            const forceLight = {% if request.resolver_match.url_name == 'login' %}true{% else %}false{% endif %};
             if (forceLight) {
                 document.documentElement.setAttribute('data-theme', 'light');
                 return;
