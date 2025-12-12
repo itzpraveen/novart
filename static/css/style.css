@@ -881,6 +881,8 @@ input[type="date"].form-control {
     color: var(--text-main);
     border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-md);
+    /* Force appropriate native UI/icon colors regardless of OS theme */
+    color-scheme: light;
 }
 
 input[type="date"]:focus,
@@ -896,6 +898,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 [data-theme="dark"] input[type="date"] {
     border-color: var(--border-color-strong);
+    color-scheme: dark;
 }
 
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
