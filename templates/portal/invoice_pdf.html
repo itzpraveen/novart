@@ -26,53 +26,65 @@
             margin: 0;
             line-height: 1.45;
             font-size: 12px;
-            background: #fff;
         }
-        .sheet { width: 100%; }
-        .muted { color: #6b7280; font-size: 10.5px; }
+        body { background: #f1f5f9; }
+        .sheet {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 18px 20px 16px;
+        }
+        .muted { color: #6b7280; font-size: 10px; }
         .text-right { text-align: right; }
 
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
-        .brand-cell { vertical-align: top; }
-        .title-cell { vertical-align: top; text-align: right; }
+        .brand-cell { vertical-align: top; width: 60%; }
+        .title-cell { vertical-align: top; width: 40%; text-align: right; }
         .invoice-title {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
-            letter-spacing: 1px;
-            margin: 0 0 6px 0;
+            letter-spacing: 1.6px;
+            margin: 0 0 8px 0;
         }
         .meta-box {
             display: inline-block;
-            background: #e5e7eb;
-            padding: 8px 10px;
-            border-radius: 4px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #111827;
+            padding: 9px 12px;
+            border-radius: 6px;
             font-size: 11px;
             text-align: left;
             min-width: 180px;
         }
         .meta-row { width: 100%; border-collapse: collapse; }
-        .meta-row td { padding: 1px 0; }
-        .meta-label { font-weight: 600; width: 45%; }
+        .meta-row td { padding: 1.5px 0; }
+        .meta-label { font-weight: 600; width: 45%; color: #374151; }
         .meta-value { text-align: right; }
 
-        .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        .bill-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         .bill-box {
-            border: 1px solid #111827;
-            padding: 8px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 6px;
+            min-height: 64px;
         }
         .bill-title {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            color: #111827;
         }
 
-        .items { width: 100%; border-collapse: collapse; }
+        .items { width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; }
         .items th {
             background: #111827;
             color: #fff;
@@ -86,38 +98,52 @@
             padding: 7px 6px;
             vertical-align: top;
         }
-        .items tbody tr:nth-child(even) { background: #f3f4f6; }
+        .items tbody tr:nth-child(even) { background: #f8fafc; }
 
         .totals-wrap { width: 100%; margin-top: 10px; }
         .totals-table {
-            width: 45%;
-            margin-left: 55%;
+            width: 44%;
+            margin-left: 56%;
             border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
         }
-        .totals-table td { padding: 5px 6px; font-size: 12px; }
+        .totals-table td {
+            padding: 6px 8px;
+            font-size: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .totals-table tr:last-child td { border-bottom: none; }
         .totals-label { text-align: right; color: #374151; }
         .totals-value { text-align: right; font-weight: 600; }
         .grand-total-row td {
             background: #111827;
             color: #fff;
             font-weight: 700;
-            font-size: 14px;
-            padding: 8px 6px;
+            font-size: 15px;
+            padding: 9px 8px;
         }
         .grand-total-row .totals-label { color: #fff; }
-        .balance-row td { background: #fef3c7; color: #92400e; font-weight: 700; }
+        .balance-row td { background: #fff7ed; color: #9a3412; font-weight: 700; }
 
         .payment-terms { width: 100%; margin-top: 14px; border-collapse: collapse; }
         .payment-col { width: 50%; vertical-align: top; }
         .section-title {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             margin: 0 0 4px 0;
         }
 
-        .hr { border-top: 1px solid #111827; margin: 16px 0 8px; }
+        .payment-box {
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 9px 10px;
+            border-radius: 6px;
+        }
+
+        .hr { border-top: 1px solid #e5e7eb; margin: 16px 0 8px; }
         .footer { font-size: 10px; color: #6b7280; text-align: center; margin-top: 6px; }
     </style>
 </head>
@@ -255,17 +281,21 @@
         <table class="payment-terms">
             <tr>
                 <td class="payment-col" style="padding-right:10px;">
-                    <div class="section-title">Payment Method</div>
-                    {% if firm.bank_name %}<div class="muted"><strong>Bank:</strong> {{ firm.bank_name }}</div>{% endif %}
-                    {% if firm.bank_account_name %}<div class="muted"><strong>A/C Name:</strong> {{ firm.bank_account_name }}</div>{% endif %}
-                    {% if firm.bank_account_number %}<div class="muted"><strong>A/C No:</strong> {{ firm.bank_account_number }}</div>{% endif %}
-                    {% if firm.bank_ifsc %}<div class="muted"><strong>IFSC:</strong> {{ firm.bank_ifsc }}</div>{% endif %}
-                    {% if firm.upi_id %}<div class="muted"><strong>UPI:</strong> {{ firm.upi_id }}</div>{% endif %}
+                    <div class="payment-box">
+                        <div class="section-title">Payment Method</div>
+                        {% if firm.bank_name %}<div class="muted"><strong>Bank:</strong> {{ firm.bank_name }}</div>{% endif %}
+                        {% if firm.bank_account_name %}<div class="muted"><strong>A/C Name:</strong> {{ firm.bank_account_name }}</div>{% endif %}
+                        {% if firm.bank_account_number %}<div class="muted"><strong>A/C No:</strong> {{ firm.bank_account_number }}</div>{% endif %}
+                        {% if firm.bank_ifsc %}<div class="muted"><strong>IFSC:</strong> {{ firm.bank_ifsc }}</div>{% endif %}
+                        {% if firm.upi_id %}<div class="muted"><strong>UPI:</strong> {{ firm.upi_id }}</div>{% endif %}
+                    </div>
                 </td>
                 <td class="payment-col" style="padding-left:10px;">
                     {% if firm.terms %}
-                        <div class="section-title">Terms</div>
-                        <div class="muted" style="white-space:pre-line;">{{ firm.terms }}</div>
+                        <div class="payment-box">
+                            <div class="section-title">Terms</div>
+                            <div class="muted" style="white-space:pre-line;">{{ firm.terms }}</div>
+                        </div>
                     {% endif %}
                 </td>
             </tr>
