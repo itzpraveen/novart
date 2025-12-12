@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <p class="text-muted mb-1">{{ project.code }}</p>
+        <h2 class="mb-0">{{ project.name }} · Timeline</h2>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Stage history → timeline</div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Days</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for phase in phases %}
+                        <tr>
+                            <td>{{ phase.stage }}</td>
+                            <td>{{ phase.start|date:"d M Y" }}</td>
+                            <td>{{ phase.end|date:"d M Y" }}</td>
+                            <td>{{ phase.duration_days|default:"—" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">No stage history yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Tasks & due dates</div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Status</th>
+                        <th>Assignee</th>
+                        <th>Due</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for task in tasks %}
+                        <tr class="{% if task.due_date and task.due_date < today and task.status != 'done' %}table-danger{% endif %}">
+                            <td><a href="{% url 'task_detail' task.pk %}">{{ task.title }}</a></td>
+                            <td>{{ task.get_status_display }}</td>
+                            <td>{{ task.assigned_to|default:"Unassigned" }}</td>
+                            <td>{{ task.due_date|date:"d M Y"|default:"—" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">No tasks yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

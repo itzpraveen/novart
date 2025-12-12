@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <p class="text-muted mb-1">{{ project.code }} · {{ project.name }}</p>
+        <h2 class="mb-0">{{ task.title }}</h2>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            <span class="badge bg-info">{{ task.get_status_display }}</span>
+            <span class="badge bg-light text-dark border">{{ task.get_priority_display }}</span>
+            {% if task.due_date %}<span class="badge bg-light text-dark border">Due {{ task.due_date|date:"d M Y" }}</span>{% endif %}
+            {% if task.assigned_to %}<span class="badge bg-light text-dark border">Assigned to {{ task.assigned_to }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'project_tasks' project.pk %}">Back to board</a>
+        {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'architect' %}
+            <a class="btn btn-outline-primary" href="{% url 'task_edit' task.pk %}">Edit task</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">Task brief</div>
+            <div class="card-body">
+                {% if task.description %}
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Description</div>
+                        <div style="white-space: pre-wrap;">{{ task.description }}</div>
+                    </div>
+                {% endif %}
+                {% if task.objective %}
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Objective</div>
+                        <div style="white-space: pre-wrap;">{{ task.objective }}</div>
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Expected output</div>
+                    <div style="white-space: pre-wrap;">{{ task.expected_output }}</div>
+                </div>
+                {% if task.deliverables %}
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Deliverables / checklist</div>
+                        <div style="white-space: pre-wrap;">{{ task.deliverables }}</div>
+                    </div>
+                {% endif %}
+                {% if task.references %}
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">References / links</div>
+                        <div style="white-space: pre-wrap;">{{ task.references }}</div>
+                    </div>
+                {% endif %}
+                {% if task.constraints %}
+                    <div class="mb-0">
+                        <div class="text-muted small mb-1">Constraints</div>
+                        <div style="white-space: pre-wrap;">{{ task.constraints }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Discussion</div>
+            <div class="card-body">
+                {% for comment in comments %}
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">
+                            {{ comment.author|default:"System" }} · {{ comment.created_at|date:"d M Y H:i" }}
+                        </div>
+                        <div style="white-space: pre-wrap;">{{ comment.body }}</div>
+                        {% if comment.attachments.all %}
+                            <div class="mt-2 small">
+                                {% for attachment in comment.attachments.all %}
+                                    <div>
+                                        <a href="{{ attachment.file.url }}" target="_blank">
+                                            {{ attachment.caption|default:attachment.file.name }}
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p class="text-muted small mb-0">No updates yet.</p>
+                {% endfor %}
+                <hr/>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label class="form-label">{{ form.body.label }}</label>
+                        {{ form.body|add_class:"form-control" }}
+                        {% for error in form.body.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Attachments</label>
+                        {{ form.attachments|add_class:"form-control" }}
+                        {% for error in form.attachments.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        <div class="form-text">{{ form.attachments.help_text }}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm">Post update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold">Metadata</div>
+            <div class="card-body small">
+                <div><strong>Status:</strong> {{ task.get_status_display }}</div>
+                <div><strong>Priority:</strong> {{ task.get_priority_display }}</div>
+                <div><strong>Due date:</strong> {{ task.due_date|date:"d M Y"|default:"—" }}</div>
+                <div><strong>Estimated:</strong> {{ task.estimated_hours }}h</div>
+                <div><strong>Actual:</strong> {{ task.actual_hours }}h</div>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Watchers</div>
+            <div class="card-body small">
+                {% for watcher in task.watchers.all %}
+                    <div>{{ watcher }}</div>
+                {% empty %}
+                    <p class="text-muted small mb-0">No watchers yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

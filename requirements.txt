@@ -9,3 +9,4 @@ python-dateutil==2.9.0.post0
 whitenoise==6.6.0
 xhtml2pdf==0.2.15
 requests==2.32.3
+sentry-sdk==2.20.0

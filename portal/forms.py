@@ -20,6 +20,8 @@ from .models import (
     SiteVisit,
     SiteVisitAttachment,
     Task,
+    TaskComment,
+    TaskCommentAttachment,
     TaskTemplate,
     Transaction,
     User,
@@ -211,14 +213,29 @@ class TaskForm(forms.ModelForm):
             'project',
             'title',
             'description',
+            'objective',
+            'expected_output',
+            'deliverables',
+            'references',
+            'constraints',
             'status',
             'priority',
             'due_date',
             'assigned_to',
+            'watchers',
             'estimated_hours',
             'actual_hours',
         ]
-        widgets = {'due_date': DateInput(), 'description': forms.Textarea(attrs={'rows': 3})}
+        widgets = {
+            'due_date': DateInput(),
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'objective': forms.Textarea(attrs={'rows': 2}),
+            'expected_output': forms.Textarea(attrs={'rows': 2}),
+            'deliverables': forms.Textarea(attrs={'rows': 3}),
+            'references': forms.Textarea(attrs={'rows': 2}),
+            'constraints': forms.Textarea(attrs={'rows': 2}),
+            'watchers': forms.SelectMultiple(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -226,10 +243,17 @@ class TaskForm(forms.ModelForm):
         placeholders = {
             'title': 'Task title',
             'description': 'Details or acceptance criteria',
+            'objective': 'What is this task trying to achieve?',
+            'expected_output': 'Define the required output/result',
+            'deliverables': 'One deliverable per line',
+            'references': 'Links or notes, one per line',
+            'constraints': 'Budgets, rules, or limitations',
         }
         for field, text in placeholders.items():
             if field in self.fields:
                 self.fields[field].widget.attrs.setdefault('placeholder', text)
+        if 'watchers' in self.fields:
+            self.fields['watchers'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
 
     def clean(self):
         cleaned = super().clean()
@@ -246,6 +270,25 @@ class TaskForm(forms.ModelForm):
                 from datetime import date, timedelta
                 cleaned['due_date'] = date.today() + timedelta(days=template.due_in_days or 0)
         return cleaned
+
+
+class TaskCommentForm(forms.ModelForm):
+    attachments = MultipleFileField(
+        required=False,
+        help_text='Optional files, images, or notes to attach.',
+    )
+
+    class Meta:
+        model = TaskComment
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(
+                attrs={
+                    'rows': 3,
+                    'placeholder': 'Add an update… Use @username to mention someone.',
+                }
+            )
+        }
 
 
 class UserForm(forms.ModelForm):
@@ -387,8 +430,8 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['payment_date', 'amount', 'method', 'reference', 'received_by']
-        widgets = {'payment_date': DateInput()}
+        fields = ['payment_date', 'amount', 'method', 'reference', 'notes', 'received_by']
+        widgets = {'payment_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
 
     def clean_amount(self):
         amount = self.cleaned_data.get('amount') or Decimal('0')

@@ -1377,6 +1377,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: rgba(236, 253, 245, 0.8);
 }
 
+/* WIP limit exceeded highlight */
+.kanban-wip-exceeded .card-header {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-bottom-color: #ef4444 !important;
+    color: #b91c1c !important;
+}
+
 /* Kanban task card */
 .kanban-task {
     border: 1px solid var(--border-color);

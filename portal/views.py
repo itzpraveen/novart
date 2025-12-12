@@ -8,7 +8,9 @@ import json
 import logging
 import mimetypes
 import os
+import re
 from io import BytesIO
+from django.conf import settings as dj_settings
 from django.contrib.staticfiles import finders
 
 from django.contrib import messages
@@ -64,6 +66,7 @@ from .forms import (
     SiteVisitForm,
     StageUpdateForm,
     TaskForm,
+    TaskCommentForm,
     TransactionForm,
     ReminderSettingForm,
     UserForm,
@@ -86,12 +89,17 @@ from .models import (
     SiteVisit,
     SiteVisitAttachment,
     Task,
+    TaskComment,
+    TaskCommentAttachment,
     TaskTemplate,
     Transaction,
     User,
     RolePermission,
 )
 from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
+from .notifications.tasks import notify_task_change
+from .notifications.whatsapp import send_text as send_whatsapp_text
+from django.core.mail import send_mail
 
 
 def _can_view_all_tasks(user) -> bool:
@@ -118,6 +126,16 @@ def _visible_projects_for_user(user, queryset=None):
     return qs.filter(
         Q(project_manager=user) | Q(site_engineer=user) | Q(tasks__assigned_to=user)
     ).distinct()
+
+
+MENTION_RE = re.compile(r'@([\w.@+-]+)')
+
+
+def _mentioned_users(text: str):
+    usernames = {m.strip() for m in MENTION_RE.findall(text or '') if m.strip()}
+    if not usernames:
+        return User.objects.none()
+    return User.objects.filter(username__in=usernames, is_active=True)
 
 
 def _get_default_context():
@@ -691,6 +709,43 @@ def project_detail(request, pk):
     stage_history = project.stage_history.all()
     stage_form = StageUpdateForm(initial={'stage': project.current_stage})
     can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
+
+    month_buckets = defaultdict(lambda: {'invoiced': Decimal('0'), 'expenses': Decimal('0')})
+    for row in (
+        Invoice.objects.filter(project=project)
+        .annotate(month=TruncMonth('invoice_date'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['invoiced'] += row['total'] or Decimal('0')
+    for row in (
+        Transaction.objects.filter(related_project=project)
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Sum('debit'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+    for row in (
+        SiteVisit.objects.filter(project=project)
+        .annotate(month=TruncMonth('visit_date'))
+        .values('month')
+        .annotate(total=Sum('expenses'))
+        .order_by('month')
+    ):
+        if row['month']:
+            month_buckets[row['month'].date()]['expenses'] += row['total'] or Decimal('0')
+
+    months_sorted = sorted(month_buckets.keys())
+    profit_chart_data = {
+        'labels': [m.strftime('%b %Y') for m in months_sorted],
+        'invoiced': [float(month_buckets[m]['invoiced']) for m in months_sorted],
+        'expenses': [float(month_buckets[m]['expenses']) for m in months_sorted],
+        'profit': [float(month_buckets[m]['invoiced'] - month_buckets[m]['expenses']) for m in months_sorted],
+    }
     return render(
         request,
         'portal/project_detail.html',
@@ -706,6 +761,7 @@ def project_detail(request, pk):
             'visible_total_tasks': visible_total_tasks,
             'currency': '₹',
             'can_manage_tasks': can_manage_tasks,
+            'profit_chart_data': json.dumps(profit_chart_data),
         },
     )
 
@@ -730,12 +786,77 @@ def project_stage_update(request, pk):
 
 @login_required
 @module_required('projects')
+def project_timeline(request, pk):
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
+    history = list(project.stage_history.order_by('changed_on', 'created_at'))
+    phases = []
+    if history:
+        for idx, change in enumerate(history):
+            start = change.changed_on
+            end = history[idx + 1].changed_on - timedelta(days=1) if idx + 1 < len(history) else timezone.localdate()
+            phases.append(
+                {
+                    'stage': change.stage,
+                    'start': start,
+                    'end': end,
+                    'duration_days': (end - start).days + 1 if start and end else None,
+                    'changed_by': change.changed_by,
+                    'notes': change.notes,
+                }
+            )
+    elif project.start_date:
+        phases.append(
+            {
+                'stage': project.current_stage,
+                'start': project.start_date,
+                'end': timezone.localdate(),
+                'duration_days': (timezone.localdate() - project.start_date).days + 1 if project.start_date else None,
+                'changed_by': None,
+                'notes': '',
+            }
+        )
+
+    tasks = _visible_tasks_for_user(request.user, project.tasks.select_related('assigned_to')).order_by('due_date')
+    return render(
+        request,
+        'portal/project_timeline.html',
+        {
+            'project': project,
+            'phases': phases,
+            'tasks': tasks,
+            'today': timezone.localdate(),
+        },
+    )
+
+
+@login_required
+@module_required('projects')
 def project_tasks(request, pk):
     project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
-    task_list = list(_visible_tasks_for_user(request.user, project.tasks.select_related('assigned_to')))
+    today = timezone.localdate()
+    visible_tasks_qs = _visible_tasks_for_user(request.user, project.tasks.select_related('assigned_to'))
+
+    assigned_to_filter = request.GET.get('assigned_to') or ''
+    priority_filter = request.GET.get('priority') or ''
+    overdue_filter = request.GET.get('overdue') == '1'
+
+    tasks_qs = visible_tasks_qs
+    if assigned_to_filter:
+        if assigned_to_filter == 'unassigned':
+            tasks_qs = tasks_qs.filter(assigned_to__isnull=True)
+        else:
+            tasks_qs = tasks_qs.filter(assigned_to_id=assigned_to_filter)
+    if priority_filter:
+        tasks_qs = tasks_qs.filter(priority=priority_filter)
+    if overdue_filter:
+        tasks_qs = tasks_qs.filter(due_date__lt=today).exclude(status=Task.Status.DONE)
+
     columns = {code: [] for code, _ in Task.Status.choices}
-    for task in task_list:
+    for task in tasks_qs:
         columns.setdefault(task.status, []).append(task)
+
+    wip_limits = getattr(dj_settings, 'KANBAN_WIP_LIMITS', {}) or {}
+    wip_counts = {code: visible_tasks_qs.filter(status=code).count() for code, _ in Task.Status.choices}
     can_manage_tasks = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
     form = TaskForm(initial={'project': project})
     if not _can_view_all_projects(request.user):
@@ -751,6 +872,15 @@ def project_tasks(request, pk):
             if task.project_id != project.pk:
                 return HttpResponseForbidden("You do not have permission to add tasks to this project.")
             task.save()
+            form.save_m2m()
+            if task.assigned_to_id:
+                task.watchers.add(task.assigned_to)
+            notify_task_change(
+                task,
+                actor=request.user,
+                message=f"{request.user} created task “{task.title}”.",
+                category='task_created',
+            )
             messages.success(request, 'Task added.')
             return redirect('project_tasks', pk=pk)
     return render(
@@ -763,7 +893,14 @@ def project_tasks(request, pk):
             'can_manage_tasks': can_manage_tasks,
             'statuses': Task.Status.choices,
             'task_templates_json': _task_template_data(),
-            'today': timezone.localdate(),
+            'today': today,
+            'assignees': User.objects.filter(is_active=True).order_by('first_name', 'username'),
+            'assigned_to_filter': assigned_to_filter,
+            'priority_filter': priority_filter,
+            'overdue_filter': overdue_filter,
+            'priority_choices': Task.Priority.choices,
+            'wip_limits': wip_limits,
+            'wip_counts': wip_counts,
         },
     )
 
@@ -786,6 +923,15 @@ def task_create(request):
             if not _visible_projects_for_user(request.user).filter(pk=task.project_id).exists():
                 return HttpResponseForbidden("You do not have permission to add tasks to that project.")
             task.save()
+            form.save_m2m()
+            if task.assigned_to_id:
+                task.watchers.add(task.assigned_to)
+            notify_task_change(
+                task,
+                actor=request.user,
+                message=f"{request.user} created task “{task.title}”.",
+                category='task_created',
+            )
             messages.success(request, 'Task created.')
             return redirect('project_detail', pk=task.project.pk)
     else:
@@ -809,6 +955,11 @@ def task_edit(request, pk):
         task_qs = task_qs.filter(project__in=visible_projects)
     task = get_object_or_404(task_qs, pk=pk)
     if request.method == 'POST':
+        old_status = task.status
+        old_assigned_to = task.assigned_to
+        old_assigned_to_id = task.assigned_to_id
+        old_due_date = task.due_date
+        old_priority = task.priority
         form = TaskForm(request.POST, instance=task)
         if not _can_view_all_projects(request.user):
             form.fields['project'].queryset = visible_projects
@@ -817,6 +968,31 @@ def task_edit(request, pk):
             if not visible_projects.filter(pk=updated_task.project_id).exists():
                 return HttpResponseForbidden("You do not have permission to move this task to that project.")
             updated_task.save()
+            form.save_m2m()
+            changes = []
+            if old_status != updated_task.status:
+                changes.append(f"status {old_status} → {updated_task.status}")
+            if old_priority != updated_task.priority:
+                changes.append(f"priority {old_priority} → {updated_task.priority}")
+            if old_due_date != updated_task.due_date:
+                changes.append(f"due {old_due_date or '—'} → {updated_task.due_date or '—'}")
+            if old_assigned_to_id != updated_task.assigned_to_id:
+                changes.append(
+                    f"assignee {old_assigned_to or 'Unassigned'} → {updated_task.assigned_to or 'Unassigned'}"
+                )
+                if updated_task.assigned_to_id:
+                    updated_task.watchers.add(updated_task.assigned_to)
+            if changes or form.changed_data:
+                if changes:
+                    message = f"{request.user} updated task “{updated_task.title}”: " + "; ".join(changes)
+                else:
+                    message = f"{request.user} updated task “{updated_task.title}”."
+                notify_task_change(
+                    updated_task,
+                    actor=request.user,
+                    message=message,
+                    category='task_updated',
+                )
             messages.success(request, 'Task updated.')
             return redirect('project_detail', pk=updated_task.project.pk)
     else:
@@ -827,6 +1003,58 @@ def task_edit(request, pk):
         request,
         'portal/task_form.html',
         {'form': form, 'task': task, 'project': task.project, 'task_templates_json': _task_template_data()},
+    )
+
+
+@login_required
+@module_required('projects')
+def task_detail(request, pk):
+    visible_projects = _visible_projects_for_user(request.user)
+    task_qs = Task.objects.select_related('project', 'assigned_to').prefetch_related('watchers')
+    if not _can_view_all_projects(request.user):
+        task_qs = task_qs.filter(project__in=visible_projects)
+    task_qs = _visible_tasks_for_user(request.user, task_qs)
+    task = get_object_or_404(task_qs, pk=pk)
+
+    comments_qs = task.comments.select_related('author').prefetch_related('attachments')
+    if request.method == 'POST':
+        form = TaskCommentForm(request.POST, request.FILES)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.task = task
+            comment.author = request.user
+            comment.save()
+            for uploaded in form.cleaned_data.get('attachments') or []:
+                TaskCommentAttachment.objects.create(comment=comment, file=uploaded)
+
+            # Auto-watch when commenting
+            if task.watchers.filter(pk=request.user.pk).exists() is False:
+                task.watchers.add(request.user)
+
+            for user in _mentioned_users(comment.body):
+                if user.pk == request.user.pk:
+                    continue
+                Notification.objects.create(
+                    user=user,
+                    message=f"{request.user} mentioned you on task “{task.title}”.",
+                    category='task_mention',
+                    related_url=reverse('task_detail', args=[task.pk]),
+                )
+
+            messages.success(request, 'Comment added.')
+            return redirect('task_detail', pk=pk)
+    else:
+        form = TaskCommentForm()
+
+    return render(
+        request,
+        'portal/task_detail.html',
+        {
+            'task': task,
+            'project': task.project,
+            'comments': comments_qs,
+            'form': form,
+        },
     )
 
 
@@ -862,8 +1090,21 @@ def task_quick_update(request, pk):
         return JsonResponse({'ok': False, 'error': 'Invalid status'}, status=400)
 
     if new_status != task.status:
+        old_status = task.status
         task.status = new_status
         task.save(update_fields=['status'])
+        TaskComment.objects.create(
+            task=task,
+            author=request.user,
+            body=f"Status changed from {old_status} to {new_status}.",
+            is_system=True,
+        )
+        notify_task_change(
+            task,
+            actor=request.user,
+            message=f"{request.user} moved task “{task.title}” to {task.get_status_display()}.",
+            category='task_status_changed',
+        )
 
     return JsonResponse({'ok': True, 'status': task.status})
 
@@ -1329,6 +1570,26 @@ def receipt_create(request, payment_pk):
             receipt.payment = payment
             receipt.generated_by = request.user
             receipt.save()
+            client = receipt.client
+            receipt_url = request.build_absolute_uri(reverse('receipt_pdf', args=[receipt.pk]))
+            message_body = (
+                f"Payment received for invoice #{receipt.invoice.invoice_number}. "
+                f"Receipt #{receipt.receipt_number}: {receipt_url}"
+            )
+            if client:
+                try:
+                    if client.phone:
+                        send_whatsapp_text(client.phone, message_body)
+                    if client.email:
+                        send_mail(
+                            subject=f"Receipt #{receipt.receipt_number}",
+                            message=message_body,
+                            from_email=None,
+                            recipient_list=[client.email],
+                            fail_silently=True,
+                        )
+                except Exception:
+                    logger.exception("Failed to send receipt notification to client %s", client.pk)
             messages.success(request, f"Receipt {receipt.receipt_number} generated.")
             return redirect('receipt_pdf', receipt_pk=receipt.pk)
     else:

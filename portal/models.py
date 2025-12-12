@@ -1,4 +1,6 @@
 from decimal import Decimal
+import os
+import re
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -233,12 +235,47 @@ class Task(TimeStampedModel):
     )
     estimated_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     actual_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    objective = models.TextField(blank=True, help_text='What is the goal of this task?')
+    expected_output = models.TextField(help_text='What should be delivered/decided?')
+    deliverables = models.TextField(blank=True, help_text='Checklist or bullet deliverables (one per line).')
+    references = models.TextField(blank=True, help_text='Links or references (one per line).')
+    constraints = models.TextField(blank=True, help_text='Any constraints, budgets, or rules to follow.')
+    watchers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name='watched_tasks', help_text='Users watching this task.'
+    )
 
     class Meta:
         ordering = ['due_date', 'priority']
 
     def __str__(self) -> str:
         return self.title
+
+
+class TaskComment(TimeStampedModel):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='task_comments'
+    )
+    body = models.TextField()
+    is_system = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self) -> str:
+        return f"Comment on {self.task}"
+
+
+class TaskCommentAttachment(TimeStampedModel):
+    comment = models.ForeignKey(TaskComment, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='task_comments/', blank=True, null=True)
+    caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f"Attachment for {self.comment}"
 
 
 class TaskTemplate(TimeStampedModel):
@@ -330,7 +367,7 @@ class Invoice(TimeStampedModel):
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invoices', null=True, blank=True)
     lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, related_name='invoices', null=True, blank=True)
-    invoice_number = models.CharField(max_length=50, unique=True)
+    invoice_number = models.CharField(max_length=50, unique=True, blank=True)
     invoice_date = models.DateField()
     due_date = models.DateField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -349,6 +386,41 @@ class Invoice(TimeStampedModel):
         super().clean()
         if not self.project and not self.lead:
             raise ValidationError('Select a project or a lead to bill.')
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            self.invoice_number = self._generate_invoice_number()
+        super().save(*args, **kwargs)
+
+    def _generate_invoice_number(self) -> str:
+        prefix = (os.environ.get('INVOICE_PREFIX') or 'NVRT').strip() or 'NVRT'
+        project_part = 'GEN'
+        if self.project and getattr(self.project, 'code', None):
+            code = str(self.project.code)
+            match = re.match(r'^(\d+)', code)
+            if match:
+                project_part = match.group(1)
+            else:
+                project_part = code.split('-')[0] or code
+        elif self.lead and self.lead.client_id:
+            project_part = str(self.lead.client_id)
+
+        pattern = re.compile(rf'^{re.escape(prefix)}/[^/]+/(\d+)$')
+        max_seq = 0
+        for existing in Invoice.objects.values_list('invoice_number', flat=True):
+            m = pattern.match(existing or '')
+            if m:
+                try:
+                    max_seq = max(max_seq, int(m.group(1)))
+                except ValueError:
+                    continue
+
+        seq = max_seq + 1
+        candidate = f"{prefix}/{project_part}/{seq}"
+        while Invoice.objects.filter(invoice_number=candidate).exists():
+            seq += 1
+            candidate = f"{prefix}/{project_part}/{seq}"
+        return candidate
 
     def refresh_status(self, *, save: bool = True, today=None) -> str:
         """Update invoice.status based on due date and payments."""
@@ -420,6 +492,7 @@ class Payment(TimeStampedModel):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=50, blank=True)
     reference = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True, help_text='Internal notes about this payment.')
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

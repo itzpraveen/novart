@@ -39,6 +39,7 @@ Open http://127.0.0.1:8000 and log in with the user created above.
 - `DJANGO_SECRET_KEY`: override the default dev key.
 - `DJANGO_ALLOWED_HOSTS`: comma separated hosts (e.g. `studio.example.com,127.0.0.1`).
 - `DATABASE_URL` if you swap to a different database backend (update `DATABASES`).
+- `INVOICE_PREFIX`: prefix for auto invoice numbers (default `NVRT`).
 
 ### Seed Sample Data (optional)
 ```bash
@@ -55,6 +56,23 @@ Reminders run through a management command; schedule it with cron:
 ```
 
 The command inspects configured `ReminderSetting` records (pre-seeded for task due dates, handovers, invoice due, and overdue) and writes in-app notifications to the assigned staff + admins.
+
+## Ops Hardening (production)
+
+### Nightly Postgres backups
+Use `ops/backup_postgres.sh` with cron or a systemd timer. It dumps `DATABASE_URL`, keeps a local rolling window, and optionally pushes off‑droplet (rclone or AWS CLI).
+
+Example cron (2 AM daily):
+```bash
+0 2 * * * DATABASE_URL="postgres://USER:PASS@HOST:5432/DB" BACKUP_DIR="/var/backups/studioflow" OFFSITE_REMOTE="s3://your-bucket/studioflow" /path/to/repo/ops/backup_postgres.sh >> /var/log/studioflow-backup.log 2>&1
+```
+
+### Basic monitoring
+`ops/monitor_basic.sh` prints CPU load / memory / disk. Schedule it hourly and pipe to email/WhatsApp or a simple uptime monitor.
+
+### Error reporting
+- Recommended: Sentry. Add `sentry-sdk` to `requirements.txt`, set `SENTRY_DSN`, and Django will auto‑init (see `studioflow/settings.py`).
+- Alternative: configure SMTP + Django `ADMINS` to use email alerts.
 
 ## Useful Commands
 - `python manage.py createsuperuser` – add admin.

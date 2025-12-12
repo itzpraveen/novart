@@ -42,6 +42,14 @@ def env_bool(name: str, default: bool) -> bool:
     return os.environ.get(name, str(default)).lower() in ('1', 'true', 'yes', 'on')
 
 
+def env_int(name: str, default: int) -> int:
+    """Read an integer environment variable."""
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -159,6 +167,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_CURRENCY = 'INR'
 DATE_INPUT_FORMATS = ['%d-%m-%Y', '%Y-%m-%d']
 
+# Optional Kanban WIP caps per column (0/empty disables).
+KANBAN_WIP_LIMITS = {
+    'todo': env_int('KANBAN_WIP_TODO', 0),
+    'in_progress': env_int('KANBAN_WIP_IN_PROGRESS', 0),
+    'done': env_int('KANBAN_WIP_DONE', 0),
+}
+KANBAN_WIP_LIMITS = {k: v for k, v in KANBAN_WIP_LIMITS.items() if v}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -179,3 +195,20 @@ LOGGING = {
         },
     },
 }
+
+# Optional Sentry error reporting. Install sentry-sdk and set SENTRY_DSN.
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0') or 0),
+            send_default_pii=True,
+        )
+    except Exception:
+        # Safe no-op if sentry-sdk isn't installed or init fails.
+        pass

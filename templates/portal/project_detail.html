@@ -16,6 +16,7 @@
         <div class="subnav-tabs">
             <a class="subnav-link active" href="{% url 'project_detail' project.pk %}">Overview</a>
             <a class="subnav-link" href="{% url 'project_tasks' project.pk %}">Tasks</a>
+            <a class="subnav-link" href="{% url 'project_timeline' project.pk %}">Timeline</a>
             <a class="subnav-link" href="{% url 'invoice_list' %}?project={{ project.pk }}">Invoices</a>
             <a class="subnav-link" href="{% url 'site_visit_list' %}?project={{ project.pk }}">Visits</a>
             <a class="subnav-link" href="{% url 'document_list' %}?project={{ project.pk }}">Docs</a>
@@ -107,6 +108,60 @@
         </div>
     </div>
 </div>
+
+{% if profit_chart_data %}
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">Profitability trend (invoiced − expenses)</div>
+    <div class="card-body">
+        <canvas id="profitChart" height="110"></canvas>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(() => {
+    const payload = {{ profit_chart_data|safe }};
+    const ctx = document.getElementById('profitChart');
+    if (!ctx || !payload || !payload.labels || !payload.labels.length) return;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: payload.labels,
+            datasets: [
+                {
+                    label: 'Profit',
+                    data: payload.profit,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    tension: 0.25,
+                    fill: true,
+                },
+                {
+                    label: 'Invoiced',
+                    data: payload.invoiced,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    tension: 0.25,
+                    fill: false,
+                },
+                {
+                    label: 'Expenses',
+                    data: payload.expenses,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    tension: 0.25,
+                    fill: false,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: { y: { beginAtZero: true } },
+        },
+    });
+})();
+</script>
+{% endif %}
 
 <div class="row g-3">
     <div class="col-md-6">
