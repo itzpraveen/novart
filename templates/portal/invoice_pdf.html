@@ -15,7 +15,7 @@
 	            src: url("file://{{ font_path }}");
 	        }
 	        {% endif %}
-	        @page { size: A4; margin: 36px; }
+	        @page { size: A4; margin: 22mm; }
 	        body, table, th, td {
 	            font-family: "DejaVuSans", "Helvetica", "Arial", sans-serif;
 	            color: #0f172a;
@@ -25,7 +25,7 @@
 	        }
 	        body { background: #ffffff; }
 
-	        .sheet { width: 100%; padding: 0 6px; }
+	        .sheet { width: 100%; }
 	        .topline { height: 3px; background: #0f172a; margin-bottom: 14px; }
 
 	        .muted { color: #64748b; font-size: 10px; }
@@ -58,9 +58,7 @@
 	        .client-name { font-size: 13px; font-weight: 800; margin: 0 0 2px 0; }
 
 	        .bill { width: 100%; border-collapse: collapse; }
-	        .billto { width: 70%; vertical-align: top; padding-right: 16px; }
-	        .billmeta { width: 30%; vertical-align: top; text-align: right; }
-	        .amount-due { font-size: 18px; font-weight: 800; margin: 0; }
+	        .billto { width: 100%; vertical-align: top; }
 
 	        .items { width: 100%; border-collapse: collapse; margin-top: 8px; }
 	        .items th {
@@ -117,6 +115,13 @@
 	        .foot { width: 100%; border-collapse: collapse; }
 	        .thanks { font-size: 11px; font-weight: 800; }
 	        .generated { font-size: 10px; color: #64748b; text-align: right; }
+	        .footer-meta {
+	            margin-top: 8px;
+	            text-align: center;
+	            color: #64748b;
+	            font-size: 9.5px;
+	            line-height: 1.35;
+	        }
 	    </style>
 </head>
 <body>
@@ -132,7 +137,6 @@
 	                    {% else %}
 	                        <div class="brand-name">{{ firm.name|default:"StudioFlow" }}</div>
 	                    {% endif %}
-	                    {% if firm.address %}<div class="muted" style="white-space:pre-line; margin-top: 6px;">{{ firm.address }}</div>{% endif %}
 	                    <div class="muted">
 	                        {% if firm.phone %}Ph: {{ firm.phone }}{% endif %}
 	                        {% if firm.phone and firm.email %} · {% endif %}
@@ -182,11 +186,6 @@
 	                    {% else %}
 	                        <div class="muted">No client linked</div>
 	                    {% endif %}
-	                </td>
-	                <td class="billmeta">
-	                    <div class="section-label">Amount Due</div>
-	                    <div class="amount-due">{{ invoice.outstanding|rupee }}</div>
-	                    <div class="muted">Due {{ invoice.due_date|date:"d M Y" }}</div>
 	                </td>
 	            </tr>
 	        </table>
@@ -313,6 +312,12 @@
 	            </table>
 	            {% if firm.email %}
 	                <div class="muted" style="margin-top: 4px;">For queries: {{ firm.email }}</div>
+	            {% endif %}
+	            {% if firm.address %}
+	                <div class="footer-meta" style="white-space: pre-line;">{{ firm.address }}</div>
+	            {% endif %}
+	            {% if firm.phone %}
+	                <div class="footer-meta">Ph: {{ firm.phone }}{% if firm.email %} · {{ firm.email }}{% endif %}</div>
 	            {% endif %}
 	        </div>
 	    </div>
