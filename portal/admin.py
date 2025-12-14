@@ -13,6 +13,7 @@ from .models import (
     Project,
     ProjectStageHistory,
     ReminderSetting,
+    StaffActivity,
     SiteIssue,
     SiteIssueAttachment,
     SiteVisit,
@@ -131,6 +132,13 @@ class ReminderSettingAdmin(admin.ModelAdmin):
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'message', 'is_read', 'created_at')
+
+
+@admin.register(StaffActivity)
+class StaffActivityAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'actor', 'category', 'message')
+    list_filter = ('category',)
+    search_fields = ('message', 'actor__username', 'actor__first_name', 'actor__last_name')
 
 
 @admin.register(FirmProfile)

@@ -1,12 +1,30 @@
 import django_filters
 from django.contrib.auth import get_user_model
+from django import forms
 
-from .models import Invoice, Lead, Project, SiteIssue, SiteVisit, Task, Transaction
+from .models import Invoice, Lead, Project, SiteIssue, SiteVisit, StaffActivity, Task, Transaction
 
 User = get_user_model()
 
 
 class ProjectFilter(django_filters.FilterSet):
+    ordering = django_filters.OrderingFilter(
+        label='Sort',
+        fields=(
+            ('code', 'code'),
+            ('client__name', 'client'),
+            ('start_date', 'start_date'),
+            ('expected_handover', 'expected_handover'),
+            ('updated_at', 'updated_at'),
+        ),
+        field_labels={
+            'code': 'Code',
+            'client': 'Client',
+            'start_date': 'Start date',
+            'expected_handover': 'Handover date',
+            'updated_at': 'Last updated',
+        },
+    )
     current_stage = django_filters.ChoiceFilter(choices=Project.Stage.choices)
     health_status = django_filters.ChoiceFilter(choices=Project.Health.choices)
     project_type = django_filters.ChoiceFilter(choices=Project.ProjectType.choices)
@@ -77,3 +95,31 @@ class TransactionFilter(django_filters.FilterSet):
     class Meta:
         model = Transaction
         fields = ['related_project', 'related_client']
+
+
+class StaffActivityFilter(django_filters.FilterSet):
+    q = django_filters.CharFilter(method='filter_q', label='Search')
+    actor = django_filters.ModelChoiceFilter(queryset=User.objects.all())
+    category = django_filters.ChoiceFilter(choices=StaffActivity.Category.choices)
+    from_date = django_filters.DateFilter(
+        field_name='created_at',
+        lookup_expr='date__gte',
+        label='From',
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    to_date = django_filters.DateFilter(
+        field_name='created_at',
+        lookup_expr='date__lte',
+        label='To',
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+
+    def filter_q(self, queryset, name, value):
+        value = (value or '').strip()
+        if not value:
+            return queryset
+        return queryset.filter(message__icontains=value)
+
+    class Meta:
+        model = StaffActivity
+        fields = ['q', 'actor', 'category', 'from_date', 'to_date']

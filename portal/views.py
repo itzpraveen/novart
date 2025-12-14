@@ -16,6 +16,7 @@ from django.contrib.staticfiles import finders
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction as db_transaction
 from django.db.models import (
     Count,
     Q,
@@ -49,7 +50,15 @@ from reportlab.pdfbase.ttfonts import TTFont
 logger = logging.getLogger(__name__)
 
 from .decorators import role_required, module_required
-from .filters import InvoiceFilter, ProjectFilter, SiteIssueFilter, SiteVisitFilter, TaskFilter, TransactionFilter
+from .filters import (
+    InvoiceFilter,
+    ProjectFilter,
+    SiteIssueFilter,
+    SiteVisitFilter,
+    StaffActivityFilter,
+    TaskFilter,
+    TransactionFilter,
+)
 from .forms import (
     ClientForm,
     DocumentForm,
@@ -84,6 +93,7 @@ from .models import (
     Project,
     ProjectStageHistory,
     ReminderSetting,
+    StaffActivity,
     SiteIssue,
     SiteIssueAttachment,
     SiteVisit,
@@ -99,6 +109,7 @@ from .models import (
 from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
 from .notifications.tasks import notify_task_change
 from .notifications.whatsapp import send_text as send_whatsapp_text
+from .activity import log_staff_activity
 from django.core.mail import send_mail
 
 
@@ -664,7 +675,7 @@ def project_list(request):
     base_qs = _visible_projects_for_user(
         request.user,
         Project.objects.select_related('client', 'project_manager', 'site_engineer'),
-    )
+    ).order_by('code')
     project_filter = ProjectFilter(request.GET, queryset=base_qs)
     qs = project_filter.qs
     context = {
@@ -688,6 +699,12 @@ def project_create(request):
         if form.is_valid():
             project = form.save()
             ProjectStageHistory.objects.create(project=project, stage=project.current_stage, changed_by=request.user)
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.PROJECTS,
+                message=f"Created project {project.code}.",
+                related_url=reverse('project_detail', args=[project.pk]),
+            )
             messages.success(request, 'Project created.')
             return redirect('project_detail', pk=project.pk)
     else:
@@ -704,6 +721,12 @@ def project_edit(request, pk):
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             project = form.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.PROJECTS,
+                message=f"Updated project {project.code}.",
+                related_url=reverse('project_detail', args=[project.pk]),
+            )
             messages.success(request, 'Project updated.')
             return redirect('project_detail', pk=project.pk)
     else:
@@ -812,6 +835,12 @@ def project_stage_update(request, pk):
             history.save()
             project.current_stage = history.stage
             project.save(update_fields=['current_stage'])
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.PROJECTS,
+                message=f"Updated stage for {project.code} → {history.stage}.",
+                related_url=reverse('project_detail', args=[project.pk]),
+            )
             messages.success(request, 'Stage updated.')
     return redirect('project_detail', pk=pk)
 
@@ -964,6 +993,12 @@ def task_create(request):
                 message=f"{request.user} created task “{task.title}”.",
                 category='task_created',
             )
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.TASKS,
+                message=f"Created task “{task.title}” ({task.project.code}).",
+                related_url=reverse('task_detail', args=[task.pk]),
+            )
             messages.success(request, 'Task created.')
             return redirect('project_detail', pk=task.project.pk)
     else:
@@ -1025,6 +1060,12 @@ def task_edit(request, pk):
                     message=message,
                     category='task_updated',
                 )
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.TASKS,
+                message=f"Updated task “{updated_task.title}” ({updated_task.project.code}).",
+                related_url=reverse('task_detail', args=[updated_task.pk]),
+            )
             messages.success(request, 'Task updated.')
             return redirect('project_detail', pk=updated_task.project.pk)
     else:
@@ -1137,6 +1178,12 @@ def task_quick_update(request, pk):
             message=f"{request.user} moved task “{task.title}” to {task.get_status_display()}.",
             category='task_status_changed',
         )
+        log_staff_activity(
+            actor=request.user,
+            category=StaffActivity.Category.TASKS,
+            message=f"Moved task “{task.title}” → {task.get_status_display()} ({task.project.code}).",
+            related_url=reverse('task_detail', args=[task.pk]),
+        )
 
     return JsonResponse({'ok': True, 'status': task.status})
 
@@ -1174,6 +1221,12 @@ def site_visit_create(request):
             visit.save()
             for file in request.FILES.getlist('attachments'):
                 SiteVisitAttachment.objects.create(site_visit=visit, file=file)
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.SITE_VISITS,
+                message=f"Logged site visit for {visit.project.code} ({visit.visit_date:%d %b %Y}).",
+                related_url=reverse('site_visit_detail', args=[visit.pk]),
+            )
             messages.success(request, 'Site visit logged.')
             return redirect('site_visit_list')
     else:
@@ -1207,6 +1260,12 @@ def site_visit_edit(request, pk):
             updated_visit.save()
             for file in request.FILES.getlist('attachments'):
                 SiteVisitAttachment.objects.create(site_visit=updated_visit, file=file)
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.SITE_VISITS,
+                message=f"Updated site visit for {updated_visit.project.code} ({updated_visit.visit_date:%d %b %Y}).",
+                related_url=reverse('site_visit_detail', args=[updated_visit.pk]),
+            )
             messages.success(request, 'Site visit updated.')
             return redirect('site_visit_list')
     else:
@@ -1264,6 +1323,12 @@ def issue_list(request):
             issue.save()
             for file in request.FILES.getlist('attachments'):
                 SiteIssueAttachment.objects.create(issue=issue, file=file)
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.SITE_VISITS,
+                message=f"Logged issue “{issue.title}” for {issue.project.code}.",
+                related_url=reverse('issue_detail', args=[issue.pk]),
+            )
             messages.success(request, 'Issue logged.')
             return redirect('issue_list')
     else:
@@ -1443,6 +1508,12 @@ def invoice_create(request):
                 formset.instance = invoice
                 formset.save()
                 _refresh_invoice_status(invoice)
+                log_staff_activity(
+                    actor=request.user,
+                    category=StaffActivity.Category.FINANCE,
+                    message=f"Created invoice {invoice.display_invoice_number}.",
+                    related_url=reverse('invoice_edit', args=[invoice.pk]),
+                )
                 messages.success(request, 'Invoice created.')
                 return redirect('invoice_list')
     else:
@@ -1473,6 +1544,12 @@ def invoice_edit(request, invoice_pk):
                 invoice.save()
                 formset.save()
                 _refresh_invoice_status(invoice)
+                log_staff_activity(
+                    actor=request.user,
+                    category=StaffActivity.Category.FINANCE,
+                    message=f"Updated invoice {invoice.display_invoice_number}.",
+                    related_url=reverse('invoice_edit', args=[invoice.pk]),
+                )
                 messages.success(request, 'Invoice updated.')
                 return redirect('invoice_list')
     else:
@@ -1543,16 +1620,54 @@ def payment_create(request, invoice_pk):
     if request.method == 'POST':
         form = PaymentForm(request.POST, invoice=invoice)
         if form.is_valid():
-            payment = form.save(commit=False)
-            payment.invoice = invoice
-            payment.recorded_by = request.user
-            payment.save()
-            _refresh_invoice_status(invoice)
-            messages.success(request, 'Payment recorded.')
-            # Offer to generate receipt
-            if 'generate_receipt' in request.POST:
-                return redirect('receipt_create', payment_pk=payment.pk)
-            return redirect('invoice_list')
+            with db_transaction.atomic():
+                payment = form.save(commit=False)
+                payment.invoice = invoice
+                payment.recorded_by = request.user
+                payment.save()
+                _refresh_invoice_status(invoice)
+
+                receipt = Receipt(payment=payment, generated_by=request.user)
+                receipt.save()
+
+                log_staff_activity(
+                    actor=request.user,
+                    category=StaffActivity.Category.FINANCE,
+                    message=(
+                        f"Recorded payment {payment.amount} for invoice {invoice.display_invoice_number} "
+                        f"and created receipt {receipt.receipt_number}."
+                    ),
+                    related_url=reverse('receipt_pdf', args=[receipt.pk]),
+                )
+
+                client = receipt.client
+                receipt_url = request.build_absolute_uri(reverse('receipt_pdf', args=[receipt.pk]))
+                message_body = (
+                    f"Payment received for invoice {receipt.invoice.display_invoice_number}. "
+                    f"Receipt {receipt.receipt_number}: {receipt_url}"
+                )
+
+                def _notify_client():
+                    if not client:
+                        return
+                    try:
+                        if client.phone:
+                            send_whatsapp_text(client.phone, message_body)
+                        if client.email:
+                            send_mail(
+                                subject=f"Receipt #{receipt.receipt_number}",
+                                message=message_body,
+                                from_email=None,
+                                recipient_list=[client.email],
+                                fail_silently=True,
+                            )
+                    except Exception:
+                        logger.exception("Failed to send receipt notification to client %s", client.pk)
+
+                db_transaction.on_commit(_notify_client)
+
+            messages.success(request, f"Payment recorded. Receipt {receipt.receipt_number} created.")
+            return redirect('receipt_pdf', receipt_pk=receipt.pk)
     else:
         form = PaymentForm(initial={'received_by': request.user, 'payment_date': timezone.now().date()}, invoice=invoice)
     return render(request, 'portal/payment_form.html', {'form': form, 'invoice': invoice})
@@ -1611,6 +1726,12 @@ def receipt_create(request, payment_pk):
             receipt.payment = payment
             receipt.generated_by = request.user
             receipt.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Generated receipt {receipt.receipt_number} for invoice {receipt.invoice.display_invoice_number}.",
+                related_url=reverse('receipt_pdf', args=[receipt.pk]),
+            )
             client = receipt.client
             receipt_url = request.build_absolute_uri(reverse('receipt_pdf', args=[receipt.pk]))
             message_body = (
@@ -1736,6 +1857,12 @@ def transaction_list(request):
             txn = form.save(commit=False)
             txn.recorded_by = request.user
             txn.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Added cashbook entry: {txn.description} (Dr {txn.debit} / Cr {txn.credit}).",
+                related_url=reverse('transaction_list'),
+            )
             messages.success(request, 'Transaction saved.')
             return redirect('transaction_list')
     else:
@@ -1925,6 +2052,16 @@ def notification_mark_read(request, pk):
     ):
         return redirect(notification.related_url)
     return redirect('notification_list')
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+def activity_overview(request):
+    activity_filter = StaffActivityFilter(
+        request.GET,
+        queryset=StaffActivity.objects.select_related('actor').all()[:500],
+    )
+    return render(request, 'portal/activity.html', {'filter': activity_filter})
 
 
 @login_required

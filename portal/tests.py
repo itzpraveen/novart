@@ -1,8 +1,11 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from .models import Client, Lead, RolePermission
+from .models import Client, Invoice, Payment, Project, Receipt, RolePermission, StaffActivity, Transaction, Lead
 from .permissions import get_permissions_for_user
 
 User = get_user_model()
@@ -83,3 +86,57 @@ class PermissionGuardTests(TestCase):
         perms = get_permissions_for_user(user)
         self.assertFalse(perms['clients'])
         self.assertTrue(perms['projects'])
+
+
+class FinanceFlowTests(TestCase):
+    def setUp(self):
+        self.password = 'test-pass-123'
+        self.user = User.objects.create_user(
+            username='admin',
+            password=self.password,
+            role=User.Roles.ADMIN,
+        )
+        self.client.login(username='admin', password=self.password)
+
+    def test_record_payment_auto_creates_receipt_and_cashbook(self):
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='100-NVRT')
+        invoice = Invoice.objects.create(
+            project=project,
+            invoice_date=timezone.localdate(),
+            due_date=timezone.localdate(),
+            amount=Decimal('1000.00'),
+            tax_percent=Decimal('0'),
+            discount_percent=Decimal('0'),
+            status=Invoice.Status.SENT,
+        )
+
+        resp = self.client.post(
+            reverse('payment_create', args=[invoice.pk]),
+            data={
+                'payment_date': timezone.localdate(),
+                'amount': '250.00',
+                'method': 'Cash',
+                'reference': 'REF-1',
+                'notes': '',
+                'received_by': self.user.pk,
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+
+        payment = Payment.objects.get(invoice=invoice)
+        receipt = Receipt.objects.get(payment=payment)
+        cashbook_entry = Transaction.objects.get(payment=payment)
+
+        self.assertEqual(cashbook_entry.credit, payment.amount)
+        self.assertEqual(cashbook_entry.debit, 0)
+        self.assertEqual(cashbook_entry.related_project_id, project.pk)
+        self.assertEqual(cashbook_entry.related_client_id, client.pk)
+
+        self.assertTrue(
+            StaffActivity.objects.filter(
+                category=StaffActivity.Category.FINANCE,
+                related_url=reverse('receipt_pdf', args=[receipt.pk]),
+            ).exists()
+        )
+        self.assertEqual(resp.url, reverse('receipt_pdf', args=[receipt.pk]))

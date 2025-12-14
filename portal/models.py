@@ -629,6 +629,14 @@ class Transaction(TimeStampedModel):
     description = models.CharField(max_length=255)
     debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment = models.OneToOneField(
+        'Payment',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='cashbook_entry',
+        help_text='Auto-linked payment income entry (system generated).',
+    )
     related_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     related_client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     related_person = models.ForeignKey(
@@ -737,6 +745,39 @@ class ReminderSetting(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.get_category_display()} - {self.days_before} days"
+
+
+class StaffActivity(TimeStampedModel):
+    """Append-only audit trail for admin staff activity overview."""
+
+    class Category(models.TextChoices):
+        PROJECTS = 'projects', 'Projects'
+        TASKS = 'tasks', 'Tasks'
+        SITE_VISITS = 'site_visits', 'Site Visits'
+        FINANCE = 'finance', 'Finance'
+        DOCS = 'docs', 'Docs'
+        TEAM = 'team', 'Team'
+        USERS = 'users', 'Users'
+        SETTINGS = 'settings', 'Settings'
+        SYSTEM = 'system', 'System'
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='staff_activity',
+    )
+    category = models.CharField(max_length=50, choices=Category.choices, default=Category.SYSTEM)
+    message = models.CharField(max_length=500)
+    related_url = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        actor = self.actor.get_full_name() if self.actor else 'System'
+        return f"{actor}: {self.message}"
 
 
 class Notification(TimeStampedModel):

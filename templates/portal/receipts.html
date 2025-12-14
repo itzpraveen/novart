@@ -13,7 +13,7 @@
 </div>
 
 <div class="alert alert-info small">
-    <strong>How receipts work:</strong> Record a payment on an invoice, then generate a receipt PDF to give to the client as proof of payment.
+    <strong>How receipts work:</strong> Recording a payment automatically creates one receipt (per payment) and generates the PDF.
 </div>
 
 <div class="filter-bar">
@@ -69,7 +69,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet. Record payments on invoices, then generate receipts.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet. Record payments on invoices to auto-create receipts.</td></tr>
             {% endfor %}
             </tbody>
         </table>

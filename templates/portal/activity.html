@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Admin</div>
+        <h2 class="mb-0">Staff Activity</h2>
+        <div class="text-muted small">Overview of actions across projects, tasks, visits, and finance.</div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            {% for field in filter.form %}
+                <div class="col-md-3">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% if field.name == "actor" or field.name == "category" %}
+                        {{ field|add_class:"form-select form-select-sm" }}
+                    {% else %}
+                        {{ field|add_class:"form-control form-control-sm" }}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" type="submit">Filter</button>
+                <a class="btn btn-link btn-sm" href="{% url 'activity_overview' %}">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Staff</th>
+                    <th>Category</th>
+                    <th>Activity</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in filter.qs %}
+                    <tr>
+                        <td data-label="When">{{ item.created_at|date:"d M Y, h:i A" }}</td>
+                        <td data-label="Staff">{{ item.actor|default:"System" }}</td>
+                        <td data-label="Category"><span class="chip chip-ghost">{{ item.get_category_display }}</span></td>
+                        <td data-label="Activity">{{ item.message }}</td>
+                        <td data-label="Link" class="text-end">
+                            {% if item.related_url %}
+                                <a class="btn btn-sm btn-outline-primary" href="{{ item.related_url }}">Open</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No activity recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

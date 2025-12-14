@@ -68,8 +68,7 @@
                     <div class="col-12">
                         <hr>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-success" name="save" type="submit">Save Payment</button>
-                            <button class="btn btn-primary" name="generate_receipt" type="submit">Save & Generate Receipt</button>
+                            <button class="btn btn-primary" type="submit">Save & Create Receipt</button>
                             <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
                         </div>
                     </div>
@@ -78,7 +77,7 @@
         </div>
 
         <div class="alert alert-info mt-3 small">
-            <strong>Receipt Flow:</strong> After recording payment, you can generate a receipt PDF to give to the client as proof of payment.
+            <strong>Receipt Flow:</strong> Saving a payment automatically creates a receipt and opens the PDF (one receipt per payment).
         </div>
     </div>
 </div>

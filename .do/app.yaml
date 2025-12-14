@@ -9,7 +9,7 @@ services:
     build_command: |
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    run_command: gunicorn studioflow.wsgi:application --bind 0.0.0.0:8080
+    run_command: python manage.py migrate --noinput && gunicorn studioflow.wsgi:application --bind 0.0.0.0:8080
     http_port: 8080
     instance_count: 1
     instance_size_slug: apps-s-1vcpu-0.5gb

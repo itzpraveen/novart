@@ -167,6 +167,7 @@
                                 {% if module_perms.finance %}<li class="nav-item"><a class="nav-link {% if 'receipt' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'receipt_list' %}">Receipts</a></li>{% endif %}
                                 {% if module_perms.docs %}<li class="nav-item"><a class="nav-link {% if 'document' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'document_list' %}">Docs</a></li>{% endif %}
                                 {% if module_perms.team %}<li class="nav-item"><a class="nav-link {% if 'team' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'team_list' %}">Team</a></li>{% endif %}
+                                {% if request.user.role == 'admin' or request.user.is_superuser %}<li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'activity_overview' %}active{% endif %}" href="{% url 'activity_overview' %}">Activity</a></li>{% endif %}
                                 {% if module_perms.users %}<li class="nav-item"><a class="nav-link {% if 'user_admin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user_admin_list' %}">Users</a></li>{% endif %}
                             </ul>
                         </div>

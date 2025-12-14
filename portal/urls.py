@@ -49,6 +49,7 @@ urlpatterns = [
     path('reminders/', views.reminder_settings, name='reminder_settings'),
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:pk>/read/', views.notification_mark_read, name='notification_mark_read'),
+    path('activity/', views.activity_overview, name='activity_overview'),
     path('team/', views.team_list, name='team_list'),
     path('users/', views.user_admin_list, name='user_admin_list'),
     path('users/<int:pk>/', views.user_admin_edit, name='user_admin_edit'),

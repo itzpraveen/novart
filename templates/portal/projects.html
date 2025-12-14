@@ -31,14 +31,22 @@
 <div class="filter-bar">
     <form class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap" method="get">
         <input id="projectSearch" type="search" class="form-control" style="max-width: 280px;" placeholder="Live search by code, client, manager" aria-label="Search projects">
+        {% if filter.form.ordering %}
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label text-muted small mb-0" for="{{ filter.form.ordering.id_for_label }}">Sort</label>
+                {{ filter.form.ordering|add_class:"form-select form-select-sm" }}
+            </div>
+        {% endif %}
         <details class="filter-details">
             <summary class="btn btn-outline-secondary btn-sm">More filters</summary>
             <div class="filter-dropdown">
                 {% for field in filter.form %}
-                    <div class="filter-field">
-                        <label class="form-label text-muted small mb-1" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field|add_class:"form-select form-select-sm" }}
-                    </div>
+                    {% if field.name != "ordering" %}
+                        <div class="filter-field">
+                            <label class="form-label text-muted small mb-1" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field|add_class:"form-select form-select-sm" }}
+                        </div>
+                    {% endif %}
                 {% endfor %}
                 <button class="btn btn-primary btn-sm w-100 mt-2" type="submit">Apply</button>
             </div>
@@ -106,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const empty = document.getElementById('projectEmptyState');
     const counter = document.getElementById('projectCount');
     const chips = Array.from(document.querySelectorAll('[data-health-filter]'));
+    const sortSelect = document.querySelector('select[name="ordering"]');
 
     const filterRows = (term, health) => {
         const q = term.trim().toLowerCase();
@@ -136,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (input) {
         input.addEventListener('input', () => filterRows(input.value, currentHealth));
+    }
+    if (sortSelect && sortSelect.form) {
+        sortSelect.addEventListener('change', () => sortSelect.form.submit());
     }
     filterRows(input ? input.value : '', currentHealth);
 });
