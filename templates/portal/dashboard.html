@@ -6,6 +6,7 @@
         <h2 class="fw-bold mb-1">Dashboard</h2>
         <p class="text-muted">Welcome back, here's what's happening today.</p>
     </div>
+    {% if can_create_projects %}
     <a href="{% url 'project_create' %}" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -14,6 +15,7 @@
         </svg>
         New Project
     </a>
+    {% endif %}
 </div>
 
 <div class="row g-4 mb-4">
@@ -114,6 +116,7 @@
 </div>
 
 <div class="row g-4">
+    {% if show_stage_summary %}
     <!-- Projects by Stage -->
     <div class="col-md-4">
         <div class="card h-100">
@@ -130,15 +133,18 @@
                 {% empty %}
                 <li class="list-group-item text-center py-4">
                     <div class="text-muted mb-2">No projects yet</div>
+                    {% if can_create_projects %}
                     <a href="{% url 'project_create' %}" class="btn btn-sm btn-primary">Create Project</a>
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
+    {% endif %}
 
     <!-- Upcoming Tasks -->
-    <div class="col-md-4">
+    <div class="{% if show_stage_summary %}col-md-4{% else %}col-md-8{% endif %}">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Upcoming Tasks</span>

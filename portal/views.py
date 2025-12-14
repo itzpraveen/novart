@@ -186,6 +186,8 @@ def dashboard(request):
     start_month = today.replace(day=1)
     perms = get_permissions_for_user(request.user)
     show_finance = request.user.is_superuser or perms.get('finance') or perms.get('invoices')
+    show_stage_summary = request.user.is_superuser or perms.get('leads')
+    can_create_projects = request.user.is_superuser or request.user.has_any_role(User.Roles.ADMIN, User.Roles.ARCHITECT)
 
     projects = Project.objects.select_related('client')
     if not show_finance:
@@ -196,7 +198,9 @@ def dashboard(request):
         ).distinct()
 
     total_active = projects.exclude(current_stage=Project.Stage.CLOSED).count()
-    stage_counts = projects.values('current_stage').annotate(total=Count('id')).order_by('current_stage')
+    stage_counts = []
+    if show_stage_summary:
+        stage_counts = projects.values('current_stage').annotate(total=Count('id')).order_by('current_stage')
 
     site_visits_scope = SiteVisit.objects.filter(visit_date__gte=start_month)
     if not show_finance:
@@ -213,7 +217,8 @@ def dashboard(request):
             status__in=[Task.Status.TODO, Task.Status.IN_PROGRESS]
         ),
     )
-    upcoming_tasks = tasks_scope.filter(due_date__isnull=False).order_by('due_date')[:5]
+    task_limit = 5 if show_stage_summary else 10
+    upcoming_tasks = tasks_scope.filter(due_date__isnull=False).order_by('due_date')[:task_limit]
     my_open_tasks_count = tasks_scope.count()
 
     upcoming_handover = projects.filter(expected_handover__gte=today, expected_handover__lte=today + timedelta(days=30))
@@ -250,6 +255,8 @@ def dashboard(request):
         'upcoming_handover': upcoming_handover,
         'top_projects': top_projects,
         'show_finance': show_finance,
+        'show_stage_summary': show_stage_summary,
+        'can_create_projects': can_create_projects,
         'my_open_tasks_count': my_open_tasks_count,
     } | financial_context
     return render(request, 'portal/dashboard.html', context)
