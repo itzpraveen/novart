@@ -1330,6 +1330,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     vertical-align: middle;
 }
 
+.table-sort {
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.table-sort:hover {
+    text-decoration: underline;
+}
+
+.sort-indicator {
+    font-size: 0.8em;
+    opacity: 0.45;
+}
+
+.sort-indicator.active {
+    opacity: 0.9;
+}
+
 .table-striped tbody tr:nth-child(odd) {
     background-color: #f8fafc;
 }

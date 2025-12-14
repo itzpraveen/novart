@@ -32,7 +32,7 @@
     <form class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap" method="get">
         <input id="projectSearch" type="search" class="form-control" style="max-width: 280px;" placeholder="Live search by code, client, manager" aria-label="Search projects">
         {% if filter.form.ordering %}
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex d-md-none align-items-center gap-2">
                 <label class="form-label text-muted small mb-0" for="{{ filter.form.ordering.id_for_label }}">Sort</label>
                 {{ filter.form.ordering|add_class:"form-select form-select-sm" }}
             </div>
@@ -68,14 +68,14 @@
         <table class="table mb-0 align-middle table-stack">
             <thead>
             <tr>
-                <th>Code</th>
-                <th>Client</th>
-                <th>Manager</th>
-                <th>Site Engineer</th>
-                <th>Stage</th>
-                <th>Health</th>
-                <th>Start</th>
-                <th>Handover</th>
+                <th><a class="table-sort" href="{% sort_url request 'code' %}">Code{% sort_indicator request 'code' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'client' %}">Client{% sort_indicator request 'client' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'manager' %}">Manager{% sort_indicator request 'manager' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'site_engineer' %}">Site Engineer{% sort_indicator request 'site_engineer' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'stage' %}">Stage{% sort_indicator request 'stage' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'health' %}">Health{% sort_indicator request 'health' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'start_date' %}">Start{% sort_indicator request 'start_date' %}</a></th>
+                <th><a class="table-sort" href="{% sort_url request 'expected_handover' %}">Handover{% sort_indicator request 'expected_handover' %}</a></th>
                 <th></th>
             </tr>
             </thead>
