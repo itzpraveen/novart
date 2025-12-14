@@ -4,6 +4,7 @@ import csv
 from datetime import timedelta
 import datetime as dt
 from decimal import Decimal
+from functools import lru_cache
 import json
 import logging
 import mimetypes
@@ -48,6 +49,69 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger(__name__)
+
+def _file_mtime(path: str) -> float | None:
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return None
+
+
+@lru_cache(maxsize=32)
+def _data_uri_cached(path: str, mtime: float) -> str:
+    mime, _ = mimetypes.guess_type(path)
+    with open(path, 'rb') as f:
+        encoded = b64encode(f.read()).decode('utf-8')
+    return f"data:{mime or 'image/png'};base64,{encoded}"
+
+
+def _data_uri(path: str | None) -> str | None:
+    if not path:
+        return None
+    mtime = _file_mtime(path)
+    if mtime is None:
+        return None
+    try:
+        return _data_uri_cached(path, mtime)
+    except Exception:
+        return None
+
+
+@lru_cache(maxsize=4)
+def _dejavu_font_bundle_cached(font_path: str, mtime: float) -> tuple[str | None, str | None]:
+    try:
+        registered = set(pdfmetrics.getRegisteredFontNames())
+        if 'DejaVuSans' not in registered:
+            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
+            pdfmetrics.registerFontFamily(
+                'DejaVuSans',
+                normal='DejaVuSans',
+                bold='DejaVuSans',
+                italic='DejaVuSans',
+                boldItalic='DejaVuSans',
+            )
+        with open(font_path, 'rb') as f:
+            font_data_b64 = b64encode(f.read()).decode('utf-8')
+        return font_path, font_data_b64
+    except Exception:
+        logger.exception("Failed to register PDF font at %s", font_path)
+        return None, None
+
+
+def _resolve_dejavu_font_bundle() -> tuple[str | None, str | None]:
+    font_candidates = [
+        finders.find('fonts/DejaVuSans.ttf'),
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/opt/studioflow/static/fonts/DejaVuSans.ttf',
+    ]
+    font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
+    if not font_path:
+        return None, None
+    mtime = _file_mtime(font_path)
+    if mtime is None:
+        return None, None
+    return _dejavu_font_bundle_cached(font_path, mtime)
+
 
 from .decorators import role_required, module_required
 from .filters import (
@@ -134,9 +198,12 @@ def _visible_projects_for_user(user, queryset=None):
     qs = queryset or Project.objects.all()
     if _can_view_all_projects(user):
         return qs
+    if not user or not user.is_authenticated:
+        return qs.none()
+    task_project_ids = Task.objects.filter(assigned_to=user).values('project_id')
     return qs.filter(
-        Q(project_manager=user) | Q(site_engineer=user) | Q(tasks__assigned_to=user)
-    ).distinct()
+        Q(project_manager=user) | Q(site_engineer=user) | Q(pk__in=task_project_ids)
+    )
 
 
 MENTION_RE = re.compile(r'@([\w.@+-]+)')
@@ -1420,47 +1487,15 @@ def invoice_pdf(request, invoice_pk):
     logo_path = None
     logo_data = None
 
-    def _encode_image(path: str | None) -> str | None:
-        if not path:
-            return None
-        try:
-            mime, _ = mimetypes.guess_type(path)
-            with open(path, 'rb') as f:
-                encoded = b64encode(f.read()).decode('utf-8')
-                return f"data:{mime or 'image/png'};base64,{encoded}"
-        except Exception:
-            return None
-
     if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
         logo_path = firm.logo.path
-        logo_data = _encode_image(logo_path)
+        logo_data = _data_uri(logo_path)
 
     if not logo_data:
         fallback_logo = finders.find('img/novart.png')
-        logo_data = _encode_image(fallback_logo)
+        logo_data = _data_uri(fallback_logo)
 
-    font_candidates = [
-        finders.find('fonts/DejaVuSans.ttf'),
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-        '/opt/studioflow/static/fonts/DejaVuSans.ttf',
-    ]
-    font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
-    font_data_b64 = None
-    if font_path:
-        try:
-            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
-            pdfmetrics.registerFontFamily(
-                'DejaVuSans',
-                normal='DejaVuSans',
-                bold='DejaVuSans',
-                italic='DejaVuSans',
-                boldItalic='DejaVuSans',
-            )
-            with open(font_path, 'rb') as f:
-                font_data_b64 = b64encode(f.read()).decode('utf-8')
-        except Exception:
-            logger.exception("Failed to register PDF font at %s", font_path)
-            font_path = None
+    font_path, font_data_b64 = _resolve_dejavu_font_bundle()
     html = render_to_string(
         'portal/invoice_pdf.html',
         {
@@ -1792,39 +1827,14 @@ def receipt_pdf(request, receipt_pk):
     client = receipt.client
     firm = FirmProfile.objects.first()
 
-    def _encode_image(path: str | None) -> str | None:
-        if not path:
-            return None
-        try:
-            mime, _ = mimetypes.guess_type(path)
-            with open(path, 'rb') as f:
-                encoded = b64encode(f.read()).decode('utf-8')
-                return f"data:{mime or 'image/png'};base64,{encoded}"
-        except Exception:
-            return None
-
     logo_data = None
     if firm and firm.logo and firm.logo.storage.exists(firm.logo.name):
-        logo_data = _encode_image(firm.logo.path)
+        logo_data = _data_uri(firm.logo.path)
     if not logo_data:
         fallback_logo = finders.find('img/novart.png')
-        logo_data = _encode_image(fallback_logo)
+        logo_data = _data_uri(fallback_logo)
 
-    font_candidates = [
-        finders.find('fonts/DejaVuSans.ttf'),
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-        '/opt/studioflow/static/fonts/DejaVuSans.ttf',
-    ]
-    font_path = next((p for p in font_candidates if p and os.path.exists(p)), None)
-    font_data_b64 = None
-    if font_path:
-        try:
-            pdfmetrics.registerFont(TTFont('DejaVuSans', font_path))
-            with open(font_path, 'rb') as f:
-                font_data_b64 = b64encode(f.read()).decode('utf-8')
-        except Exception:
-            logger.exception("Failed to register PDF font at %s", font_path)
-            font_path = None
+    font_path, font_data_b64 = _resolve_dejavu_font_bundle()
 
     html = render_to_string(
         'portal/receipt_pdf.html',

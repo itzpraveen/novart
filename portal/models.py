@@ -5,6 +5,7 @@ import re
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.db import models
 from django.utils import timezone
 
@@ -168,6 +169,16 @@ class Project(TimeStampedModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='engineered_projects'
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['current_stage']),
+            models.Index(fields=['health_status']),
+            models.Index(fields=['project_type']),
+            models.Index(fields=['start_date']),
+            models.Index(fields=['expected_handover']),
+            models.Index(fields=['updated_at']),
+        ]
+
     def __str__(self) -> str:
         return f"{self.code} - {self.name}"
 
@@ -246,6 +257,10 @@ class Task(TimeStampedModel):
 
     class Meta:
         ordering = ['due_date', 'priority']
+        indexes = [
+            models.Index(fields=['assigned_to', 'status', 'due_date']),
+            models.Index(fields=['project', 'status', 'due_date']),
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -304,6 +319,12 @@ class SiteVisit(TimeStampedModel):
     expenses = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     location = models.CharField(max_length=255, blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['project', 'visit_date']),
+            models.Index(fields=['visited_by', 'visit_date']),
+        ]
+
     def save(self, *args, **kwargs):
         if not self.location and self.project:
             self.location = self.project.location
@@ -341,6 +362,10 @@ class SiteIssue(TimeStampedModel):
 
     class Meta:
         ordering = ['status', '-raised_on']
+        indexes = [
+            models.Index(fields=['project', 'status']),
+            models.Index(fields=['status', 'raised_on']),
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -378,6 +403,10 @@ class Invoice(TimeStampedModel):
 
     class Meta:
         ordering = ['-invoice_date']
+        indexes = [
+            models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['invoice_date']),
+        ]
 
     def __str__(self) -> str:
         return f"Invoice {self.display_invoice_number}"
@@ -407,21 +436,45 @@ class Invoice(TimeStampedModel):
         elif self.lead and self.lead.client_id:
             project_part = str(self.lead.client_id)
 
-        pattern = re.compile(rf'^{re.escape(prefix)}/[^/]+/(\d+)$')
-        max_seq = 0
-        for existing in Invoice.objects.values_list('invoice_number', flat=True):
-            existing_value = (existing or '').strip()
-            m = pattern.match(existing_value)
-            if m:
-                seq_str = m.group(1)
-            elif re.fullmatch(r'\d+', existing_value):
-                seq_str = existing_value
-            else:
-                continue
+        max_seq: int | None = None
+        if connection.vendor == 'postgresql':
             try:
-                max_seq = max(max_seq, int(seq_str))
-            except ValueError:
-                continue
+                table = connection.ops.quote_name(Invoice._meta.db_table)
+                scheme_regex = rf'^{re.escape(prefix)}/[^/]+/[0-9]+$'
+                digits_regex = r'^[0-9]+$'
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"SELECT MAX(CAST(split_part(invoice_number, '/', 3) AS integer)) "
+                        f"FROM {table} WHERE invoice_number ~ %s",
+                        [scheme_regex],
+                    )
+                    max_scheme = cursor.fetchone()[0] or 0
+                    cursor.execute(
+                        f"SELECT MAX(CAST(invoice_number AS integer)) "
+                        f"FROM {table} WHERE invoice_number ~ %s",
+                        [digits_regex],
+                    )
+                    max_digits = cursor.fetchone()[0] or 0
+                max_seq = max(int(max_scheme or 0), int(max_digits or 0))
+            except Exception:
+                max_seq = None
+
+        if max_seq is None:
+            pattern = re.compile(rf'^{re.escape(prefix)}/[^/]+/(\d+)$')
+            max_seq = 0
+            for existing in Invoice.objects.values_list('invoice_number', flat=True):
+                existing_value = (existing or '').strip()
+                m = pattern.match(existing_value)
+                if m:
+                    seq_str = m.group(1)
+                elif re.fullmatch(r'\d+', existing_value):
+                    seq_str = existing_value
+                else:
+                    continue
+                try:
+                    max_seq = max(max_seq, int(seq_str))
+                except ValueError:
+                    continue
 
         seq = max_seq + 1
         candidate = f"{prefix}/{project_part}/{seq}"
@@ -539,6 +592,10 @@ class Payment(TimeStampedModel):
 
     class Meta:
         ordering = ['-payment_date']
+        indexes = [
+            models.Index(fields=['payment_date']),
+            models.Index(fields=['invoice', 'payment_date']),
+        ]
 
     def __str__(self) -> str:
         return f"Payment {self.amount} on {self.payment_date}"
@@ -569,6 +626,10 @@ class Receipt(TimeStampedModel):
 
     class Meta:
         ordering = ['-receipt_date', '-created_at']
+        indexes = [
+            models.Index(fields=['receipt_date']),
+            models.Index(fields=['invoice', 'receipt_date']),
+        ]
 
     def __str__(self) -> str:
         return self.receipt_number
@@ -653,6 +714,11 @@ class Transaction(TimeStampedModel):
 
     class Meta:
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date']),
+            models.Index(fields=['related_project', 'date']),
+            models.Index(fields=['related_client', 'date']),
+        ]
 
     def __str__(self) -> str:
         return self.description
@@ -678,6 +744,10 @@ class Document(TimeStampedModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['project', 'created_at']),
+            models.Index(fields=['file_type']),
+        ]
 
 
 class FirmProfile(TimeStampedModel):
@@ -774,6 +844,11 @@ class StaffActivity(TimeStampedModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['actor', 'created_at']),
+            models.Index(fields=['category', 'created_at']),
+        ]
 
     def __str__(self) -> str:
         actor = self.actor.get_full_name() if self.actor else 'System'
@@ -789,6 +864,9 @@ class Notification(TimeStampedModel):
 
     class Meta:
         ordering = ['is_read', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read', 'created_at']),
+        ]
 
     def __str__(self) -> str:
         return f"{self.user}: {self.message}"
