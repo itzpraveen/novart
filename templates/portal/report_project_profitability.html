@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Project Profitability</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_reports' %}">Reports</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'report_project_profitability' %}?export=1">Export CSV</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Project</th>
+                <th class="text-end">Planned Fee</th>
+                <th class="text-end">Planned Cost</th>
+                <th class="text-end">Invoiced</th>
+                <th class="text-end">Received</th>
+                <th class="text-end">Expenses</th>
+                <th class="text-end">Profit</th>
+                <th class="text-end">Margin</th>
+                <th class="text-end">Receivable</th>
+                <th class="text-end">Payable</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td data-label="Project">
+                        <div class="fw-semibold">{{ row.project.code }} · {{ row.project.name }}</div>
+                        <small class="text-muted">{{ row.project.client.name }}</small>
+                    </td>
+                    <td data-label="Planned Fee" class="text-end">{{ row.planned_fee|rupee }}</td>
+                    <td data-label="Planned Cost" class="text-end">{{ row.planned_cost|rupee }}</td>
+                    <td data-label="Invoiced" class="text-end">{{ row.invoiced|rupee }}</td>
+                    <td data-label="Received" class="text-end fw-semibold">{{ row.received|rupee }}</td>
+                    <td data-label="Expenses" class="text-end">{{ row.expenses|rupee }}</td>
+                    <td data-label="Profit" class="text-end fw-semibold">{{ row.profit|rupee }}</td>
+                    <td data-label="Margin" class="text-end">{% if row.received %}{{ row.margin|floatformat:1 }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td data-label="Receivable" class="text-end">{{ row.receivable|rupee }}</td>
+                    <td data-label="Payable" class="text-end">{{ row.payable|rupee }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10" class="text-center text-muted py-4">No projects.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

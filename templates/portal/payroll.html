@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <h2 class="mb-0">Payroll</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'transaction_list' %}">Cashbook</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_payroll_csv' %}?month={{ month_str }}">Export CSV</a>
+        <a class="btn btn-primary btn-sm d-md-none" data-bs-toggle="offcanvas" href="#salaryOffcanvas" role="button" aria-controls="salaryOffcanvas">Record salary</a>
+    </div>
+</div>
+
+<div class="d-md-flex gap-3 align-items-start">
+    <div class="flex-grow-1">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label" for="month">Month</label>
+                        <input type="month" class="form-control" id="month" name="month" value="{{ month_str }}">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <button class="btn btn-outline-secondary w-100" type="submit">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Planned salary</p>
+                        <h3>{{ totals.salary|rupee }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Paid (this month)</p>
+                        <h3>{{ totals.paid|rupee }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Due (this month)</p>
+                        <h3>{{ totals.due|rupee }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th class="text-end">Monthly salary</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Due</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in staff_rows %}
+                        <tr>
+                            <td data-label="Employee">
+                                <div class="fw-semibold">{{ row.staff.get_full_name|default:row.staff.username }}</div>
+                                <small class="text-muted">{{ row.staff.get_role_display }}</small>
+                            </td>
+                            <td class="text-end" data-label="Monthly salary">{{ row.salary|rupee }}</td>
+                            <td class="text-end" data-label="Paid">{{ row.paid|rupee }}</td>
+                            <td class="text-end fw-semibold" data-label="Due">{{ row.due|rupee }}</td>
+                            <td class="text-end" data-label="Action">
+                                {% if row.due > 0 %}
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="offcanvas"
+                                        data-bs-target="#salaryOffcanvas"
+                                        aria-controls="salaryOffcanvas"
+                                        data-person="{{ row.staff.pk }}"
+                                        data-amount="{{ row.due }}"
+                                    >
+                                        Pay
+                                    </button>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success">Paid</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No employees with salary configured.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Salary payments · {{ month_start|date:"M Y" }}</div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Account</th>
+                        <th class="text-end">Amount</th>
+                        <th>Recorded by</th>
+                        <th>Remarks</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for txn in salary_txns %}
+                        <tr>
+                            <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
+                            <td data-label="Employee">{{ txn.related_person }}</td>
+                            <td data-label="Account">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td class="text-end" data-label="Amount">{{ txn.debit|rupee }}</td>
+                            <td data-label="Recorded by">{{ txn.recorded_by|default:"—" }}</td>
+                            <td data-label="Remarks">{{ txn.remarks|default:"—" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No salary payments recorded for this month.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="salaryOffcanvas" aria-labelledby="salaryOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="salaryOffcanvasLabel">Record salary payment</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">Save</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const offcanvas = document.getElementById('salaryOffcanvas');
+    if (!offcanvas) return;
+    offcanvas.addEventListener('show.bs.offcanvas', (event) => {
+        const trigger = event.relatedTarget;
+        if (!trigger) return;
+        const personId = trigger.getAttribute('data-person');
+        const amount = trigger.getAttribute('data-amount');
+        const personField = offcanvas.querySelector('select[name="related_person"]');
+        const amountField = offcanvas.querySelector('input[name="debit"]');
+        if (personField && personId) personField.value = personId;
+        if (amountField && amount) amountField.value = amount;
+    });
+})();
+</script>
+{% endblock %}

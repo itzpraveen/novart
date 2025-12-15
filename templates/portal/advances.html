@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Client Advances</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_list' %}">Invoices</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_advances_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
+        <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#advanceOffcanvas" role="button" aria-controls="advanceOffcanvas">New advance</a>
+    </div>
+</div>
+
+<div class="card panel-subtle mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            {% for field in filter.form %}
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                </div>
+            {% endfor %}
+            <div class="col-12 col-md-3 col-lg-2">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Client / Project</th>
+                <th>Account</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Allocated</th>
+                <th class="text-end">Available</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for adv in filter.qs %}
+                <tr>
+                    <td data-label="Date">{{ adv.received_date|date:"d M Y" }}</td>
+                    <td data-label="Client / Project">
+                        {% if adv.project %}
+                            <div class="fw-semibold">{{ adv.project.code }} · {{ adv.project.name }}</div>
+                            <small class="text-muted">{{ adv.project.client.name }}</small>
+                        {% else %}
+                            <div class="fw-semibold">{{ adv.client|default:"—" }}</div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Account">{% if adv.account %}{{ adv.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td data-label="Amount" class="text-end fw-semibold">{{ adv.amount|rupee }}</td>
+                    <td data-label="Allocated" class="text-end">{{ adv.allocated_amount|rupee }}</td>
+                    <td data-label="Available" class="text-end">{{ adv.available_amount|rupee }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No advances yet.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end offcanvas-glow" tabindex="-1" id="advanceOffcanvas" aria-labelledby="advanceOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 460px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="advanceOffcanvasLabel">New advance</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary w-100">Save</button>
+        </form>
+        <div class="alert alert-info small mt-3">
+            Apply advances to invoices from the invoice actions menu.
+        </div>
+    </div>
+</div>
+{% endblock %}

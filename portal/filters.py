@@ -2,7 +2,7 @@ import django_filters
 from django.contrib.auth import get_user_model
 from django import forms
 
-from .models import Invoice, Lead, Project, SiteIssue, SiteVisit, StaffActivity, Task, Transaction
+from .models import Bill, ClientAdvance, ExpenseClaim, Invoice, Lead, Project, RecurringTransactionRule, SiteIssue, SiteVisit, StaffActivity, Task, Transaction, Vendor, Account
 
 User = get_user_model()
 
@@ -99,10 +99,50 @@ class InvoiceFilter(django_filters.FilterSet):
 
 class TransactionFilter(django_filters.FilterSet):
     date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+    category = django_filters.ChoiceFilter(choices=Transaction.Category.choices)
+    related_person = django_filters.ModelChoiceFilter(queryset=User.objects.all(), label='Person')
+    related_vendor = django_filters.ModelChoiceFilter(queryset=Vendor.objects.all(), label='Vendor')
+    account = django_filters.ModelChoiceFilter(queryset=Account.objects.all(), label='Account')
 
     class Meta:
         model = Transaction
-        fields = ['related_project', 'related_client']
+        fields = ['date', 'category', 'account', 'related_project', 'related_client', 'related_vendor', 'related_person']
+
+
+class BillFilter(django_filters.FilterSet):
+    status = django_filters.ChoiceFilter(choices=Bill.Status.choices)
+    bill_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+    due_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+
+    class Meta:
+        model = Bill
+        fields = ['vendor', 'project', 'status']
+
+
+class ClientAdvanceFilter(django_filters.FilterSet):
+    received_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+
+    class Meta:
+        model = ClientAdvance
+        fields = ['project', 'client']
+
+
+class ExpenseClaimFilter(django_filters.FilterSet):
+    status = django_filters.ChoiceFilter(choices=ExpenseClaim.Status.choices)
+    expense_date = django_filters.DateFromToRangeFilter(widget=django_filters.widgets.RangeWidget(attrs={'type': 'date'}))
+    employee = django_filters.ModelChoiceFilter(queryset=User.objects.all())
+
+    class Meta:
+        model = ExpenseClaim
+        fields = ['status', 'employee', 'project']
+
+
+class RecurringRuleFilter(django_filters.FilterSet):
+    is_active = django_filters.BooleanFilter()
+
+    class Meta:
+        model = RecurringTransactionRule
+        fields = ['is_active', 'category', 'account', 'related_project', 'related_vendor']
 
 
 class StaffActivityFilter(django_filters.FilterSet):

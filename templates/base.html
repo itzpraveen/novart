@@ -163,6 +163,7 @@
                                 {% if module_perms.projects %}<li class="nav-item"><a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'project_list' %}">Projects</a></li>{% endif %}
                                 {% if module_perms.site_visits %}<li class="nav-item"><a class="nav-link {% if 'site_visit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'site_visit_list' %}">Site Visits</a></li>{% endif %}
                                 {% if module_perms.finance %}<li class="nav-item"><a class="nav-link {% if 'finance' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'finance_dashboard' %}">Finance</a></li>{% endif %}
+                                {% if module_perms.finance %}<li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}" href="{% url 'payroll' %}">Payroll</a></li>{% endif %}
                                 {% if module_perms.invoices %}<li class="nav-item"><a class="nav-link {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'invoice_list' %}">Invoices</a></li>{% endif %}
                                 {% if module_perms.finance %}<li class="nav-item"><a class="nav-link {% if 'receipt' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'receipt_list' %}">Receipts</a></li>{% endif %}
                                 {% if module_perms.docs %}<li class="nav-item"><a class="nav-link {% if 'document' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'document_list' %}">Docs</a></li>{% endif %}
@@ -351,6 +352,15 @@
                         </svg>
                         Finance
                     </a>
+                    <a href="{% url 'payroll' %}" class="bottom-nav-menu-item" role="menuitem">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                        Payroll
+                    </a>
                     <a href="{% url 'receipt_list' %}" class="bottom-nav-menu-item" role="menuitem">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect>
@@ -405,6 +415,13 @@
                             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                         </svg>
                         My Tasks
+                    </a>
+                    <a href="{% url 'expense_claim_my' %}" class="bottom-nav-menu-item" role="menuitem">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 1v22"></path>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        My Claims
                     </a>
                 </div>
             </div>

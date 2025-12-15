@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <h2 class="mb-0">Accounts</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'transaction_list' %}">Cashbook</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'transfer_create' %}">Transfer</a>
+        <a class="btn btn-primary btn-sm d-md-none" data-bs-toggle="offcanvas" href="#accountOffcanvas" role="button" aria-controls="accountOffcanvas">New account</a>
+    </div>
+</div>
+
+<div class="d-md-flex gap-3 align-items-start">
+    <div class="flex-grow-1">
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th class="text-end">Opening</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for acc in accounts %}
+                        <tr>
+                            <td data-label="Name" class="fw-semibold">{{ acc.name }}</td>
+                            <td data-label="Type">{{ acc.get_account_type_display }}</td>
+                            <td data-label="Opening" class="text-end">{{ acc.opening_balance|rupee }}</td>
+                            <td data-label="Balance" class="text-end fw-semibold">{{ acc.balance|rupee }}</td>
+                            <td data-label="Actions" class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'transaction_list' %}?account={{ acc.pk }}">View ledger</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No accounts yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="accountOffcanvas" aria-labelledby="accountOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="accountOffcanvasLabel">New account</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% if field.field.widget.input_type == "checkbox" %}
+                            <div class="form-check form-switch">
+                                {{ field|add_class:"form-check-input" }}
+                            </div>
+                        {% else %}
+                            {{ field|add_class:"form-control" }}
+                        {% endif %}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">Save</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Finance</div>
+        <h2 class="mb-0">Transfer</h2>
+        <div class="text-muted small">Move money between accounts (no income/expense).</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'account_list' %}">Back to accounts</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                </div>
+            {% endfor %}
+            <div class="col-12">
+                <hr>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" type="submit">Save transfer</button>
+                    <a class="btn btn-link" href="{% url 'account_list' %}">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Bills (Payables)</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_bills_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'bill_aging' %}">Aging report</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'vendor_list' %}">Vendors</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#billOffcanvas" role="button" aria-controls="billOffcanvas">New bill</a>
+    </div>
+</div>
+
+<button class="btn btn-outline-secondary w-100 d-md-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#billFilters" aria-expanded="false" aria-controls="billFilters">
+    Filters
+</button>
+<div class="card panel-subtle mb-3 collapse show d-md-block" id="billFilters">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            {% for field in filter.form %}
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                </div>
+            {% endfor %}
+            <div class="col-12 col-md-3 col-lg-2">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Vendor</th>
+                <th>Project</th>
+                <th>Bill #</th>
+                <th>Date</th>
+                <th>Due</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Outstanding</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for bill in filter.qs %}
+                <tr>
+                    <td data-label="Vendor" class="fw-semibold">{{ bill.vendor.name }}</td>
+                    <td data-label="Project">
+                        {% if bill.project %}
+                            <div>{{ bill.project.code }} · {{ bill.project.name }}</div>
+                            <small class="text-muted">{{ bill.project.client.name }}</small>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Bill #">{{ bill.bill_number|default:"—" }}</td>
+                    <td data-label="Date">{{ bill.bill_date|date:"d M Y" }}</td>
+                    <td data-label="Due">{% if bill.due_date %}{{ bill.due_date|date:"d M Y" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td data-label="Amount" class="text-end fw-semibold">{{ bill.amount|rupee }}</td>
+                    <td data-label="Outstanding" class="text-end">{{ bill.outstanding|rupee }}</td>
+                    <td data-label="Status">
+                        <span class="badge bg-{% if bill.status == 'overdue' %}danger{% elif bill.status == 'paid' %}success{% elif bill.status == 'partial' %}warning{% else %}secondary{% endif %}">
+                            {{ bill.get_status_display }}
+                        </span>
+                    </td>
+                    <td data-label="Actions" class="text-end">
+                        {% if bill.outstanding > 0 %}
+                            <a class="btn btn-sm btn-outline-success" href="{% url 'bill_payment_create' bill.pk %}">Pay</a>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state text-center py-5">
+                            <div class="eyebrow mb-2">No bills found</div>
+                            <p class="text-muted mb-3">Add vendor bills to track payables and due dates.</p>
+                            <a class="btn btn-primary" data-bs-toggle="offcanvas" href="#billOffcanvas" role="button" aria-controls="billOffcanvas">New bill</a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end offcanvas-glow" tabindex="-1" id="billOffcanvas" aria-labelledby="billOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 460px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="billOffcanvasLabel">New bill</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary w-100">Save</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

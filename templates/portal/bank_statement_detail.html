@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Finance</div>
+        <h2 class="mb-0">Statement Lines</h2>
+        <div class="text-muted small">{{ statement.account.name }} · {{ statement.created_at|date:"d M Y, H:i" }}</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'bank_statement_list' %}">Back</a>
+        <a class="btn btn-outline-secondary" href="{% url 'transaction_list' %}?account={{ statement.account.pk }}">Ledger</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Balance</th>
+                <th>Matched</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for line in lines %}
+                <tr>
+                    <td data-label="Date">{{ line.line_date|date:"d M Y" }}</td>
+                    <td data-label="Description">{{ line.description }}</td>
+                    <td data-label="Amount" class="text-end fw-semibold">
+                        {% if line.amount < 0 %}
+                            <span class="text-danger">{{ line.amount|rupee }}</span>
+                        {% else %}
+                            <span class="text-success">{{ line.amount|rupee }}</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Balance" class="text-end">{% if line.balance is not None %}{{ line.balance|rupee }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td data-label="Matched">
+                        {% if line.matched_transaction %}
+                            <span class="badge bg-success">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Actions" class="text-end">
+                        {% if not line.matched_transaction %}
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="create_txn">
+                                <input type="hidden" name="line_id" value="{{ line.pk }}">
+                                <button class="btn btn-sm btn-outline-primary">Create txn</button>
+                            </form>
+                        {% else %}
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'transaction_list' %}?account={{ statement.account.pk }}&date_after={{ line.line_date }}&date_before={{ line.line_date }}">View day</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No lines.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

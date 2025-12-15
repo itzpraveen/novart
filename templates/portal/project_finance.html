@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <div>
+        <div class="eyebrow text-uppercase">Project Finance</div>
+        <h2 class="mb-0">{{ project.code }} · {{ project.name }}</h2>
+        <div class="text-muted small">{{ project.client.name }}</div>
+    </div>
+    <div class="actions">
+        <a class="btn btn-outline-secondary" href="{% url 'project_detail' project.pk %}">Back to project</a>
+        <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}?project={{ project.pk }}">Invoices</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Plan</div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="plan">
+                    {% for field in plan_form %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100">Save plan</button>
+                    </div>
+                </form>
+                <hr>
+                <div class="small text-muted">
+                    Planned fee: <strong>{{ project.finance_plan.planned_fee|rupee }}</strong><br>
+                    Planned cost: <strong>{{ project.finance_plan.planned_cost|rupee }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white fw-semibold">Add milestone</div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="milestone">
+                    {% for field in milestone_form %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <div class="col-12">
+                        <button class="btn btn-outline-primary w-100">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Milestones</div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due</th>
+                        <th class="text-end">Amount</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for ms in milestones %}
+                        <tr>
+                            <td data-label="Title" class="fw-semibold">{{ ms.title }}</td>
+                            <td data-label="Due">{% if ms.due_date %}{{ ms.due_date|date:"d M Y" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td data-label="Amount" class="text-end">{{ ms.amount|rupee }}</td>
+                            <td data-label="Status">
+                                <span class="badge bg-{% if ms.status == 'paid' %}success{% elif ms.status == 'invoiced' %}info{% else %}secondary{% endif %}">{{ ms.get_status_display }}</span>
+                            </td>
+                            <td data-label="Actions" class="text-end">
+                                {% if ms.invoice %}
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'invoice_edit' ms.invoice.pk %}">Invoice</a>
+                                {% else %}
+                                    <a class="btn btn-sm btn-outline-primary" href="{% url 'project_milestone_invoice' project.pk ms.pk %}">Create invoice</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No milestones yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

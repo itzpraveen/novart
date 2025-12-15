@@ -36,6 +36,13 @@ class User(AbstractUser):
 
     phone = models.CharField(max_length=50, blank=True)
     role = models.CharField(max_length=32, choices=Roles.choices, default=Roles.ARCHITECT)
+    monthly_salary = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        help_text='Optional: used for payroll tracking (monthly amount).',
+    )
 
     def __str__(self) -> str:
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
@@ -197,12 +204,25 @@ class Project(TimeStampedModel):
 
     @property
     def total_received(self) -> Decimal:
-        return Payment.objects.filter(invoice__project=self).aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+        if 'transactions' in prefetched:
+            return sum((txn.credit for txn in self.transactions.all()), Decimal('0'))
+        return self.transactions.aggregate(total=models.Sum('credit'))['total'] or Decimal('0')
 
     @property
     def total_expenses(self) -> Decimal:
-        expenses = self.transactions.aggregate(total=models.Sum('debit'))['total'] or Decimal('0')
-        visit_expenses = self.site_visits.aggregate(total=models.Sum('expenses'))['total'] or Decimal('0')
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+
+        if 'transactions' in prefetched:
+            expenses = sum((txn.debit for txn in self.transactions.all()), Decimal('0'))
+        else:
+            expenses = self.transactions.aggregate(total=models.Sum('debit'))['total'] or Decimal('0')
+
+        if 'site_visits' in prefetched:
+            visit_expenses = sum((visit.expenses for visit in self.site_visits.all()), Decimal('0'))
+        else:
+            visit_expenses = self.site_visits.aggregate(total=models.Sum('expenses'))['total'] or Decimal('0')
+
         return expenses + visit_expenses
 
     @property
@@ -548,11 +568,28 @@ class Invoice(TimeStampedModel):
 
     @property
     def amount_received(self) -> Decimal:
+        """Cash payments recorded against this invoice."""
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+        if 'payments' in prefetched:
+            return sum((payment.amount for payment in self.payments.all()), Decimal('0'))
         return self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
 
     @property
+    def advance_applied(self) -> Decimal:
+        """Non-cash allocations from client advances that settle this invoice."""
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+        if 'advance_allocations' in prefetched:
+            return sum((alloc.amount for alloc in self.advance_allocations.all()), Decimal('0'))
+        return self.advance_allocations.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+    @property
+    def amount_settled(self) -> Decimal:
+        """Payments + advance allocations."""
+        return (self.amount_received or Decimal('0')) + (self.advance_applied or Decimal('0'))
+
+    @property
     def outstanding(self) -> Decimal:
-        return max(self.total_with_tax - self.amount_received, Decimal('0'))
+        return max(self.total_with_tax - self.amount_settled, Decimal('0'))
 
 
 class InvoiceLine(models.Model):
@@ -576,6 +613,13 @@ class Payment(TimeStampedModel):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     payment_date = models.DateField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account = models.ForeignKey(
+        'Account',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments',
+    )
     method = models.CharField(max_length=50, blank=True)
     reference = models.CharField(max_length=100, blank=True)
     notes = models.TextField(blank=True, help_text='Internal notes about this payment.')
@@ -685,11 +729,501 @@ class Receipt(TimeStampedModel):
         return candidate
 
 
+class Account(TimeStampedModel):
+    class Type(models.TextChoices):
+        CASH = 'cash', 'Cash'
+        BANK = 'bank', 'Bank'
+        UPI = 'upi', 'UPI'
+        OTHER = 'other', 'Other'
+
+    name = models.CharField(max_length=255)
+    account_type = models.CharField(max_length=16, choices=Type.choices, default=Type.CASH)
+    opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['account_type', 'name']),
+            models.Index(fields=['is_active', 'name']),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def current_balance(self) -> Decimal:
+        totals = self.transactions.aggregate(
+            debit=models.Sum('debit'),
+            credit=models.Sum('credit'),
+        )
+        debit = totals.get('debit') or Decimal('0')
+        credit = totals.get('credit') or Decimal('0')
+        return (self.opening_balance or Decimal('0')) + credit - debit
+
+
+class Vendor(TimeStampedModel):
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    tax_id = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Bill(TimeStampedModel):
+    class Status(models.TextChoices):
+        UNPAID = 'unpaid', 'Unpaid'
+        PARTIAL = 'partial', 'Partial'
+        PAID = 'paid', 'Paid'
+        OVERDUE = 'overdue', 'Overdue'
+
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='bills')
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='bills')
+    bill_number = models.CharField(max_length=100, blank=True)
+    bill_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.UNPAID)
+    category = models.CharField(
+        max_length=32,
+        choices=[
+            ('project_expense', 'Project expense'),
+            ('misc', 'Misc expense'),
+            ('other_expense', 'Other expense'),
+        ],
+        default='project_expense',
+    )
+    description = models.TextField(blank=True)
+    attachment = models.FileField(upload_to='bills/', blank=True, null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bills_created',
+    )
+
+    class Meta:
+        ordering = ['-bill_date', '-created_at']
+        indexes = [
+            models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['bill_date']),
+            models.Index(fields=['vendor', 'bill_date']),
+        ]
+
+    def __str__(self) -> str:
+        label = self.bill_number or f"Bill #{self.pk}"
+        return f"{self.vendor} · {label}"
+
+    @property
+    def amount_paid(self) -> Decimal:
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+        if 'payments' in prefetched:
+            return sum((payment.amount for payment in self.payments.all()), Decimal('0'))
+        return self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+    @property
+    def outstanding(self) -> Decimal:
+        return max((self.amount or Decimal('0')) - self.amount_paid, Decimal('0'))
+
+    def refresh_status(self, *, save: bool = True, today=None) -> str:
+        today = today or timezone.localdate()
+        outstanding = self.outstanding
+        new_status = self.status
+        if outstanding <= 0:
+            new_status = self.Status.PAID
+        elif outstanding < (self.amount or Decimal('0')):
+            new_status = self.Status.PARTIAL
+        elif self.due_date and self.due_date < today:
+            new_status = self.Status.OVERDUE
+        else:
+            new_status = self.Status.UNPAID
+        if new_status != self.status:
+            self.status = new_status
+            if save:
+                self.save(update_fields=['status'])
+        return new_status
+
+
+class BillPayment(TimeStampedModel):
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='payments')
+    payment_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bill_payments',
+    )
+    method = models.CharField(max_length=50, blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bill_payments_recorded',
+    )
+
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+        indexes = [
+            models.Index(fields=['payment_date']),
+            models.Index(fields=['bill', 'payment_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"Bill payment {self.amount} on {self.payment_date}"
+
+
+class ClientAdvance(TimeStampedModel):
+    """Client advance / retainer received (not tied to an invoice)."""
+
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='advances')
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='advances')
+    received_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='client_advances',
+    )
+    method = models.CharField(max_length=50, blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='advances_recorded',
+    )
+    received_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='advances_received',
+    )
+
+    class Meta:
+        ordering = ['-received_date', '-created_at']
+        indexes = [
+            models.Index(fields=['received_date']),
+            models.Index(fields=['client', 'received_date']),
+            models.Index(fields=['project', 'received_date']),
+        ]
+
+    def __str__(self) -> str:
+        label = f"Advance {self.amount} on {self.received_date}"
+        if self.project_id:
+            return f"{self.project} · {label}"
+        if self.client_id:
+            return f"{self.client} · {label}"
+        return label
+
+    def clean(self):
+        super().clean()
+        if not self.project_id and not self.client_id:
+            raise ValidationError('Select a project or a client.')
+        if self.project_id and not self.client_id and self.project and self.project.client_id:
+            self.client = self.project.client
+
+    @property
+    def allocated_amount(self) -> Decimal:
+        prefetched = getattr(self, '_prefetched_objects_cache', {}) or {}
+        if 'allocations' in prefetched:
+            return sum((alloc.amount for alloc in self.allocations.all()), Decimal('0'))
+        return self.allocations.aggregate(total=models.Sum('amount'))['total'] or Decimal('0')
+
+    @property
+    def available_amount(self) -> Decimal:
+        return max((self.amount or Decimal('0')) - self.allocated_amount, Decimal('0'))
+
+
+class ClientAdvanceAllocation(TimeStampedModel):
+    advance = models.ForeignKey(ClientAdvance, on_delete=models.CASCADE, related_name='allocations')
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='advance_allocations')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    allocated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='advance_allocations',
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['invoice', 'created_at']),
+            models.Index(fields=['advance', 'created_at']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.advance} -> {self.invoice.display_invoice_number} ({self.amount})"
+
+    def clean(self):
+        super().clean()
+        amount = self.amount or Decimal('0')
+        if amount <= 0:
+            raise ValidationError({'amount': 'Amount must be greater than zero.'})
+        if self.advance_id and self.invoice_id:
+            if self.invoice.project_id and self.advance.project_id and self.invoice.project_id != self.advance.project_id:
+                raise ValidationError('Advance and invoice must belong to the same project.')
+            if self.invoice.lead_id and self.advance.client_id and self.invoice.lead and self.invoice.lead.client_id != self.advance.client_id:
+                raise ValidationError('Advance and invoice must belong to the same client.')
+
+
+class ProjectFinancePlan(TimeStampedModel):
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='finance_plan')
+    planned_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    planned_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+
+    def __str__(self) -> str:
+        return f"Finance plan · {self.project}"
+
+
+class ProjectMilestone(TimeStampedModel):
+    class Status(models.TextChoices):
+        PLANNED = 'planned', 'Planned'
+        INVOICED = 'invoiced', 'Invoiced'
+        PAID = 'paid', 'Paid'
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='milestones')
+    title = models.CharField(max_length=255)
+    due_date = models.DateField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PLANNED)
+    invoice = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='milestones')
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['due_date', 'created_at']
+        indexes = [
+            models.Index(fields=['project', 'status']),
+            models.Index(fields=['due_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.project} · {self.title}"
+
+
+class ExpenseClaim(TimeStampedModel):
+    class Status(models.TextChoices):
+        SUBMITTED = 'submitted', 'Submitted'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+        PAID = 'paid', 'Paid'
+
+    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='expense_claims')
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='expense_claims')
+    expense_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    category = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.SUBMITTED)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='expense_claims_approved',
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-expense_date', '-created_at']
+        indexes = [
+            models.Index(fields=['status', 'expense_date']),
+            models.Index(fields=['employee', 'expense_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee} · {self.amount} · {self.expense_date}"
+
+
+class ExpenseClaimAttachment(TimeStampedModel):
+    claim = models.ForeignKey(ExpenseClaim, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='expense_claims/', blank=True, null=True)
+    caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f"Attachment for {self.claim}"
+
+
+class ExpenseClaimPayment(TimeStampedModel):
+    claim = models.OneToOneField(ExpenseClaim, on_delete=models.CASCADE, related_name='payment')
+    payment_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='expense_claim_payments',
+    )
+    method = models.CharField(max_length=50, blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='expense_claim_payments_recorded',
+    )
+
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+        indexes = [
+            models.Index(fields=['payment_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"Claim payment {self.amount} on {self.payment_date}"
+
+
+class RecurringTransactionRule(TimeStampedModel):
+    class Direction(models.TextChoices):
+        DEBIT = 'debit', 'Debit (expense)'
+        CREDIT = 'credit', 'Credit (income)'
+
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    direction = models.CharField(max_length=16, choices=Direction.choices, default=Direction.DEBIT)
+    category = models.CharField(
+        max_length=32,
+        choices=[
+            ('client_payment', 'Client payment'),
+            ('client_advance', 'Client advance'),
+            ('vendor_payment', 'Vendor payment'),
+            ('salary', 'Salary'),
+            ('reimbursement', 'Reimbursement'),
+            ('transfer', 'Transfer'),
+            ('misc', 'Misc expense'),
+            ('project_expense', 'Project expense'),
+            ('other_income', 'Other income'),
+            ('other_expense', 'Other expense'),
+        ],
+        default='misc',
+    )
+    description = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='recurring_rules')
+    related_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='recurring_rules')
+    related_vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name='recurring_rules')
+    day_of_month = models.PositiveSmallIntegerField(default=1)
+    next_run_date = models.DateField()
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['next_run_date', 'name']
+        indexes = [
+            models.Index(fields=['is_active', 'next_run_date']),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class BankStatementImport(TimeStampedModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='statement_imports')
+    file = models.FileField(upload_to='bank_statements/')
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bank_statement_uploads',
+    )
+    source_name = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['account', 'created_at']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.account} statement · {self.created_at:%Y-%m-%d}"
+
+
+class BankStatementLine(TimeStampedModel):
+    statement = models.ForeignKey(BankStatementImport, on_delete=models.CASCADE, related_name='lines')
+    line_date = models.DateField()
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text='Positive = credit (money in). Negative = debit (money out).',
+    )
+    balance = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    matched_transaction = models.ForeignKey(
+        'Transaction',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='matched_statement_lines',
+    )
+
+    class Meta:
+        ordering = ['-line_date', '-created_at']
+        indexes = [
+            models.Index(fields=['statement', 'line_date']),
+            models.Index(fields=['line_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.statement.account} · {self.line_date} · {self.amount}"
+
+
 class Transaction(TimeStampedModel):
+    class Category(models.TextChoices):
+        CLIENT_PAYMENT = 'client_payment', 'Client payment'
+        CLIENT_ADVANCE = 'client_advance', 'Client advance'
+        VENDOR_PAYMENT = 'vendor_payment', 'Vendor payment'
+        SALARY = 'salary', 'Salary'
+        REIMBURSEMENT = 'reimbursement', 'Reimbursement'
+        TRANSFER = 'transfer', 'Transfer'
+        MISC = 'misc', 'Misc expense'
+        PROJECT_EXPENSE = 'project_expense', 'Project expense'
+        OTHER_INCOME = 'other_income', 'Other income'
+        OTHER_EXPENSE = 'other_expense', 'Other expense'
+
     date = models.DateField()
     description = models.CharField(max_length=255)
+    category = models.CharField(max_length=32, choices=Category.choices, blank=True, default='', db_index=True)
+    subcategory = models.CharField(max_length=100, blank=True, null=True)
     debit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     credit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions',
+    )
     payment = models.OneToOneField(
         'Payment',
         on_delete=models.CASCADE,
@@ -698,8 +1232,40 @@ class Transaction(TimeStampedModel):
         related_name='cashbook_entry',
         help_text='Auto-linked payment income entry (system generated).',
     )
+    bill_payment = models.ForeignKey(
+        'BillPayment',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='cashbook_entries',
+        help_text='Auto-linked vendor payment entry (system generated).',
+    )
+    client_advance = models.ForeignKey(
+        'ClientAdvance',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='cashbook_entries',
+        help_text='Auto-linked client advance entry (system generated).',
+    )
+    expense_claim_payment = models.ForeignKey(
+        'ExpenseClaimPayment',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='cashbook_entries',
+        help_text='Auto-linked reimbursement entry (system generated).',
+    )
+    recurring_rule = models.ForeignKey(
+        RecurringTransactionRule,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions',
+    )
     related_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     related_client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
+    related_vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     related_person = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions'
     )
@@ -716,6 +1282,10 @@ class Transaction(TimeStampedModel):
         ordering = ['-date']
         indexes = [
             models.Index(fields=['date']),
+            models.Index(fields=['category', 'date']),
+            models.Index(fields=['account', 'date']),
+            models.Index(fields=['related_vendor', 'date']),
+            models.Index(fields=['related_person', 'date']),
             models.Index(fields=['related_project', 'date']),
             models.Index(fields=['related_client', 'date']),
         ]

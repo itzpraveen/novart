@@ -219,8 +219,18 @@
                 <td class="value">{{ payment.amount|rupee }}</td>
             </tr>
             <tr>
-                <td class="label">Total Received</td>
+                <td class="label">Total Paid (cash)</td>
                 <td class="value">{{ invoice.amount_received|rupee }}</td>
+            </tr>
+            {% if invoice.advance_applied %}
+            <tr>
+                <td class="label">Advance Applied</td>
+                <td class="value">{{ invoice.advance_applied|rupee }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td class="label">Total Settled</td>
+                <td class="value">{{ invoice.amount_settled|rupee }}</td>
             </tr>
             <tr class="balance {% if invoice.outstanding %}due{% else %}settled{% endif %}">
                 <td class="label">Balance Due</td>

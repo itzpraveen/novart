@@ -2,8 +2,18 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from .models import (
+    Account,
+    BankStatementImport,
+    BankStatementLine,
+    Bill,
+    BillPayment,
     Client,
+    ClientAdvance,
+    ClientAdvanceAllocation,
     Document,
+    ExpenseClaim,
+    ExpenseClaimAttachment,
+    ExpenseClaimPayment,
     FirmProfile,
     Invoice,
     InvoiceLine,
@@ -11,7 +21,10 @@ from .models import (
     Notification,
     Payment,
     Project,
+    ProjectFinancePlan,
+    ProjectMilestone,
     ProjectStageHistory,
+    RecurringTransactionRule,
     ReminderSetting,
     StaffActivity,
     SiteIssue,
@@ -21,13 +34,14 @@ from .models import (
     Task,
     Transaction,
     User,
+    Vendor,
     WhatsAppConfig,
 )
 
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
-    fieldsets = DjangoUserAdmin.fieldsets + (('Role Info', {'fields': ('role', 'phone')}),)
+    fieldsets = DjangoUserAdmin.fieldsets + (('Role Info', {'fields': ('role', 'phone', 'monthly_salary')}),)
     list_display = ('username', 'email', 'role', 'is_staff')
     list_filter = ('role', 'is_staff')
 
@@ -110,12 +124,12 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('invoice', 'payment_date', 'amount', 'method', 'recorded_by')
+    list_display = ('invoice', 'payment_date', 'amount', 'account', 'method', 'recorded_by')
 
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('date', 'description', 'debit', 'credit', 'related_project', 'recorded_by')
+    list_display = ('date', 'description', 'category', 'account', 'debit', 'credit', 'related_project', 'related_vendor', 'recorded_by')
 
 
 @admin.register(Document)
@@ -144,6 +158,86 @@ class StaffActivityAdmin(admin.ModelAdmin):
 @admin.register(FirmProfile)
 class FirmProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email', 'tax_id')
+
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ('name', 'account_type', 'opening_balance', 'is_active')
+    list_filter = ('account_type', 'is_active')
+    search_fields = ('name',)
+
+
+@admin.register(Vendor)
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'email', 'tax_id')
+    search_fields = ('name', 'phone', 'email', 'tax_id')
+
+
+@admin.register(Bill)
+class BillAdmin(admin.ModelAdmin):
+    list_display = ('vendor', 'project', 'bill_number', 'bill_date', 'due_date', 'amount', 'status', 'category')
+    list_filter = ('status', 'category')
+    search_fields = ('bill_number', 'vendor__name', 'project__code', 'project__name')
+
+
+@admin.register(BillPayment)
+class BillPaymentAdmin(admin.ModelAdmin):
+    list_display = ('bill', 'payment_date', 'amount', 'account', 'method', 'recorded_by')
+    list_filter = ('payment_date',)
+
+
+@admin.register(ClientAdvance)
+class ClientAdvanceAdmin(admin.ModelAdmin):
+    list_display = ('project', 'client', 'received_date', 'amount', 'account', 'method', 'recorded_by')
+    list_filter = ('received_date',)
+
+
+@admin.register(ClientAdvanceAllocation)
+class ClientAdvanceAllocationAdmin(admin.ModelAdmin):
+    list_display = ('advance', 'invoice', 'amount', 'created_at', 'allocated_by')
+
+
+@admin.register(ProjectFinancePlan)
+class ProjectFinancePlanAdmin(admin.ModelAdmin):
+    list_display = ('project', 'planned_fee', 'planned_cost', 'updated_at')
+
+
+@admin.register(ProjectMilestone)
+class ProjectMilestoneAdmin(admin.ModelAdmin):
+    list_display = ('project', 'title', 'due_date', 'amount', 'status', 'invoice')
+    list_filter = ('status',)
+
+
+@admin.register(ExpenseClaim)
+class ExpenseClaimAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'project', 'expense_date', 'amount', 'status', 'approved_by')
+    list_filter = ('status', 'expense_date')
+
+
+@admin.register(ExpenseClaimAttachment)
+class ExpenseClaimAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('claim', 'caption', 'created_at')
+
+
+@admin.register(ExpenseClaimPayment)
+class ExpenseClaimPaymentAdmin(admin.ModelAdmin):
+    list_display = ('claim', 'payment_date', 'amount', 'account', 'method', 'recorded_by')
+
+
+@admin.register(RecurringTransactionRule)
+class RecurringTransactionRuleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active', 'direction', 'category', 'amount', 'next_run_date')
+    list_filter = ('is_active', 'direction', 'category')
+
+
+@admin.register(BankStatementImport)
+class BankStatementImportAdmin(admin.ModelAdmin):
+    list_display = ('account', 'source_name', 'created_at', 'uploaded_by')
+
+
+@admin.register(BankStatementLine)
+class BankStatementLineAdmin(admin.ModelAdmin):
+    list_display = ('statement', 'line_date', 'description', 'amount', 'matched_transaction')
 
 
 @admin.register(WhatsAppConfig)

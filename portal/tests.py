@@ -5,7 +5,25 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Client, Invoice, Payment, Project, Receipt, RolePermission, StaffActivity, Transaction, Lead
+from .models import (
+    Account,
+    Bill,
+    BillPayment,
+    Client,
+    ClientAdvance,
+    ClientAdvanceAllocation,
+    ExpenseClaim,
+    Invoice,
+    Payment,
+    Project,
+    Receipt,
+    RecurringTransactionRule,
+    RolePermission,
+    StaffActivity,
+    Transaction,
+    Lead,
+    Vendor,
+)
 from .permissions import get_permissions_for_user
 
 User = get_user_model()
@@ -130,6 +148,7 @@ class FinanceFlowTests(TestCase):
 
         self.assertEqual(cashbook_entry.credit, payment.amount)
         self.assertEqual(cashbook_entry.debit, 0)
+        self.assertEqual(cashbook_entry.category, Transaction.Category.CLIENT_PAYMENT)
         self.assertEqual(cashbook_entry.related_project_id, project.pk)
         self.assertEqual(cashbook_entry.related_client_id, client.pk)
 
@@ -140,3 +159,150 @@ class FinanceFlowTests(TestCase):
             ).exists()
         )
         self.assertEqual(resp.url, reverse('receipt_pdf', args=[receipt.pk]))
+
+    def test_bill_payment_creates_cashbook_entry(self):
+        cash = Account.objects.create(name='Cash', account_type=Account.Type.CASH)
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='200-NVRT')
+        vendor = Vendor.objects.create(name='Test Vendor')
+        bill = Bill.objects.create(
+            vendor=vendor,
+            project=project,
+            bill_number='B-1',
+            bill_date=timezone.localdate(),
+            due_date=timezone.localdate(),
+            amount=Decimal('1000.00'),
+            category='project_expense',
+            created_by=self.user,
+        )
+
+        resp = self.client.post(
+            reverse('bill_payment_create', args=[bill.pk]),
+            data={
+                'payment_date': timezone.localdate(),
+                'amount': '1000.00',
+                'account': cash.pk,
+                'method': 'Cash',
+                'reference': 'BILL-REF',
+                'notes': '',
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+
+        payment = BillPayment.objects.get(bill=bill)
+        txn = Transaction.objects.get(bill_payment=payment)
+        self.assertEqual(txn.debit, Decimal('1000.00'))
+        self.assertEqual(txn.credit, 0)
+        self.assertEqual(txn.account_id, cash.pk)
+        self.assertEqual(txn.related_vendor_id, vendor.pk)
+        self.assertEqual(txn.related_project_id, project.pk)
+        self.assertEqual(txn.category, 'project_expense')
+
+    def test_advance_allocation_reduces_invoice_outstanding(self):
+        cash = Account.objects.create(name='Cash', account_type=Account.Type.CASH)
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='300-NVRT')
+        invoice = Invoice.objects.create(
+            project=project,
+            invoice_date=timezone.localdate(),
+            due_date=timezone.localdate(),
+            amount=Decimal('1000.00'),
+            tax_percent=Decimal('0'),
+            discount_percent=Decimal('0'),
+            status=Invoice.Status.SENT,
+        )
+        advance = ClientAdvance.objects.create(
+            project=project,
+            client=client,
+            received_date=timezone.localdate(),
+            amount=Decimal('1000.00'),
+            account=cash,
+            recorded_by=self.user,
+            received_by=self.user,
+        )
+        ClientAdvanceAllocation.objects.create(advance=advance, invoice=invoice, amount=Decimal('250.00'), allocated_by=self.user)
+
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.advance_applied, Decimal('250.00'))
+        self.assertEqual(invoice.outstanding, Decimal('750.00'))
+
+    def test_recurring_run_creates_transactions(self):
+        cash = Account.objects.create(name='Cash', account_type=Account.Type.CASH)
+        today = timezone.localdate()
+        rule = RecurringTransactionRule.objects.create(
+            name='Rent',
+            is_active=True,
+            direction=RecurringTransactionRule.Direction.DEBIT,
+            category=Transaction.Category.MISC,
+            description='Office rent',
+            amount=Decimal('500.00'),
+            account=cash,
+            day_of_month=1,
+            next_run_date=today.replace(day=1),
+        )
+        resp = self.client.post(reverse('recurring_rule_run'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Transaction.objects.filter(recurring_rule=rule).exists())
+
+    def test_expense_claim_payment_sets_paid_and_cashbook(self):
+        cash = Account.objects.create(name='Cash', account_type=Account.Type.CASH)
+        employee = User.objects.create_user(username='employee2', password=self.password, role=User.Roles.ARCHITECT)
+        claim = ExpenseClaim.objects.create(
+            employee=employee,
+            expense_date=timezone.localdate(),
+            amount=Decimal('200.00'),
+            category='Travel',
+            status=ExpenseClaim.Status.APPROVED,
+            approved_by=self.user,
+            approved_at=timezone.now(),
+        )
+        resp = self.client.post(
+            reverse('expense_claim_pay', args=[claim.pk]),
+            data={
+                'payment_date': timezone.localdate(),
+                'amount': '200.00',
+                'account': cash.pk,
+                'method': 'Cash',
+                'reference': 'CLM-1',
+                'notes': '',
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        claim.refresh_from_db()
+        self.assertEqual(claim.status, ExpenseClaim.Status.PAID)
+        txn = Transaction.objects.get(expense_claim_payment__claim=claim)
+        self.assertEqual(txn.category, Transaction.Category.REIMBURSEMENT)
+        self.assertEqual(txn.debit, Decimal('200.00'))
+        self.assertEqual(txn.account_id, cash.pk)
+
+
+class PayrollTests(TestCase):
+    def setUp(self):
+        self.password = 'test-pass-123'
+        self.admin = User.objects.create_user(
+            username='admin',
+            password=self.password,
+            role=User.Roles.ADMIN,
+        )
+        self.employee = User.objects.create_user(
+            username='employee',
+            password=self.password,
+            role=User.Roles.ARCHITECT,
+            monthly_salary=Decimal('25000.00'),
+        )
+        self.client.login(username='admin', password=self.password)
+
+    def test_payroll_post_creates_salary_transaction(self):
+        resp = self.client.post(
+            reverse('payroll'),
+            data={
+                'date': timezone.localdate(),
+                'related_person': self.employee.pk,
+                'debit': '5000.00',
+                'remarks': 'Demo salary',
+            },
+        )
+        self.assertEqual(resp.status_code, 302)
+        txn = Transaction.objects.get(category=Transaction.Category.SALARY, related_person=self.employee)
+        self.assertEqual(txn.credit, 0)
+        self.assertEqual(txn.debit, Decimal('5000.00'))

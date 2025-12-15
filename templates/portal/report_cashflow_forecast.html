@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Cashflow Forecast</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_reports' %}">Reports</a>
+    </div>
+</div>
+
+<div class="card panel-subtle mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label text-muted small" for="days">Horizon (days)</label>
+                <input class="form-control" type="number" min="7" max="180" id="days" name="days" value="{{ horizon_days }}">
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="text-muted small mb-1">Range</div>
+                <div class="fw-semibold">{{ today|date:"d M Y" }} → {{ end_date|date:"d M Y" }}</div>
+            </div>
+            <div class="col-12 col-md-4">
+                <button class="btn btn-outline-secondary w-100" type="submit">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Starting cash</p>
+                <h3>{{ starting_cash|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Expected inflow</p>
+                <h3>{{ overdue_in|add:due_in|add:recurring_in|rupee }}</h3>
+                <div class="text-muted small">Overdue {{ overdue_in|rupee }} · Due {{ due_in|rupee }} · Recurring {{ recurring_in|rupee }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Forecast cash</p>
+                <h3>{{ forecast_cash|rupee }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Expected Outflow</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Payables overdue</span><span class="fw-semibold">{{ overdue_out|rupee }}</span></div>
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Payables due</span><span class="fw-semibold">{{ due_out|rupee }}</span></div>
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Recurring expenses</span><span class="fw-semibold">{{ recurring_out|rupee }}</span></div>
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Payroll due (estimate)</span><span class="fw-semibold">{{ payroll_due|rupee }}</span></div>
+                <div class="d-flex justify-content-between mb-1"><span class="text-muted">Approved claims unpaid</span><span class="fw-semibold">{{ approved_claims_due|rupee }}</span></div>
+                <hr>
+                <div class="d-flex justify-content-between"><span class="fw-semibold">Total expected outflow</span><span class="fw-semibold">{{ overdue_out|add:due_out|add:recurring_out|add:payroll_due|add:approved_claims_due|rupee }}</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Account Balances</div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th class="text-end">Balance</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for acc in account_balances %}
+                        <tr>
+                            <td>{{ acc.name }}</td>
+                            <td class="text-end fw-semibold">{{ acc.balance|rupee }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">No accounts.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-header bg-white fw-semibold">Upcoming recurring items</div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Direction</th>
+                <th class="text-end">Amount</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in recurring_items %}
+                <tr>
+                    <td>{{ item.date|date:"d M Y" }}</td>
+                    <td class="fw-semibold">{{ item.name }}</td>
+                    <td>{{ item.direction }}</td>
+                    <td class="text-end">{{ item.amount|rupee }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">No upcoming recurring items.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

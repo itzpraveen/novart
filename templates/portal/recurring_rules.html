@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Recurring Transactions</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'transaction_list' %}">Cashbook</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <form method="post" action="{% url 'recurring_rule_run' %}" class="d-inline" onsubmit="return confirm('Generate due recurring transactions now?');">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary btn-sm">Generate due</button>
+        </form>
+        <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#ruleOffcanvas" role="button" aria-controls="ruleOffcanvas">New rule</a>
+    </div>
+</div>
+
+<div class="card panel-subtle mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            {% for field in filter.form %}
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                </div>
+            {% endfor %}
+            <div class="col-12 col-md-3 col-lg-2">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Direction</th>
+                <th>Category</th>
+                <th class="text-end">Amount</th>
+                <th>Next run</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for rule in filter.qs %}
+                <tr>
+                    <td data-label="Name" class="fw-semibold">{{ rule.name }}</td>
+                    <td data-label="Direction">{{ rule.get_direction_display }}</td>
+                    <td data-label="Category">{{ rule.get_category_display }}</td>
+                    <td data-label="Amount" class="text-end">{{ rule.amount|rupee }}</td>
+                    <td data-label="Next run">{{ rule.next_run_date|date:"d M Y" }}</td>
+                    <td data-label="Status">
+                        {% if rule.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Paused</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No rules yet.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end offcanvas-glow" tabindex="-1" id="ruleOffcanvas" aria-labelledby="ruleOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 460px;">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="ruleOffcanvasLabel">New recurring rule</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    {% if field.field.widget.input_type == "checkbox" %}
+                        <div class="form-check form-switch">
+                            {{ field|add_class:"form-check-input" }}
+                            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        </div>
+                    {% else %}
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                    {% endif %}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary w-100">Save</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

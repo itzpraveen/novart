@@ -4,11 +4,11 @@
 <div class="page-header page-header-sticky">
     <div>
         <div class="eyebrow text-uppercase">Finance</div>
-        <h2 class="mb-0">Record Payment</h2>
-        <div class="text-muted small">Invoice {{ invoice.display_invoice_number }}</div>
+        <h2 class="mb-0">Pay Expense Claim</h2>
+        <div class="text-muted small">{{ claim.employee }} · {{ claim.expense_date|date:"d M Y" }}</div>
     </div>
     <div class="actions">
-        <a class="btn btn-outline-secondary" href="{% url 'invoice_list' %}">Back to invoices</a>
+        <a class="btn btn-outline-secondary" href="{% url 'expense_claim_admin' %}">Back to claims</a>
     </div>
 </div>
 
@@ -16,37 +16,25 @@
     <div class="col-md-5">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0">Invoice Details</h5>
+                <h5 class="mb-0">Claim Details</h5>
             </div>
             <div class="card-body">
                 <table class="table table-sm mb-0">
                     <tr>
-                        <td class="text-muted">Invoice</td>
-                        <td class="fw-semibold">{{ invoice.display_invoice_number }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Client</td>
-                        <td>{% if invoice.project %}{{ invoice.project.client.name }}{% elif invoice.lead %}{{ invoice.lead.client.name }}{% else %}—{% endif %}</td>
+                        <td class="text-muted">Employee</td>
+                        <td class="fw-semibold">{{ claim.employee }}</td>
                     </tr>
                     <tr>
                         <td class="text-muted">Project</td>
-                        <td>{% if invoice.project %}{{ invoice.project.code }}{% else %}—{% endif %}</td>
+                        <td>{% if claim.project %}{{ claim.project.code }}{% else %}—{% endif %}</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Invoice Total</td>
-                        <td>{{ invoice.total_with_tax|rupee }}</td>
+                        <td class="text-muted">Category</td>
+                        <td>{{ claim.category|default:"—" }}</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Already Paid</td>
-                        <td>{{ invoice.amount_received|rupee }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Advance Applied</td>
-                        <td>{{ invoice.advance_applied|rupee }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted fw-semibold">Outstanding</td>
-                        <td class="fw-semibold text-warning">{{ invoice.outstanding|rupee }}</td>
+                        <td class="text-muted">Amount</td>
+                        <td class="fw-semibold">{{ claim.amount|rupee }}</td>
                     </tr>
                 </table>
             </div>
@@ -72,17 +60,14 @@
                     <div class="col-12">
                         <hr>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-primary" type="submit">Save & Create Receipt</button>
-                            <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
+                            <button class="btn btn-primary" type="submit">Save payment</button>
+                            <a class="btn btn-link" href="{% url 'expense_claim_admin' %}">Cancel</a>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
-
-        <div class="alert alert-info mt-3 small">
-            <strong>Receipt Flow:</strong> Saving a payment automatically creates a receipt and opens the PDF (one receipt per payment).
-        </div>
     </div>
 </div>
 {% endblock %}
+

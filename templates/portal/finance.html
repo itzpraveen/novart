@@ -6,10 +6,22 @@
     <div>
         <a class="btn btn-outline-primary btn-sm me-2" href="{% url 'invoice_list' %}">Invoices</a>
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'transaction_list' %}">Cashbook</a>
+        <a class="btn btn-outline-secondary btn-sm ms-2" href="{% url 'payroll' %}">Payroll</a>
     </div>
 </div>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'account_list' %}">Accounts</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'transfer_create' %}">Transfer</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'vendor_list' %}">Vendors</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'bill_list' %}">Bills</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'advance_list' %}">Advances</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'expense_claim_admin' %}">Claims</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'recurring_rule_list' %}">Recurring</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'bank_statement_list' %}">Statements</a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'finance_reports' %}">Reports</a>
+</div>
 <div class="row g-3 mb-3">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <p class="text-muted mb-1">Total invoiced</p>
@@ -17,7 +29,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <p class="text-muted mb-1">Total received</p>
@@ -25,11 +37,20 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card shadow-sm">
             <div class="card-body">
                 <p class="text-muted mb-1">Expenses</p>
                 <h3>{{ totals.expenses|rupee }}</h3>
+                <div class="text-muted small mt-2">Salary: {{ totals.salary|rupee }} · Misc: {{ totals.misc|rupee }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <p class="text-muted mb-1">Cash balance</p>
+                <h3>{{ totals.cash_balance|rupee }}</h3>
             </div>
         </div>
     </div>

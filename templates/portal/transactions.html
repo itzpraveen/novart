@@ -4,6 +4,7 @@
 <div class="page-header">
     <h2 class="mb-0">Cashbook</h2>
     <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">New entry</a>
     </div>
 </div>
@@ -25,13 +26,19 @@
             </div>
         </div>
         <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                <div class="fw-semibold">Entries</div>
+                <div class="small text-muted">Dr {{ totals.debit|rupee }} · Cr {{ totals.credit|rupee }} · Net {{ totals.net|rupee }}</div>
+            </div>
             <div class="table-responsive">
                 <table class="table mb-0">
                     <thead>
                     <tr>
                         <th>Date</th>
                         <th>Description</th>
-                        <th>Project</th>
+                        <th>Account</th>
+                        <th>Category</th>
+                        <th>Linked to</th>
                         <th>Debit</th>
                         <th>Credit</th>
                     </tr>
@@ -41,12 +48,29 @@
                         <tr>
                             <td>{{ txn.date|date:"d M Y" }}</td>
                             <td>{{ txn.description }}</td>
-                            <td>{{ txn.related_project }}</td>
+                            <td>{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td>{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td>
+                                {% if txn.related_project %}
+                                    <div>{{ txn.related_project }}</div>
+                                    {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
+                                    {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
+                                {% elif txn.related_client %}
+                                    <div>{{ txn.related_client }}</div>
+                                    {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
+                                {% elif txn.related_vendor %}
+                                    {{ txn.related_vendor }}
+                                {% elif txn.related_person %}
+                                    {{ txn.related_person }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td>{{ txn.debit|rupee }}</td>
                             <td>{{ txn.credit|rupee }}</td>
                         </tr>
                     {% empty %}
-                        {% include "includes/empty_state.html" with colspan=5 title="No cashbook entries" description="Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label="New entry" cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
+                        {% include "includes/empty_state.html" with colspan=7 title="No cashbook entries" description="Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label="New entry" cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>

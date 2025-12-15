@@ -4,7 +4,7 @@
 <div class="page-header page-header-sticky">
     <div>
         <div class="eyebrow text-uppercase">Finance</div>
-        <h2 class="mb-0">Record Payment</h2>
+        <h2 class="mb-0">Apply Advance</h2>
         <div class="text-muted small">Invoice {{ invoice.display_invoice_number }}</div>
     </div>
     <div class="actions">
@@ -29,15 +29,11 @@
                         <td>{% if invoice.project %}{{ invoice.project.client.name }}{% elif invoice.lead %}{{ invoice.lead.client.name }}{% else %}—{% endif %}</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Project</td>
-                        <td>{% if invoice.project %}{{ invoice.project.code }}{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
                         <td class="text-muted">Invoice Total</td>
                         <td>{{ invoice.total_with_tax|rupee }}</td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Already Paid</td>
+                        <td class="text-muted">Paid (cash)</td>
                         <td>{{ invoice.amount_received|rupee }}</td>
                     </tr>
                     <tr>
@@ -51,12 +47,32 @@
                 </table>
             </div>
         </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white fw-semibold">Eligible advances</div>
+            <div class="card-body">
+                {% for adv in eligible_advances %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <div class="fw-semibold">{{ adv.project|default:adv.client }}</div>
+                            <div class="text-muted small">{{ adv.received_date|date:"d M Y" }}{% if adv.account %} · {{ adv.account.name }}{% endif %}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold">{{ adv.available_amount|rupee }}</div>
+                            <div class="text-muted small">available</div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No available advances found for this invoice.</div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
     <div class="col-md-7">
         <div class="card shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0">Payment Details</h5>
+                <h5 class="mb-0">Allocation</h5>
             </div>
             <div class="card-body">
                 <form method="post" class="row g-3">
@@ -72,17 +88,14 @@
                     <div class="col-12">
                         <hr>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-primary" type="submit">Save & Create Receipt</button>
+                            <button class="btn btn-primary" type="submit">Apply advance</button>
                             <a class="btn btn-link" href="{% url 'invoice_list' %}">Cancel</a>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
-
-        <div class="alert alert-info mt-3 small">
-            <strong>Receipt Flow:</strong> Saving a payment automatically creates a receipt and opens the PDF (one receipt per payment).
-        </div>
     </div>
 </div>
 {% endblock %}
+

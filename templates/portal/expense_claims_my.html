@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <h2 class="mb-0">My Expense Claims</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'dashboard' %}">Home</a>
+        {% if module_perms.finance %}
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'expense_claim_admin' %}">All claims</a>
+        {% endif %}
+        <a class="btn btn-primary btn-sm d-md-none" data-bs-toggle="offcanvas" href="#claimOffcanvas" role="button" aria-controls="claimOffcanvas">New claim</a>
+    </div>
+</div>
+
+<div class="d-md-flex gap-3 align-items-start">
+    <div class="flex-grow-1">
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Project</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for claim in claims %}
+                        <tr>
+                            <td data-label="Date">{{ claim.expense_date|date:"d M Y" }}</td>
+                            <td data-label="Project">{% if claim.project %}{{ claim.project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td data-label="Description">
+                                <div class="fw-semibold">{{ claim.category|default:"Expense" }}</div>
+                                <small class="text-muted">{{ claim.description|default:"—" }}</small>
+                            </td>
+                            <td data-label="Amount" class="text-end fw-semibold">{{ claim.amount|rupee }}</td>
+                            <td data-label="Status">
+                                <span class="badge bg-{% if claim.status == 'paid' %}success{% elif claim.status == 'approved' %}info{% elif claim.status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                    {{ claim.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No claims yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="claimOffcanvas" aria-labelledby="claimOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="claimOffcanvasLabel">New expense claim</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

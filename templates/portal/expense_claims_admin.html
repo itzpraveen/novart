@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Expense Claims</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'expense_claim_my' %}">My claims</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_claims_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
+    </div>
+</div>
+
+<div class="card panel-subtle mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            {% for field in filter.form %}
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                </div>
+            {% endfor %}
+            <div class="col-12 col-md-3 col-lg-2">
+                <button class="btn btn-outline-secondary w-100" type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-stack">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Project</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for claim in filter.qs %}
+                <tr>
+                    <td data-label="Date">{{ claim.expense_date|date:"d M Y" }}</td>
+                    <td data-label="Employee">{{ claim.employee }}</td>
+                    <td data-label="Project">{% if claim.project %}{{ claim.project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td data-label="Description">
+                        <div class="fw-semibold">{{ claim.category|default:"Expense" }}</div>
+                        <small class="text-muted">{{ claim.description|default:"—" }}</small>
+                        {% if claim.attachments.all %}
+                            <div class="text-muted small mt-1">{{ claim.attachments.count }} attachment(s)</div>
+                        {% endif %}
+                    </td>
+                    <td data-label="Amount" class="text-end fw-semibold">{{ claim.amount|rupee }}</td>
+                    <td data-label="Status">
+                        <span class="badge bg-{% if claim.status == 'paid' %}success{% elif claim.status == 'approved' %}info{% elif claim.status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                            {{ claim.get_status_display }}
+                        </span>
+                    </td>
+                    <td data-label="Actions" class="text-end">
+                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                            {% if claim.status == 'submitted' %}
+                                <form method="post" action="{% url 'expense_claim_approve' claim.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-success">Approve</button>
+                                </form>
+                            {% endif %}
+                            {% if claim.status != 'paid' %}
+                                <form method="post" action="{% url 'expense_claim_reject' claim.pk %}" class="d-inline" onsubmit="return confirm('Reject this claim?');">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger">Reject</button>
+                                </form>
+                            {% endif %}
+                            {% if claim.status == 'approved' %}
+                                <a class="btn btn-sm btn-primary" href="{% url 'expense_claim_pay' claim.pk %}">Pay</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No claims found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

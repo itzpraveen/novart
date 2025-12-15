@@ -252,8 +252,14 @@
 	            </tr>
 	            {% if invoice.amount_received %}
 	            <tr>
-	                <td class="label">Advance / Received</td>
+	                <td class="label">Received (cash)</td>
 	                <td class="value">-{{ invoice.amount_received|rupee }}</td>
+	            </tr>
+	            {% endif %}
+	            {% if invoice.advance_applied %}
+	            <tr>
+	                <td class="label">Advance Applied</td>
+	                <td class="value">-{{ invoice.advance_applied|rupee }}</td>
 	            </tr>
 	            {% endif %}
 	            <tr class="outstanding {% if invoice.outstanding %}due{% else %}settled{% endif %}">

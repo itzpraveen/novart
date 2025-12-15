@@ -18,6 +18,7 @@
             <a class="subnav-link" href="{% url 'project_tasks' project.pk %}">Tasks</a>
             <a class="subnav-link" href="{% url 'project_timeline' project.pk %}">Timeline</a>
             <a class="subnav-link" href="{% url 'invoice_list' %}?project={{ project.pk }}">Invoices</a>
+            {% if module_perms.finance %}<a class="subnav-link" href="{% url 'project_finance' project.pk %}">Finance</a>{% endif %}
             <a class="subnav-link" href="{% url 'site_visit_list' %}?project={{ project.pk }}">Visits</a>
             <a class="subnav-link" href="{% url 'document_list' %}?project={{ project.pk }}">Docs</a>
         </div>

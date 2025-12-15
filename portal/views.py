@@ -10,10 +10,11 @@ import logging
 import mimetypes
 import os
 import re
-from io import BytesIO
+from io import BytesIO, TextIOWrapper
 from django.conf import settings as dj_settings
 from django.contrib.staticfiles import finders
 
+from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -115,6 +116,9 @@ def _resolve_dejavu_font_bundle() -> tuple[str | None, str | None]:
 
 from .decorators import role_required, module_required
 from .filters import (
+    BillFilter,
+    ClientAdvanceFilter,
+    ExpenseClaimFilter,
     InvoiceFilter,
     ProjectFilter,
     SiteIssueFilter,
@@ -122,10 +126,19 @@ from .filters import (
     StaffActivityFilter,
     TaskFilter,
     TransactionFilter,
+    RecurringRuleFilter,
 )
 from .forms import (
+    AccountForm,
+    BankStatementImportForm,
+    BillForm,
+    BillPaymentForm,
     ClientForm,
+    ClientAdvanceAllocationForm,
+    ClientAdvanceForm,
     DocumentForm,
+    ExpenseClaimForm,
+    ExpenseClaimPaymentForm,
     FirmProfileForm,
     InvoiceForm,
     InvoiceLineFormSet,
@@ -133,6 +146,9 @@ from .forms import (
     ReceiptForm,
     PaymentForm,
     ProjectForm,
+    ProjectFinancePlanForm,
+    ProjectMilestoneForm,
+    RecurringTransactionRuleForm,
     SiteIssueForm,
     SiteIssueAttachmentForm,
     SiteVisitAttachmentForm,
@@ -141,13 +157,25 @@ from .forms import (
     TaskForm,
     TaskCommentForm,
     TransactionForm,
+    SalaryPaymentForm,
     ReminderSettingForm,
     UserForm,
+    VendorForm,
     RolePermissionForm,
 )
 from .models import (
+    Account,
+    BankStatementImport,
+    BankStatementLine,
+    Bill,
+    BillPayment,
     Client,
+    ClientAdvance,
+    ClientAdvanceAllocation,
     Document,
+    ExpenseClaim,
+    ExpenseClaimAttachment,
+    ExpenseClaimPayment,
     FirmProfile,
     Invoice,
     Lead,
@@ -155,6 +183,7 @@ from .models import (
     Payment,
     Receipt,
     Project,
+    ProjectFinancePlan,
     ProjectStageHistory,
     ReminderSetting,
     StaffActivity,
@@ -169,11 +198,15 @@ from .models import (
     Transaction,
     User,
     RolePermission,
+    Vendor,
+    ProjectMilestone,
+    RecurringTransactionRule,
 )
 from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
 from .notifications.tasks import notify_task_change
 from .notifications.whatsapp import send_text as send_whatsapp_text
 from .activity import log_staff_activity
+from .finance_utils import add_month, generate_recurring_transactions
 from django.core.mail import send_mail
 
 
@@ -447,11 +480,11 @@ def export_projects_csv(request):
 @login_required
 @module_required('invoices')
 def export_invoices_csv(request):
-    invoices = Invoice.objects.select_related('project__client', 'lead__client').prefetch_related('payments', 'lines')
+    invoices = Invoice.objects.select_related('project__client', 'lead__client').prefetch_related('payments', 'lines', 'advance_allocations')
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="invoices.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Invoice #', 'Project', 'Lead', 'Client', 'Invoice Date', 'Due Date', 'Status', 'Subtotal', 'Tax %', 'Discount %', 'Total With Tax', 'Amount Received', 'Outstanding'])
+    writer.writerow(['Invoice #', 'Project', 'Lead', 'Client', 'Invoice Date', 'Due Date', 'Status', 'Subtotal', 'Tax %', 'Discount %', 'Total With Tax', 'Paid (cash)', 'Advance Applied', 'Settled', 'Outstanding'])
     for invoice in invoices.order_by('-invoice_date'):
         client = invoice.project.client if invoice.project else (invoice.lead.client if invoice.lead else None)
         writer.writerow([
@@ -467,6 +500,8 @@ def export_invoices_csv(request):
             invoice.discount_percent,
             invoice.total_with_tax,
             invoice.amount_received,
+            invoice.advance_applied,
+            invoice.amount_settled,
             invoice.outstanding,
         ])
     return response
@@ -1453,7 +1488,7 @@ def issue_detail(request, pk):
 @module_required('invoices')
 def invoice_list(request):
     invoice_qs = Invoice.objects.select_related('project', 'project__client', 'lead', 'lead__client').prefetch_related(
-        'lines', 'payments'
+        'lines', 'payments', 'advance_allocations'
     )
     invoice_filter = InvoiceFilter(request.GET, queryset=invoice_qs)
 
@@ -1476,7 +1511,7 @@ def invoice_pdf(request, invoice_pk):
     invoice = get_object_or_404(
         Invoice.objects.select_related(
             'project__client', 'project__project_manager', 'lead', 'lead__client'
-        ).prefetch_related('lines', 'payments'),
+        ).prefetch_related('lines', 'payments', 'advance_allocations'),
         pk=invoice_pk,
     )
     invoice.refresh_status(save=False)
@@ -1568,7 +1603,7 @@ def invoice_create(request):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 @module_required('invoices')
 def invoice_edit(request, invoice_pk):
-    invoice = get_object_or_404(Invoice.objects.prefetch_related('lines', 'payments'), pk=invoice_pk)
+    invoice = get_object_or_404(Invoice.objects.prefetch_related('lines', 'payments', 'advance_allocations'), pk=invoice_pk)
     if request.method == 'POST':
         form = InvoiceForm(request.POST, instance=invoice)
         formset = InvoiceLineFormSet(request.POST, instance=invoice)
@@ -1608,7 +1643,7 @@ def invoice_aging(request):
     invoices = (
         Invoice.objects.exclude(status=Invoice.Status.PAID)
         .select_related('project__client', 'lead', 'lead__client')
-        .prefetch_related('lines', 'payments')
+        .prefetch_related('lines', 'payments', 'advance_allocations')
     )
     buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}
     totals = {key: Decimal('0') for key in buckets}
@@ -1867,7 +1902,24 @@ def receipt_pdf(request, receipt_pk):
 @role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
 @module_required('finance')
 def transaction_list(request):
-    txn_filter = TransactionFilter(request.GET, queryset=Transaction.objects.select_related('related_project'))
+    txn_filter = TransactionFilter(
+        request.GET,
+        queryset=Transaction.objects.select_related(
+            'account',
+            'related_project',
+            'related_client',
+            'related_vendor',
+            'related_person',
+            'recorded_by',
+        ),
+    )
+    filtered_totals = txn_filter.qs.aggregate(
+        debit=Sum('debit'),
+        credit=Sum('credit'),
+    )
+    debit_total = filtered_totals.get('debit') or Decimal('0')
+    credit_total = filtered_totals.get('credit') or Decimal('0')
+    net_total = credit_total - debit_total
     if request.method == 'POST':
         form = TransactionForm(request.POST)
         if form.is_valid():
@@ -1884,7 +1936,1202 @@ def transaction_list(request):
             return redirect('transaction_list')
     else:
         form = TransactionForm()
-    return render(request, 'portal/transactions.html', {'filter': txn_filter, 'form': form, 'currency': '₹'})
+    return render(
+        request,
+        'portal/transactions.html',
+        {
+            'filter': txn_filter,
+            'form': form,
+            'currency': '₹',
+            'totals': {'debit': debit_total, 'credit': credit_total, 'net': net_total},
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def payroll(request):
+    today = timezone.localdate()
+    month_str = (request.GET.get('month') or '').strip()
+    if not month_str:
+        month_start = today.replace(day=1)
+        month_str = month_start.strftime('%Y-%m')
+    else:
+        try:
+            month_start = dt.datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        except ValueError:
+            messages.error(request, 'Invalid month format. Use YYYY-MM.')
+            return redirect('payroll')
+
+    if month_start.month == 12:
+        month_end = dt.date(month_start.year + 1, 1, 1)
+    else:
+        month_end = dt.date(month_start.year, month_start.month + 1, 1)
+
+    staff_qs = User.objects.filter(is_active=True, monthly_salary__gt=0).order_by('first_name', 'last_name', 'username')
+    paid_rows = (
+        Transaction.objects.filter(
+            category=Transaction.Category.SALARY,
+            related_person__in=staff_qs,
+            date__gte=month_start,
+            date__lt=month_end,
+        )
+        .values('related_person_id')
+        .annotate(total=Sum('debit'))
+    )
+    paid_by_person = {row['related_person_id']: row['total'] or Decimal('0') for row in paid_rows}
+
+    staff_rows = []
+    total_salary = Decimal('0')
+    total_paid = Decimal('0')
+    total_due = Decimal('0')
+    for staff in staff_qs:
+        salary = staff.monthly_salary or Decimal('0')
+        paid = paid_by_person.get(staff.id, Decimal('0'))
+        due = max(salary - paid, Decimal('0'))
+        staff_rows.append({'staff': staff, 'salary': salary, 'paid': paid, 'due': due})
+        total_salary += salary
+        total_paid += paid
+        total_due += due
+
+    salary_txns = Transaction.objects.filter(
+        category=Transaction.Category.SALARY,
+        date__gte=month_start,
+        date__lt=month_end,
+    ).select_related('account', 'related_person', 'recorded_by')
+
+    if request.method == 'POST':
+        form = SalaryPaymentForm(request.POST)
+        form.fields['related_person'].queryset = staff_qs
+        if form.is_valid():
+            txn = form.save(commit=False)
+            txn.recorded_by = request.user
+            txn.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Recorded salary payment: {txn.related_person} (₹{txn.debit}).",
+                related_url=reverse('payroll'),
+            )
+            messages.success(request, 'Salary payment recorded.')
+            return redirect(f"{reverse('payroll')}?month={month_str}")
+    else:
+        form = SalaryPaymentForm(initial={'date': today})
+        form.fields['related_person'].queryset = staff_qs
+
+    return render(
+        request,
+        'portal/payroll.html',
+        {
+            'month_str': month_str,
+            'month_start': month_start,
+            'staff_rows': staff_rows,
+            'salary_txns': salary_txns,
+            'totals': {'salary': total_salary, 'paid': total_paid, 'due': total_due},
+            'form': form,
+            'currency': '₹',
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def account_list(request):
+    zero = Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))
+    accounts = (
+        Account.objects.order_by('name')
+        .annotate(
+            debit_total=Coalesce(Sum('transactions__debit'), zero),
+            credit_total=Coalesce(Sum('transactions__credit'), zero),
+        )
+        .annotate(
+            balance=ExpressionWrapper(
+                F('opening_balance') + F('credit_total') - F('debit_total'),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            )
+        )
+    )
+    if request.method == 'POST':
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            account = form.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Created account: {account.name}.",
+                related_url=reverse('account_list'),
+            )
+            messages.success(request, 'Account saved.')
+            return redirect('account_list')
+    else:
+        form = AccountForm()
+    return render(request, 'portal/accounts.html', {'accounts': accounts, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def transfer_create(request):
+    class TransferForm(forms.Form):
+        date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+        from_account = forms.ModelChoiceField(queryset=Account.objects.filter(is_active=True).order_by('name'))
+        to_account = forms.ModelChoiceField(queryset=Account.objects.filter(is_active=True).order_by('name'))
+        amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+        notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 2}))
+
+        def clean(self):
+            cleaned = super().clean()
+            from_account = cleaned.get('from_account')
+            to_account = cleaned.get('to_account')
+            if from_account and to_account and from_account.pk == to_account.pk:
+                self.add_error('to_account', 'Choose a different destination account.')
+            return cleaned
+
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        if form.is_valid():
+            transfer_date = form.cleaned_data['date']
+            from_account = form.cleaned_data['from_account']
+            to_account = form.cleaned_data['to_account']
+            amount = form.cleaned_data['amount']
+            notes = (form.cleaned_data.get('notes') or '').strip()
+            transfer_ref = f"TXFER-{timezone.localtime():%Y%m%d%H%M%S}-{request.user.pk}"
+            remarks = f"{notes} | Ref: {transfer_ref}".strip(" |")
+
+            Transaction.objects.create(
+                date=transfer_date,
+                description=f"Transfer to {to_account.name}"[:255],
+                category=Transaction.Category.TRANSFER,
+                subcategory=transfer_ref,
+                debit=amount,
+                credit=0,
+                account=from_account,
+                recorded_by=request.user,
+                remarks=remarks,
+            )
+            Transaction.objects.create(
+                date=transfer_date,
+                description=f"Transfer from {from_account.name}"[:255],
+                category=Transaction.Category.TRANSFER,
+                subcategory=transfer_ref,
+                debit=0,
+                credit=amount,
+                account=to_account,
+                recorded_by=request.user,
+                remarks=remarks,
+            )
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Created transfer {amount} from {from_account} → {to_account}.",
+                related_url=reverse('account_list'),
+            )
+            messages.success(request, 'Transfer recorded.')
+            return redirect('account_list')
+    else:
+        form = TransferForm(initial={'date': timezone.localdate()})
+    return render(request, 'portal/transfer_form.html', {'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def vendor_list(request):
+    vendors = Vendor.objects.order_by('name')
+    if request.method == 'POST':
+        form = VendorForm(request.POST)
+        if form.is_valid():
+            vendor = form.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Added vendor: {vendor.name}.",
+                related_url=reverse('vendor_list'),
+            )
+            messages.success(request, 'Vendor saved.')
+            return redirect('vendor_list')
+    else:
+        form = VendorForm()
+    return render(request, 'portal/vendors.html', {'vendors': vendors, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def bill_list(request):
+    bills_qs = Bill.objects.select_related('vendor', 'project', 'project__client').prefetch_related('payments')
+    bill_filter = BillFilter(request.GET, queryset=bills_qs)
+    if request.method == 'POST':
+        form = BillForm(request.POST, request.FILES)
+        visible_projects = _visible_projects_for_user(request.user)
+        form.fields['project'].queryset = visible_projects
+        if form.is_valid():
+            bill = form.save(commit=False)
+            bill.created_by = request.user
+            bill.save()
+            bill.refresh_status()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Added bill for {bill.vendor}: ₹{bill.amount}.",
+                related_url=reverse('bill_list'),
+            )
+            messages.success(request, 'Bill saved.')
+            return redirect('bill_list')
+    else:
+        form = BillForm(initial={'bill_date': timezone.localdate()})
+        form.fields['project'].queryset = _visible_projects_for_user(request.user)
+    return render(request, 'portal/bills.html', {'filter': bill_filter, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def bill_payment_create(request, bill_pk):
+    bill = get_object_or_404(Bill.objects.select_related('vendor', 'project'), pk=bill_pk)
+    if bill.outstanding <= 0:
+        messages.info(request, 'This bill is already settled.')
+        return redirect('bill_list')
+    if request.method == 'POST':
+        form = BillPaymentForm(request.POST, bill=bill)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.bill = bill
+            payment.recorded_by = request.user
+            payment.save()
+            messages.success(request, 'Bill payment recorded.')
+            return redirect('bill_list')
+    else:
+        form = BillPaymentForm(
+            bill=bill,
+            initial={'payment_date': timezone.localdate(), 'amount': bill.outstanding},
+        )
+    return render(request, 'portal/bill_payment_form.html', {'bill': bill, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def bill_aging(request):
+    today = timezone.localdate()
+    bills = Bill.objects.exclude(status=Bill.Status.PAID).select_related('vendor', 'project').prefetch_related('payments')
+    buckets = {'0-30': [], '31-60': [], '61-90': [], '90+': []}
+    totals = {key: Decimal('0') for key in buckets}
+    for bill in bills:
+        bill.refresh_status(save=False, today=today)
+        outstanding = bill.outstanding
+        if outstanding <= 0:
+            continue
+        due = bill.due_date or bill.bill_date
+        days_overdue = max((today - due).days, 0) if due else 0
+        if days_overdue <= 30:
+            bucket_key = '0-30'
+        elif days_overdue <= 60:
+            bucket_key = '31-60'
+        elif days_overdue <= 90:
+            bucket_key = '61-90'
+        else:
+            bucket_key = '90+'
+        buckets[bucket_key].append({'bill': bill, 'days_overdue': days_overdue, 'outstanding': outstanding})
+        totals[bucket_key] += outstanding
+    grand_total = sum(totals.values(), Decimal('0'))
+    return render(
+        request,
+        'portal/bill_aging.html',
+        {'buckets': buckets, 'totals': totals, 'grand_total': grand_total, 'today': today},
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def advance_list(request):
+    advances_qs = ClientAdvance.objects.select_related('project', 'client', 'account', 'recorded_by', 'received_by').prefetch_related('allocations')
+    advance_filter = ClientAdvanceFilter(request.GET, queryset=advances_qs)
+    if request.method == 'POST':
+        form = ClientAdvanceForm(request.POST, project_queryset=_visible_projects_for_user(request.user))
+        if form.is_valid():
+            advance = form.save(commit=False)
+            advance.recorded_by = request.user
+            advance.save()
+            messages.success(request, 'Advance saved.')
+            return redirect('advance_list')
+    else:
+        form = ClientAdvanceForm(initial={'received_date': timezone.localdate()}, project_queryset=_visible_projects_for_user(request.user))
+    return render(request, 'portal/advances.html', {'filter': advance_filter, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def apply_advance_to_invoice(request, invoice_pk):
+    invoice = get_object_or_404(
+        Invoice.objects.select_related('project__client', 'lead__client').prefetch_related('payments', 'lines', 'advance_allocations'),
+        pk=invoice_pk,
+    )
+    if invoice.outstanding <= 0:
+        messages.info(request, 'This invoice is already settled.')
+        return redirect('invoice_list')
+
+    if invoice.project_id:
+        eligible_advances = ClientAdvance.objects.filter(
+            Q(project=invoice.project) | Q(client=invoice.project.client)
+        )
+    elif invoice.lead_id and invoice.lead and invoice.lead.client_id:
+        eligible_advances = ClientAdvance.objects.filter(client=invoice.lead.client)
+    else:
+        eligible_advances = ClientAdvance.objects.none()
+
+    eligible_advances = eligible_advances.order_by('-received_date', '-created_at')
+
+    if request.method == 'POST':
+        form = ClientAdvanceAllocationForm(request.POST, invoice=invoice)
+        form.fields['advance'].queryset = eligible_advances
+        if form.is_valid():
+            allocation = form.save(commit=False)
+            allocation.allocated_by = request.user
+            allocation.save()
+            messages.success(request, 'Advance applied to invoice.')
+            return redirect('invoice_list')
+    else:
+        form = ClientAdvanceAllocationForm(invoice=invoice)
+        form.fields['advance'].queryset = eligible_advances
+    return render(
+        request,
+        'portal/apply_advance.html',
+        {
+            'invoice': invoice,
+            'form': form,
+            'eligible_advances': eligible_advances,
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def recurring_rule_list(request):
+    rule_filter = RecurringRuleFilter(
+        request.GET,
+        queryset=RecurringTransactionRule.objects.select_related('account', 'related_project', 'related_vendor'),
+    )
+    if request.method == 'POST':
+        form = RecurringTransactionRuleForm(request.POST)
+        if form.is_valid():
+            rule = form.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Saved recurring rule: {rule.name}.",
+                related_url=reverse('recurring_rule_list'),
+            )
+            messages.success(request, 'Recurring rule saved.')
+            return redirect('recurring_rule_list')
+    else:
+        form = RecurringTransactionRuleForm(initial={'next_run_date': timezone.localdate()})
+    return render(request, 'portal/recurring_rules.html', {'filter': rule_filter, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def recurring_rule_run(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Run requires POST.')
+    created = generate_recurring_transactions(today=timezone.localdate(), actor=request.user)
+    messages.success(request, f'Generated {created} recurring transaction(s).')
+    return redirect('recurring_rule_list')
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def bank_statement_list(request):
+    statements = BankStatementImport.objects.select_related('account', 'uploaded_by').order_by('-created_at')
+    if request.method == 'POST':
+        form = BankStatementImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            statement = form.save(commit=False)
+            statement.uploaded_by = request.user
+            statement.save()
+
+            try:
+                statement.file.open('rb')
+                wrapper = TextIOWrapper(statement.file, encoding='utf-8-sig')
+                reader = csv.DictReader(wrapper)
+                created = 0
+                for raw_row in reader:
+                    row = {str(k or '').strip().lower(): (v or '').strip() for k, v in (raw_row or {}).items()}
+                    date_str = row.get('date') or row.get('transaction date') or row.get('value date')
+                    desc = row.get('description') or row.get('narration') or row.get('details') or row.get('particulars') or ''
+                    amount_str = row.get('amount')
+                    debit_str = row.get('debit') or row.get('withdrawal') or ''
+                    credit_str = row.get('credit') or row.get('deposit') or ''
+                    balance_str = row.get('balance') or row.get('running balance') or ''
+                    if not date_str:
+                        continue
+                    try:
+                        line_date = dt.datetime.strptime(date_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        try:
+                            line_date = dt.datetime.strptime(date_str, '%d/%m/%Y').date()
+                        except ValueError:
+                            continue
+                    amount = Decimal('0')
+                    if amount_str:
+                        try:
+                            amount = Decimal(amount_str.replace(',', ''))
+                        except Exception:
+                            amount = Decimal('0')
+                    elif credit_str or debit_str:
+                        try:
+                            credit_val = Decimal(credit_str.replace(',', '') or '0')
+                        except Exception:
+                            credit_val = Decimal('0')
+                        try:
+                            debit_val = Decimal(debit_str.replace(',', '') or '0')
+                        except Exception:
+                            debit_val = Decimal('0')
+                        amount = credit_val if credit_val else -debit_val
+                    balance = None
+                    if balance_str:
+                        try:
+                            balance = Decimal(balance_str.replace(',', ''))
+                        except Exception:
+                            balance = None
+
+                    if not desc:
+                        desc = f"Statement line {line_date:%Y-%m-%d}"
+
+                    line = BankStatementLine.objects.create(
+                        statement=statement,
+                        line_date=line_date,
+                        description=desc[:255],
+                        amount=amount,
+                        balance=balance,
+                    )
+                    created += 1
+
+                    candidates = Transaction.objects.filter(account=statement.account, date__gte=line_date - dt.timedelta(days=1), date__lte=line_date + dt.timedelta(days=1))
+                    if amount > 0:
+                        candidates = candidates.filter(credit=amount)
+                    elif amount < 0:
+                        candidates = candidates.filter(debit=abs(amount))
+                    match = candidates.exclude(matched_statement_lines__isnull=False).order_by('date').first()
+                    if match:
+                        line.matched_transaction = match
+                        line.save(update_fields=['matched_transaction'])
+
+                messages.success(request, f'Statement uploaded. Imported {created} line(s).')
+                return redirect('bank_statement_detail', statement_pk=statement.pk)
+            finally:
+                try:
+                    statement.file.close()
+                except Exception:
+                    pass
+    else:
+        form = BankStatementImportForm()
+    return render(request, 'portal/bank_statements.html', {'statements': statements, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def bank_statement_detail(request, statement_pk):
+    statement = get_object_or_404(BankStatementImport.objects.select_related('account'), pk=statement_pk)
+    if request.method == 'POST':
+        action = (request.POST.get('action') or '').strip()
+        line_id = request.POST.get('line_id')
+        line = statement.lines.filter(pk=line_id).first() if line_id else None
+        if not line:
+            return HttpResponseForbidden('Invalid line.')
+        if action == 'create_txn' and not line.matched_transaction_id:
+            amount = line.amount or Decimal('0')
+            txn = Transaction.objects.create(
+                date=line.line_date,
+                description=line.description[:255],
+                category=Transaction.Category.OTHER_INCOME if amount > 0 else Transaction.Category.OTHER_EXPENSE,
+                debit=abs(amount) if amount < 0 else 0,
+                credit=amount if amount > 0 else 0,
+                account=statement.account,
+                recorded_by=request.user,
+                remarks='Created from bank statement.',
+            )
+            line.matched_transaction = txn
+            line.save(update_fields=['matched_transaction'])
+            messages.success(request, 'Transaction created and matched.')
+            return redirect('bank_statement_detail', statement_pk=statement.pk)
+    lines = statement.lines.select_related('matched_transaction').order_by('-line_date', '-created_at')
+    return render(request, 'portal/bank_statement_detail.html', {'statement': statement, 'lines': lines})
+
+
+@login_required
+def expense_claim_my(request):
+    claims = ExpenseClaim.objects.filter(employee=request.user).select_related('project').order_by('-expense_date', '-created_at')
+    if request.method == 'POST':
+        form = ExpenseClaimForm(request.POST, request.FILES)
+        if form.is_valid():
+            claim = form.save(commit=False)
+            claim.employee = request.user
+            claim.status = ExpenseClaim.Status.SUBMITTED
+            claim.save()
+            for upload in form.cleaned_data.get('attachments') or []:
+                ExpenseClaimAttachment.objects.create(claim=claim, file=upload)
+            messages.success(request, 'Expense claim submitted.')
+            return redirect('expense_claim_my')
+    else:
+        form = ExpenseClaimForm(initial={'expense_date': timezone.localdate()})
+    return render(request, 'portal/expense_claims_my.html', {'claims': claims, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def expense_claim_admin(request):
+    claim_filter = ExpenseClaimFilter(
+        request.GET,
+        queryset=ExpenseClaim.objects.select_related('employee', 'project', 'approved_by').prefetch_related('attachments', 'payment'),
+    )
+    return render(request, 'portal/expense_claims_admin.html', {'filter': claim_filter})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def expense_claim_approve(request, claim_pk):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Approve requires POST.')
+    claim = get_object_or_404(ExpenseClaim, pk=claim_pk)
+    if claim.status not in (ExpenseClaim.Status.SUBMITTED,):
+        messages.info(request, 'Only submitted claims can be approved.')
+        return redirect('expense_claim_admin')
+    claim.status = ExpenseClaim.Status.APPROVED
+    claim.approved_by = request.user
+    claim.approved_at = timezone.now()
+    claim.save(update_fields=['status', 'approved_by', 'approved_at'])
+    messages.success(request, 'Claim approved.')
+    return redirect('expense_claim_admin')
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def expense_claim_reject(request, claim_pk):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Reject requires POST.')
+    claim = get_object_or_404(ExpenseClaim, pk=claim_pk)
+    if claim.status in (ExpenseClaim.Status.PAID,):
+        messages.error(request, 'Cannot reject a paid claim.')
+        return redirect('expense_claim_admin')
+    claim.status = ExpenseClaim.Status.REJECTED
+    claim.save(update_fields=['status'])
+    messages.success(request, 'Claim rejected.')
+    return redirect('expense_claim_admin')
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def expense_claim_pay(request, claim_pk):
+    claim = get_object_or_404(ExpenseClaim.objects.select_related('employee', 'project'), pk=claim_pk)
+    if claim.status != ExpenseClaim.Status.APPROVED:
+        messages.error(request, 'Only approved claims can be paid.')
+        return redirect('expense_claim_admin')
+    if getattr(claim, 'payment', None):
+        messages.info(request, 'This claim is already paid.')
+        return redirect('expense_claim_admin')
+    if request.method == 'POST':
+        form = ExpenseClaimPaymentForm(request.POST, claim=claim)
+        if form.is_valid():
+            payment = form.save(commit=False)
+            payment.claim = claim
+            payment.recorded_by = request.user
+            payment.save()
+            messages.success(request, 'Claim payment recorded.')
+            return redirect('expense_claim_admin')
+    else:
+        form = ExpenseClaimPaymentForm(
+            claim=claim,
+            initial={'payment_date': timezone.localdate(), 'amount': claim.amount},
+        )
+    return render(request, 'portal/expense_claim_payment_form.html', {'claim': claim, 'form': form})
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def project_finance(request, pk):
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
+    plan, _ = ProjectFinancePlan.objects.get_or_create(project=project)
+    milestones = ProjectMilestone.objects.filter(project=project).select_related('invoice').order_by('due_date', 'created_at')
+
+    plan_form = ProjectFinancePlanForm(instance=plan)
+    milestone_form = ProjectMilestoneForm()
+
+    if request.method == 'POST':
+        form_type = (request.POST.get('form_type') or '').strip()
+        if form_type == 'plan':
+            plan_form = ProjectFinancePlanForm(request.POST, instance=plan)
+            if plan_form.is_valid():
+                plan_form.save()
+                messages.success(request, 'Finance plan updated.')
+                return redirect('project_finance', pk=project.pk)
+        elif form_type == 'milestone':
+            milestone_form = ProjectMilestoneForm(request.POST)
+            if milestone_form.is_valid():
+                milestone = milestone_form.save(commit=False)
+                milestone.project = project
+                milestone.save()
+                messages.success(request, 'Milestone added.')
+                return redirect('project_finance', pk=project.pk)
+    return render(
+        request,
+        'portal/project_finance.html',
+        {'project': project, 'plan_form': plan_form, 'milestones': milestones, 'milestone_form': milestone_form},
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def project_milestone_invoice(request, pk, milestone_pk):
+    project = get_object_or_404(_visible_projects_for_user(request.user), pk=pk)
+    milestone = get_object_or_404(ProjectMilestone, pk=milestone_pk, project=project)
+    if milestone.invoice_id:
+        messages.info(request, 'Invoice already exists for this milestone.')
+        return redirect('invoice_edit', invoice_pk=milestone.invoice_id)
+    today = timezone.localdate()
+    due_date = milestone.due_date or (today + timedelta(days=7))
+    invoice = Invoice.objects.create(
+        project=project,
+        invoice_date=today,
+        due_date=due_date,
+        amount=milestone.amount or Decimal('0'),
+        tax_percent=Decimal('0'),
+        discount_percent=Decimal('0'),
+        status=Invoice.Status.DRAFT,
+        description=f"Milestone: {milestone.title}",
+    )
+    milestone.invoice = invoice
+    milestone.status = ProjectMilestone.Status.INVOICED
+    milestone.save(update_fields=['invoice', 'status'])
+    messages.success(request, f"Invoice created for milestone: {milestone.title}.")
+    return redirect('invoice_edit', invoice_pk=invoice.pk)
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ARCHITECT)
+@module_required('finance')
+def export_transactions_csv(request):
+    txn_filter = TransactionFilter(
+        request.GET,
+        queryset=Transaction.objects.select_related(
+            'account',
+            'related_project',
+            'related_client',
+            'related_vendor',
+            'related_person',
+            'recorded_by',
+        ),
+    )
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="cashbook.csv"'
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            'Date',
+            'Description',
+            'Category',
+            'Subcategory',
+            'Account',
+            'Debit',
+            'Credit',
+            'Project',
+            'Client',
+            'Vendor',
+            'Person',
+            'Recorded By',
+            'Remarks',
+        ]
+    )
+    for txn in txn_filter.qs.order_by('-date', '-created_at'):
+        writer.writerow(
+            [
+                txn.date,
+                txn.description,
+                txn.get_category_display() if txn.category else '',
+                txn.subcategory,
+                txn.account.name if txn.account_id else '',
+                txn.debit,
+                txn.credit,
+                txn.related_project.code if txn.related_project_id else '',
+                txn.related_client.name if txn.related_client_id else '',
+                txn.related_vendor.name if txn.related_vendor_id else '',
+                str(txn.related_person) if txn.related_person_id else '',
+                str(txn.recorded_by) if txn.recorded_by_id else '',
+                txn.remarks,
+            ]
+        )
+    return response
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def export_payroll_csv(request):
+    today = timezone.localdate()
+    month_str = (request.GET.get('month') or '').strip()
+    if not month_str:
+        month_start = today.replace(day=1)
+        month_str = month_start.strftime('%Y-%m')
+    else:
+        try:
+            month_start = dt.datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        except ValueError:
+            messages.error(request, 'Invalid month format. Use YYYY-MM.')
+            return redirect('payroll')
+
+    if month_start.month == 12:
+        month_end = dt.date(month_start.year + 1, 1, 1)
+    else:
+        month_end = dt.date(month_start.year, month_start.month + 1, 1)
+
+    salary_txns = Transaction.objects.filter(
+        category=Transaction.Category.SALARY,
+        date__gte=month_start,
+        date__lt=month_end,
+    ).select_related('account', 'related_person', 'recorded_by')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="payroll-{month_str}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Employee', 'Account', 'Amount', 'Recorded By', 'Remarks'])
+    for txn in salary_txns.order_by('date', 'created_at'):
+        writer.writerow(
+            [
+                txn.date,
+                str(txn.related_person) if txn.related_person_id else '',
+                txn.account.name if txn.account_id else '',
+                txn.debit,
+                str(txn.recorded_by) if txn.recorded_by_id else '',
+                txn.remarks,
+            ]
+        )
+    return response
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def export_bills_csv(request):
+    bill_filter = BillFilter(
+        request.GET,
+        queryset=Bill.objects.select_related('vendor', 'project', 'project__client').prefetch_related('payments'),
+    )
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="bills.csv"'
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            'Vendor',
+            'Project',
+            'Client',
+            'Bill #',
+            'Bill Date',
+            'Due Date',
+            'Category',
+            'Status',
+            'Amount',
+            'Paid',
+            'Outstanding',
+        ]
+    )
+    for bill in bill_filter.qs.order_by('-bill_date', '-created_at'):
+        writer.writerow(
+            [
+                bill.vendor.name,
+                bill.project.code if bill.project_id else '',
+                bill.project.client.name if bill.project_id and bill.project.client_id else '',
+                bill.bill_number,
+                bill.bill_date,
+                bill.due_date,
+                bill.get_category_display() if hasattr(bill, 'get_category_display') else bill.category,
+                bill.get_status_display(),
+                bill.amount,
+                bill.amount_paid,
+                bill.outstanding,
+            ]
+        )
+    return response
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def export_advances_csv(request):
+    advance_filter = ClientAdvanceFilter(
+        request.GET,
+        queryset=ClientAdvance.objects.select_related('project', 'client', 'account', 'recorded_by', 'received_by').prefetch_related('allocations'),
+    )
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="advances.csv"'
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            'Date',
+            'Client',
+            'Project',
+            'Account',
+            'Amount',
+            'Allocated',
+            'Available',
+            'Method',
+            'Reference',
+            'Recorded By',
+            'Received By',
+            'Notes',
+        ]
+    )
+    for adv in advance_filter.qs.order_by('-received_date', '-created_at'):
+        writer.writerow(
+            [
+                adv.received_date,
+                adv.client.name if adv.client_id else '',
+                adv.project.code if adv.project_id else '',
+                adv.account.name if adv.account_id else '',
+                adv.amount,
+                adv.allocated_amount,
+                adv.available_amount,
+                adv.method,
+                adv.reference,
+                str(adv.recorded_by) if adv.recorded_by_id else '',
+                str(adv.received_by) if adv.received_by_id else '',
+                adv.notes,
+            ]
+        )
+    return response
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def export_claims_csv(request):
+    claim_filter = ExpenseClaimFilter(
+        request.GET,
+        queryset=ExpenseClaim.objects.select_related('employee', 'project', 'approved_by').prefetch_related('payment'),
+    )
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="expense-claims.csv"'
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            'Expense Date',
+            'Employee',
+            'Project',
+            'Category',
+            'Description',
+            'Amount',
+            'Status',
+            'Approved By',
+            'Approved At',
+            'Paid On',
+            'Paid Amount',
+            'Paid Account',
+        ]
+    )
+    for claim in claim_filter.qs.order_by('-expense_date', '-created_at'):
+        payment = getattr(claim, 'payment', None)
+        writer.writerow(
+            [
+                claim.expense_date,
+                str(claim.employee),
+                claim.project.code if claim.project_id else '',
+                claim.category,
+                claim.description,
+                claim.amount,
+                claim.get_status_display(),
+                str(claim.approved_by) if claim.approved_by_id else '',
+                timezone.localtime(claim.approved_at).strftime('%Y-%m-%d %H:%M') if claim.approved_at else '',
+                payment.payment_date if payment else '',
+                payment.amount if payment else '',
+                payment.account.name if payment and payment.account_id else '',
+            ]
+        )
+    return response
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def finance_reports(request):
+    return render(request, 'portal/finance_reports.html')
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def report_profit_and_loss(request):
+    today = timezone.localdate()
+    from_str = (request.GET.get('from') or '').strip()
+    to_str = (request.GET.get('to') or '').strip()
+    try:
+        from_date = dt.datetime.strptime(from_str, '%Y-%m-%d').date() if from_str else today.replace(day=1)
+    except ValueError:
+        from_date = today.replace(day=1)
+    try:
+        to_date = dt.datetime.strptime(to_str, '%Y-%m-%d').date() if to_str else today
+    except ValueError:
+        to_date = today
+    if to_date < from_date:
+        from_date, to_date = to_date, from_date
+
+    txns = Transaction.objects.filter(date__gte=from_date, date__lte=to_date).exclude(category=Transaction.Category.TRANSFER)
+    income_rows = (
+        txns.values('category')
+        .annotate(total=Sum('credit'))
+        .filter(total__gt=0)
+        .order_by('-total')
+    )
+    expense_rows = (
+        txns.values('category')
+        .annotate(total=Sum('debit'))
+        .filter(total__gt=0)
+        .order_by('-total')
+    )
+
+    def _label_for_category(value: str) -> str:
+        if not value:
+            return 'Uncategorized'
+        for key, label in Transaction.Category.choices:
+            if key == value:
+                return label
+        return value
+
+    income = [{'category': _label_for_category(row['category']), 'total': row['total'] or Decimal('0')} for row in income_rows]
+    expenses = [{'category': _label_for_category(row['category']), 'total': row['total'] or Decimal('0')} for row in expense_rows]
+
+    site_expenses = (
+        SiteVisit.objects.filter(visit_date__gte=from_date, visit_date__lte=to_date).aggregate(total=Sum('expenses'))['total']
+        or Decimal('0')
+    )
+    if site_expenses:
+        expenses.append({'category': 'Site visit expenses', 'total': site_expenses})
+
+    income_total = sum((row['total'] for row in income), Decimal('0'))
+    expense_total = sum((row['total'] for row in expenses), Decimal('0'))
+    net = income_total - expense_total
+
+    if request.GET.get('export') == '1':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="pnl-{from_date}-to-{to_date}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Type', 'Category', 'Total'])
+        for row in income:
+            writer.writerow(['Income', row['category'], row['total']])
+        for row in expenses:
+            writer.writerow(['Expense', row['category'], row['total']])
+        writer.writerow(['', 'Income total', income_total])
+        writer.writerow(['', 'Expense total', expense_total])
+        writer.writerow(['', 'Net', net])
+        return response
+
+    return render(
+        request,
+        'portal/report_profit_and_loss.html',
+        {
+            'from_date': from_date,
+            'to_date': to_date,
+            'income': income,
+            'expenses': expenses,
+            'income_total': income_total,
+            'expense_total': expense_total,
+            'net': net,
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def report_cashflow_forecast(request):
+    today = timezone.localdate()
+    try:
+        horizon_days = int((request.GET.get('days') or '30').strip())
+    except ValueError:
+        horizon_days = 30
+    horizon_days = max(7, min(horizon_days, 180))
+    end_date = today + timedelta(days=horizon_days)
+
+    invoices = (
+        Invoice.objects.exclude(status=Invoice.Status.PAID)
+        .prefetch_related('payments', 'advance_allocations', 'lines')
+        .select_related('project__client', 'lead__client')
+    )
+    overdue_in = sum((inv.outstanding for inv in invoices if inv.due_date and inv.due_date < today), Decimal('0'))
+    due_in = sum((inv.outstanding for inv in invoices if inv.due_date and today <= inv.due_date <= end_date), Decimal('0'))
+
+    bills = Bill.objects.exclude(status=Bill.Status.PAID).prefetch_related('payments').select_related('vendor', 'project')
+    overdue_out = sum((bill.outstanding for bill in bills if (bill.due_date or bill.bill_date) and (bill.due_date or bill.bill_date) < today), Decimal('0'))
+    due_out = sum((bill.outstanding for bill in bills if (bill.due_date or bill.bill_date) and today <= (bill.due_date or bill.bill_date) <= end_date), Decimal('0'))
+
+    recurring_in = Decimal('0')
+    recurring_out = Decimal('0')
+    recurring_items = []
+    for rule in RecurringTransactionRule.objects.filter(is_active=True).select_related('account'):
+        run_date = rule.next_run_date
+        while run_date and run_date <= end_date:
+            if rule.direction == RecurringTransactionRule.Direction.CREDIT:
+                recurring_in += rule.amount
+            else:
+                recurring_out += rule.amount
+            recurring_items.append({'date': run_date, 'name': rule.name, 'amount': rule.amount, 'direction': rule.direction})
+            run_date = add_month(run_date.replace(day=1), 1).replace(day=min(rule.day_of_month or 1, 28))
+
+    month_start = today.replace(day=1)
+    month_end = add_month(month_start, 1)
+    payroll_due = Decimal('0')
+    if month_end <= end_date + timedelta(days=1):
+        staff_qs = User.objects.filter(is_active=True, monthly_salary__gt=0)
+        salary_total = staff_qs.aggregate(total=Sum('monthly_salary'))['total'] or Decimal('0')
+        paid = (
+            Transaction.objects.filter(category=Transaction.Category.SALARY, date__gte=month_start, date__lt=month_end)
+            .aggregate(total=Sum('debit'))['total']
+            or Decimal('0')
+        )
+        payroll_due = max(salary_total - paid, Decimal('0'))
+
+    approved_claims_due = ExpenseClaim.objects.filter(status=ExpenseClaim.Status.APPROVED).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    zero = Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))
+    account_balances = (
+        Account.objects.filter(is_active=True)
+        .annotate(
+            debit_total=Coalesce(Sum('transactions__debit'), zero),
+            credit_total=Coalesce(Sum('transactions__credit'), zero),
+        )
+        .annotate(
+            balance=ExpressionWrapper(
+                F('opening_balance') + F('credit_total') - F('debit_total'),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            )
+        )
+        .order_by('name')
+    )
+    starting_cash = sum((acc.balance for acc in account_balances), Decimal('0'))
+
+    expected_in = overdue_in + due_in + recurring_in
+    expected_out = overdue_out + due_out + recurring_out + payroll_due + approved_claims_due
+    forecast_cash = starting_cash + expected_in - expected_out
+
+    return render(
+        request,
+        'portal/report_cashflow_forecast.html',
+        {
+            'today': today,
+            'end_date': end_date,
+            'horizon_days': horizon_days,
+            'starting_cash': starting_cash,
+            'overdue_in': overdue_in,
+            'due_in': due_in,
+            'recurring_in': recurring_in,
+            'overdue_out': overdue_out,
+            'due_out': due_out,
+            'recurring_out': recurring_out,
+            'payroll_due': payroll_due,
+            'approved_claims_due': approved_claims_due,
+            'forecast_cash': forecast_cash,
+            'account_balances': account_balances,
+            'recurring_items': sorted(recurring_items, key=lambda x: x['date']),
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
+@module_required('finance')
+def report_project_profitability(request):
+    projects = (
+        Project.objects.select_related('client', 'finance_plan')
+        .prefetch_related(
+            'invoices__lines',
+            'invoices__payments',
+            'invoices__advance_allocations',
+            'transactions',
+            'site_visits',
+            'bills__payments',
+        )
+        .order_by('code')
+    )
+    rows = []
+    for project in projects:
+        plan = getattr(project, 'finance_plan', None)
+        planned_fee = plan.planned_fee if plan else Decimal('0')
+        planned_cost = plan.planned_cost if plan else Decimal('0')
+        invoiced = project.total_invoiced
+        received = project.total_received
+        expenses = project.total_expenses
+        profit = received - expenses
+        margin = (profit / received * 100) if received else Decimal('0')
+        receivable = sum((inv.outstanding for inv in project.invoices.all()), Decimal('0'))
+        payable = sum((bill.outstanding for bill in project.bills.all()), Decimal('0'))
+        rows.append(
+            {
+                'project': project,
+                'planned_fee': planned_fee,
+                'planned_cost': planned_cost,
+                'invoiced': invoiced,
+                'received': received,
+                'expenses': expenses,
+                'profit': profit,
+                'margin': margin,
+                'receivable': receivable,
+                'payable': payable,
+            }
+        )
+
+    if request.GET.get('export') == '1':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="project-profitability.csv"'
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                'Project Code',
+                'Project Name',
+                'Client',
+                'Planned Fee',
+                'Planned Cost',
+                'Invoiced',
+                'Received',
+                'Expenses',
+                'Profit',
+                'Margin %',
+                'Receivable',
+                'Payable',
+            ]
+        )
+        for row in rows:
+            project = row['project']
+            writer.writerow(
+                [
+                    project.code,
+                    project.name,
+                    project.client.name if project.client_id else '',
+                    row['planned_fee'],
+                    row['planned_cost'],
+                    row['invoiced'],
+                    row['received'],
+                    row['expenses'],
+                    row['profit'],
+                    row['margin'],
+                    row['receivable'],
+                    row['payable'],
+                ]
+            )
+        return response
+
+    return render(request, 'portal/report_project_profitability.html', {'rows': rows})
 
 
 @login_required
@@ -1938,26 +3185,31 @@ def finance_dashboard(request):
     total_invoiced = sum((invoice.total_with_tax for invoice in Invoice.objects.prefetch_related('lines')), Decimal('0'))
     total_received = Payment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0')
     ledger_expenses = Transaction.objects.aggregate(total=Sum('debit'))['total'] or Decimal('0')
+    ledger_income = Transaction.objects.aggregate(total=Sum('credit'))['total'] or Decimal('0')
+    salary_expenses = (
+        Transaction.objects.filter(category=Transaction.Category.SALARY).aggregate(total=Sum('debit'))['total']
+        or Decimal('0')
+    )
+    misc_expenses = (
+        Transaction.objects.filter(category=Transaction.Category.MISC).aggregate(total=Sum('debit'))['total']
+        or Decimal('0')
+    )
     site_expenses = SiteVisit.objects.aggregate(total=Sum('expenses'))['total'] or Decimal('0')
+    cash_balance = ledger_income - ledger_expenses - site_expenses
     totals = {
         'invoiced': total_invoiced,
         'received': total_received,
         'expenses': ledger_expenses + site_expenses,
+        'salary': salary_expenses,
+        'misc': misc_expenses,
+        'cash_balance': cash_balance,
     }
 
     month_buckets = defaultdict(lambda: {'invoiced': Decimal('0'), 'received': Decimal('0'), 'expenses': Decimal('0')})
 
-    for row in (
-        Invoice.objects.annotate(month=TruncMonth('invoice_date'))
-        .values('month')
-        .annotate(total=Sum('amount'))
-        .order_by('month')
-    ):
-        month = row['month']
-        if month:
-            if hasattr(month, 'date'):
-                month = month.date()
-            month_buckets[month]['invoiced'] += row['total'] or Decimal('0')
+    for invoice in Invoice.objects.prefetch_related('lines'):
+        month = invoice.invoice_date.replace(day=1)
+        month_buckets[month]['invoiced'] += invoice.total_with_tax
 
     for row in (
         Payment.objects.annotate(month=TruncMonth('payment_date'))

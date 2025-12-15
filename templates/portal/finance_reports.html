@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <h2 class="mb-0">Finance Reports</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="fw-semibold mb-1">Profit &amp; Loss</div>
+                <div class="text-muted small mb-3">Cash-basis income and expenses by category.</div>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'report_profit_and_loss' %}">Open</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="fw-semibold mb-1">Cashflow Forecast</div>
+                <div class="text-muted small mb-3">Expected inflows/outflows for upcoming days.</div>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'report_cashflow_forecast' %}">Open</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="fw-semibold mb-1">Project Profitability</div>
+                <div class="text-muted small mb-3">Planned vs actual by project.</div>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'report_project_profitability' %}">Open</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="fw-semibold mb-1">Receivables Aging</div>
+                <div class="text-muted small mb-3">Unpaid invoices grouped by overdue days.</div>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'invoice_aging' %}">Open</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="fw-semibold mb-1">Payables Aging</div>
+                <div class="text-muted small mb-3">Unpaid bills grouped by overdue days.</div>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'bill_aging' %}">Open</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

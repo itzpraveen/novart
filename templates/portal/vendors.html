@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <h2 class="mb-0">Vendors</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'bill_list' %}">Bills</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+        <a class="btn btn-primary btn-sm d-md-none" data-bs-toggle="offcanvas" href="#vendorOffcanvas" role="button" aria-controls="vendorOffcanvas">New vendor</a>
+    </div>
+</div>
+
+<div class="d-md-flex gap-3 align-items-start">
+    <div class="flex-grow-1">
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Tax ID</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for vendor in vendors %}
+                        <tr>
+                            <td data-label="Name" class="fw-semibold">{{ vendor.name }}</td>
+                            <td data-label="Phone">{{ vendor.phone|default:"—" }}</td>
+                            <td data-label="Email">{{ vendor.email|default:"—" }}</td>
+                            <td data-label="Tax ID">{{ vendor.tax_id|default:"—" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No vendors yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="vendorOffcanvas" aria-labelledby="vendorOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="vendorOffcanvasLabel">New vendor</h5>
+            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">Save</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -7,14 +7,25 @@ from django.forms import inlineformset_factory
 from django.utils import timezone
 
 from .models import (
+    Account,
+    BankStatementImport,
+    Bill,
+    BillPayment,
     Client,
+    ClientAdvance,
+    ClientAdvanceAllocation,
     Document,
+    ExpenseClaim,
+    ExpenseClaimPayment,
     FirmProfile,
     Invoice,
     InvoiceLine,
     Lead,
     Payment,
+    ProjectFinancePlan,
+    ProjectMilestone,
     Receipt,
+    RecurringTransactionRule,
     Project,
     ProjectStageHistory,
     ReminderSetting,
@@ -28,6 +39,7 @@ from .models import (
     TaskTemplate,
     Transaction,
     User,
+    Vendor,
     RolePermission,
 )
 
@@ -318,7 +330,7 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_staff', 'is_active']
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'monthly_salary', 'role', 'is_staff', 'is_active']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -462,7 +474,7 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['payment_date', 'amount', 'method', 'reference', 'notes', 'received_by']
+        fields = ['payment_date', 'amount', 'account', 'method', 'reference', 'notes', 'received_by']
         widgets = {'payment_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
 
     def clean_amount(self):
@@ -499,14 +511,314 @@ class TransactionForm(forms.ModelForm):
         fields = [
             'date',
             'description',
+            'category',
+            'subcategory',
+            'account',
             'debit',
             'credit',
             'related_project',
             'related_client',
+            'related_vendor',
             'related_person',
             'remarks',
         ]
         widgets = {'date': DateInput(), 'remarks': forms.Textarea(attrs={'rows': 3})}
+
+    def clean(self):
+        cleaned = super().clean()
+        category = (cleaned.get('category') or '').strip()
+        debit = cleaned.get('debit') or Decimal('0')
+        credit = cleaned.get('credit') or Decimal('0')
+
+        if debit < 0:
+            self.add_error('debit', 'Debit cannot be negative.')
+        if credit < 0:
+            self.add_error('credit', 'Credit cannot be negative.')
+
+        has_debit = debit > 0
+        has_credit = credit > 0
+        if has_debit and has_credit:
+            msg = 'Enter either a debit OR a credit amount, not both.'
+            self.add_error('debit', msg)
+            self.add_error('credit', msg)
+        elif not has_debit and not has_credit:
+            msg = 'Enter a debit or credit amount.'
+            self.add_error('debit', msg)
+            self.add_error('credit', msg)
+        if has_debit and not category:
+            self.add_error('category', 'Select a category for debit transactions.')
+        return cleaned
+
+
+class SalaryPaymentForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = ['date', 'related_person', 'debit', 'account', 'remarks']
+        labels = {'related_person': 'Employee', 'debit': 'Amount'}
+        widgets = {'date': DateInput(), 'remarks': forms.Textarea(attrs={'rows': 2})}
+
+    def clean(self):
+        cleaned = super().clean()
+        employee = cleaned.get('related_person')
+        amount = cleaned.get('debit') or Decimal('0')
+        if not employee:
+            self.add_error('related_person', 'Select an employee.')
+        if amount <= 0:
+            self.add_error('debit', 'Amount must be greater than zero.')
+        return cleaned
+
+    def save(self, commit=True):
+        txn = super().save(commit=False)
+        txn.category = Transaction.Category.SALARY
+        txn.credit = 0
+        employee = txn.related_person
+        employee_name = employee.get_full_name() if employee else ''
+        employee_name = employee_name.strip() if employee_name else (employee.username if employee else '')
+        txn.description = f"Salary paid · {employee_name or 'Employee'}"[:255]
+        if commit:
+            txn.save()
+        return txn
+
+
+class AccountForm(forms.ModelForm):
+    class Meta:
+        model = Account
+        fields = ['name', 'account_type', 'opening_balance', 'is_active', 'notes']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 2})}
+
+
+class VendorForm(forms.ModelForm):
+    class Meta:
+        model = Vendor
+        fields = ['name', 'phone', 'email', 'address', 'tax_id', 'notes']
+        widgets = {'address': forms.Textarea(attrs={'rows': 2}), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+
+class BillForm(forms.ModelForm):
+    class Meta:
+        model = Bill
+        fields = [
+            'vendor',
+            'project',
+            'bill_number',
+            'bill_date',
+            'due_date',
+            'amount',
+            'category',
+            'description',
+            'attachment',
+        ]
+        widgets = {
+            'bill_date': DateInput(),
+            'due_date': DateInput(),
+            'description': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        bill_date = cleaned.get('bill_date')
+        due_date = cleaned.get('due_date')
+        if bill_date and due_date and due_date < bill_date:
+            self.add_error('due_date', 'Due date cannot be earlier than the bill date.')
+        return cleaned
+
+
+class BillPaymentForm(forms.ModelForm):
+    def __init__(self, *args, bill=None, **kwargs):
+        self.bill = bill
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = BillPayment
+        fields = ['payment_date', 'amount', 'account', 'method', 'reference', 'notes']
+        widgets = {'payment_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        if self.bill:
+            outstanding = self.bill.outstanding
+            if outstanding <= 0:
+                raise forms.ValidationError('This bill is already settled.')
+            if amount > outstanding:
+                raise forms.ValidationError(f'Cannot pay more than the outstanding amount ({outstanding}).')
+        return amount
+
+
+class ClientAdvanceForm(forms.ModelForm):
+    def __init__(self, *args, project_queryset=None, client_queryset=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if project_queryset is not None:
+            self.fields['project'].queryset = project_queryset
+        if client_queryset is not None:
+            self.fields['client'].queryset = client_queryset
+
+    class Meta:
+        model = ClientAdvance
+        fields = [
+            'project',
+            'client',
+            'received_date',
+            'amount',
+            'account',
+            'method',
+            'reference',
+            'notes',
+            'received_by',
+        ]
+        widgets = {'received_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+    def clean(self):
+        cleaned = super().clean()
+        project = cleaned.get('project')
+        client = cleaned.get('client')
+        if not project and not client:
+            self.add_error('project', 'Select a project or a client.')
+            self.add_error('client', 'Select a project or a client.')
+        if project and not client and getattr(project, 'client', None):
+            cleaned['client'] = project.client
+        amount = cleaned.get('amount') or Decimal('0')
+        if amount <= 0:
+            self.add_error('amount', 'Amount must be greater than zero.')
+        return cleaned
+
+
+class ClientAdvanceAllocationForm(forms.ModelForm):
+    def __init__(self, *args, invoice=None, advance=None, **kwargs):
+        self.invoice = invoice
+        self.advance = advance
+        super().__init__(*args, **kwargs)
+        if invoice is not None:
+            self.fields['invoice'].queryset = Invoice.objects.filter(pk=invoice.pk)
+            self.initial.setdefault('invoice', invoice)
+        if advance is not None:
+            self.fields['advance'].queryset = ClientAdvance.objects.filter(pk=advance.pk)
+            self.initial.setdefault('advance', advance)
+
+    class Meta:
+        model = ClientAdvanceAllocation
+        fields = ['advance', 'invoice', 'amount', 'notes']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 2})}
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        invoice = self.cleaned_data.get('invoice') or self.invoice
+        advance = self.cleaned_data.get('advance') or self.advance
+        prior_amount = self.instance.amount if getattr(self.instance, 'pk', None) else Decimal('0')
+        if invoice:
+            allowed = (invoice.outstanding or Decimal('0')) + prior_amount
+            if amount > allowed:
+                raise forms.ValidationError(f'Cannot apply more than invoice balance ({allowed}).')
+        if advance:
+            allowed = (advance.available_amount or Decimal('0')) + prior_amount
+            if amount > allowed:
+                raise forms.ValidationError(f'Cannot apply more than available advance ({allowed}).')
+        return amount
+
+    def clean(self):
+        cleaned = super().clean()
+        invoice = cleaned.get('invoice') or self.invoice
+        advance = cleaned.get('advance') or self.advance
+        if invoice and advance:
+            if invoice.project_id and advance.project_id and invoice.project_id != advance.project_id:
+                self.add_error('advance', 'Advance must belong to the same project as the invoice.')
+            if invoice.lead_id and advance.client_id and invoice.lead and invoice.lead.client_id != advance.client_id:
+                self.add_error('advance', 'Advance must belong to the same client as the invoice.')
+        return cleaned
+
+
+class ProjectFinancePlanForm(forms.ModelForm):
+    class Meta:
+        model = ProjectFinancePlan
+        fields = ['planned_fee', 'planned_cost', 'notes']
+        widgets = {'notes': forms.Textarea(attrs={'rows': 2})}
+
+
+class ProjectMilestoneForm(forms.ModelForm):
+    class Meta:
+        model = ProjectMilestone
+        fields = ['title', 'due_date', 'amount', 'status', 'notes']
+        widgets = {'due_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+
+class ExpenseClaimForm(forms.ModelForm):
+    attachments = MultipleFileField(required=False)
+
+    class Meta:
+        model = ExpenseClaim
+        fields = ['project', 'expense_date', 'amount', 'category', 'description']
+        widgets = {
+            'expense_date': DateInput(),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        return amount
+
+
+class ExpenseClaimPaymentForm(forms.ModelForm):
+    def __init__(self, *args, claim=None, **kwargs):
+        self.claim = claim
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = ExpenseClaimPayment
+        fields = ['payment_date', 'amount', 'account', 'method', 'reference', 'notes']
+        widgets = {'payment_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        if self.claim:
+            claim_amount = self.claim.amount or Decimal('0')
+            if amount > claim_amount:
+                raise forms.ValidationError(f'Cannot pay more than the claim amount ({claim_amount}).')
+        return amount
+
+
+class RecurringTransactionRuleForm(forms.ModelForm):
+    class Meta:
+        model = RecurringTransactionRule
+        fields = [
+            'name',
+            'is_active',
+            'direction',
+            'category',
+            'description',
+            'amount',
+            'account',
+            'related_project',
+            'related_vendor',
+            'day_of_month',
+            'next_run_date',
+            'notes',
+        ]
+        widgets = {'next_run_date': DateInput(), 'notes': forms.Textarea(attrs={'rows': 2})}
+
+    def clean_day_of_month(self):
+        value = self.cleaned_data.get('day_of_month') or 1
+        if value < 1 or value > 28:
+            raise forms.ValidationError('Use a day between 1 and 28 for reliable monthly scheduling.')
+        return value
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount') or Decimal('0')
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        return amount
+
+
+class BankStatementImportForm(forms.ModelForm):
+    class Meta:
+        model = BankStatementImport
+        fields = ['account', 'file', 'source_name']
 
 
 class DocumentForm(forms.ModelForm):

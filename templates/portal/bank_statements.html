@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header page-header-sticky">
+    <h2 class="mb-0">Bank Statements</h2>
+    <div class="actions">
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'account_list' %}">Accounts</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'finance_dashboard' %}">Finance</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-stack">
+                    <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Source</th>
+                        <th>Uploaded</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for stmt in statements %}
+                        <tr>
+                            <td data-label="Account" class="fw-semibold">{{ stmt.account.name }}</td>
+                            <td data-label="Source">{{ stmt.source_name|default:"—" }}</td>
+                            <td data-label="Uploaded">{{ stmt.created_at|date:"d M Y, H:i" }}</td>
+                            <td data-label="Actions" class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'bank_statement_detail' stmt.pk %}">View</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No uploads yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-semibold">Upload CSV</div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="row g-3">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100">Upload</button>
+                    </div>
+                </form>
+                <div class="text-muted small mt-3">
+                    Supported CSV columns: <code>Date</code>, <code>Description</code>, and either <code>Amount</code> (signed) or <code>Debit</code>/<code>Credit</code>.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
