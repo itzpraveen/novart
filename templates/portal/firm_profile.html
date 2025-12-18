@@ -30,6 +30,12 @@
                 {{ form.phone|add_class:"form-control" }}
             </div>
             <div class="col-md-12">
+                <label class="form-label" for="{{ form.invoice_sequence_after.id_for_label }}">Start invoice numbering after</label>
+                {{ form.invoice_sequence_after|add_class:"form-control" }}
+                <div class="form-text">Example: <code>584</code> or <code>NVRT/530/584</code> (next invoice becomes <code>585</code>).</div>
+                {% for error in form.invoice_sequence_after.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-12">
                 <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
                 {{ form.address|add_class:"form-control" }}
             </div>

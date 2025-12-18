@@ -40,6 +40,9 @@ Open http://127.0.0.1:8000 and log in with the user created above.
 - `DJANGO_ALLOWED_HOSTS`: comma separated hosts (e.g. `studio.example.com,127.0.0.1`).
 - `DATABASE_URL` if you swap to a different database backend (update `DATABASES`).
 - `INVOICE_PREFIX`: prefix for auto invoice numbers (default `NVRT`).
+- `INVOICE_SEQUENCE_AFTER`: optional “seed” for invoice numbering (e.g. `584` or `NVRT/530/584` → next invoice uses `585`).
+
+Invoice numbering can also be seeded from the in-app Firm Profile settings (Admin only).
 
 ### Seed Sample Data (optional)
 ```bash

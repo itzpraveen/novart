@@ -1,4 +1,6 @@
 from decimal import Decimal
+import os
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -19,7 +21,9 @@ from .models import (
     Receipt,
     RecurringTransactionRule,
     RolePermission,
+    FirmProfile,
     StaffActivity,
+    Task,
     Transaction,
     Lead,
     Vendor,
@@ -306,3 +310,58 @@ class PayrollTests(TestCase):
         txn = Transaction.objects.get(category=Transaction.Category.SALARY, related_person=self.employee)
         self.assertEqual(txn.credit, 0)
         self.assertEqual(txn.debit, Decimal('5000.00'))
+
+
+class InvoiceNumberSeedTests(TestCase):
+    def test_invoice_sequence_after_env_seeds_next_number(self):
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='530-NVRT')
+        with patch.dict(
+            os.environ,
+            {'INVOICE_PREFIX': 'NVRT', 'INVOICE_SEQUENCE_AFTER': 'NVRT/530/584'},
+            clear=False,
+        ):
+            invoice = Invoice.objects.create(
+                project=project,
+                invoice_date=timezone.localdate(),
+                due_date=timezone.localdate(),
+                amount=Decimal('1000.00'),
+            )
+        self.assertEqual(invoice.invoice_number, 'NVRT/530/585')
+
+    def test_invoice_sequence_after_uses_max_of_firm_and_env(self):
+        FirmProfile.objects.create(singleton=True, invoice_sequence_after=584)
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='530-NVRT')
+        with patch.dict(os.environ, {'INVOICE_PREFIX': 'NVRT', 'INVOICE_SEQUENCE_AFTER': '1000'}, clear=False):
+            invoice = Invoice.objects.create(
+                project=project,
+                invoice_date=timezone.localdate(),
+                due_date=timezone.localdate(),
+                amount=Decimal('1000.00'),
+            )
+        self.assertEqual(invoice.invoice_number, 'NVRT/530/1001')
+
+
+class DashboardUpcomingTasksTests(TestCase):
+    def setUp(self):
+        self.password = 'test-pass-123'
+        self.user = User.objects.create_user(
+            username='arch',
+            password=self.password,
+            role=User.Roles.ARCHITECT,
+        )
+        self.client.login(username='arch', password=self.password)
+
+    def test_dashboard_shows_tasks_without_due_date(self):
+        client = Client.objects.create(name='Test Client')
+        project = Project.objects.create(client=client, name='Test Project', code='530-NVRT')
+        Task.objects.create(
+            project=project,
+            title='No due date task',
+            status=Task.Status.TODO,
+            assigned_to=self.user,
+        )
+
+        resp = self.client.get(reverse('dashboard'))
+        self.assertContains(resp, 'No due date task')

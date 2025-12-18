@@ -318,7 +318,7 @@ def dashboard(request):
         ),
     )
     task_limit = 5 if show_stage_summary else 10
-    upcoming_tasks = tasks_scope.filter(due_date__isnull=False).order_by('due_date')[:task_limit]
+    upcoming_tasks = tasks_scope.order_by(F('due_date').asc(nulls_last=True), '-created_at')[:task_limit]
     my_open_tasks_count = tasks_scope.count()
 
     upcoming_handover = projects.filter(expected_handover__gte=today, expected_handover__lte=today + timedelta(days=30))

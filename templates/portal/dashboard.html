@@ -167,7 +167,11 @@
                             {% endif %}
                         </div>
                         <div class="text-end">
+                            {% if task.due_date %}
                             <small class="text-danger fw-medium d-block">{{ task.due_date|date:"d M" }}</small>
+                            {% else %}
+                            <small class="text-muted d-block">No due date</small>
+                            {% endif %}
                             <span class="badge bg-light text-dark border small mt-1">{{ task.project.current_stage }}</span>
                         </div>
                     </div>

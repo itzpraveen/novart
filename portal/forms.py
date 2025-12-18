@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+import re
 from datetime import timedelta
 
 from django import forms
@@ -842,6 +843,12 @@ class ReminderSettingForm(forms.ModelForm):
 
 
 class FirmProfileForm(forms.ModelForm):
+    invoice_sequence_after = forms.CharField(
+        required=False,
+        label='Start invoice numbering after',
+        widget=forms.TextInput(attrs={'placeholder': '584 or NVRT/530/584'}),
+    )
+
     class Meta:
         model = FirmProfile
         fields = [
@@ -850,6 +857,7 @@ class FirmProfileForm(forms.ModelForm):
             'email',
             'phone',
             'tax_id',
+            'invoice_sequence_after',
             'bank_name',
             'bank_account_name',
             'bank_account_number',
@@ -859,3 +867,15 @@ class FirmProfileForm(forms.ModelForm):
             'logo',
         ]
         widgets = {'address': forms.Textarea(attrs={'rows': 2}), 'terms': forms.Textarea(attrs={'rows': 3})}
+
+    def clean_invoice_sequence_after(self):
+        raw = (self.cleaned_data.get('invoice_sequence_after') or '').strip()
+        if not raw:
+            return None
+        match = re.search(r'(\d+)\s*$', raw)
+        if not match:
+            raise forms.ValidationError('Enter a number like 584 or an invoice like NVRT/530/584.')
+        try:
+            return int(match.group(1))
+        except (TypeError, ValueError):
+            raise forms.ValidationError('Enter a valid invoice number suffix (e.g. 584).')

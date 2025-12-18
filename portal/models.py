@@ -496,6 +496,30 @@ class Invoice(TimeStampedModel):
                 except ValueError:
                     continue
 
+        def parse_seed_after(raw_value: str | None) -> int | None:
+            value = (raw_value or '').strip()
+            if not value:
+                return None
+            match = re.search(r'(\d+)\s*$', value)
+            if not match:
+                return None
+            try:
+                return int(match.group(1))
+            except (TypeError, ValueError):
+                return None
+
+        seed_after = None
+        try:
+            firm = FirmProfile.objects.only('invoice_sequence_after').first()
+        except Exception:
+            firm = None
+        firm_seed_after = getattr(firm, 'invoice_sequence_after', None) if firm else None
+        env_seed_after = parse_seed_after(os.environ.get('INVOICE_SEQUENCE_AFTER'))
+        candidates = [value for value in (firm_seed_after, env_seed_after) if value is not None]
+        if candidates:
+            seed_after = max(candidates)
+            max_seq = max(max_seq, seed_after)
+
         seq = max_seq + 1
         candidate = f"{prefix}/{project_part}/{seq}"
         while Invoice.objects.filter(invoice_number=candidate).exists():
@@ -1332,6 +1356,11 @@ class FirmProfile(TimeStampedModel):
     bank_ifsc = models.CharField(max_length=50, blank=True)
     upi_id = models.CharField(max_length=100, blank=True)
     terms = models.TextField(blank=True)
+    invoice_sequence_after = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text='Optional: next invoice will use the number after this value (e.g. 584 → 585).',
+    )
     logo = models.ImageField(upload_to='firm/', blank=True, null=True)
     singleton = models.BooleanField(default=True, unique=True)
 
