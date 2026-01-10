@@ -8,7 +8,9 @@
         {% if show_export %}
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
+        {% if not simple_view %}
         <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
+        {% endif %}
     </div>
 </div>
 <div class="d-md-flex gap-3 align-items-start">
@@ -42,7 +44,7 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <table class="table mb-0">
+                <table class="table mb-0{% if simple_view %} align-middle table-stack{% endif %}">
                     <thead>
                     {% if simple_view %}
                         <tr>
@@ -67,13 +69,13 @@
                     {% for txn in filter.qs %}
                         {% if simple_view %}
                             <tr>
-                                <td>{{ txn.date|date:"d M Y" }}</td>
-                                <td>
+                                <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
+                                <td data-label="Description">
                                     <div class="fw-semibold">{{ txn.description }}</div>
                                     {% if txn.category %}<small class="text-muted">{{ txn.get_category_display }}</small>{% endif %}
                                 </td>
-                                <td>{% if txn.related_project %}{{ txn.related_project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td class="text-end fw-semibold">{{ txn.debit|rupee }}</td>
+                                <td data-label="Project">{% if txn.related_project %}{{ txn.related_project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                <td data-label="Amount" class="text-end fw-semibold">{{ txn.debit|rupee }}</td>
                             </tr>
                         {% else %}
                             <tr>
@@ -130,5 +132,11 @@
         </div>
     </div>
 </div>
+{% if simple_view %}
+<div class="mobile-bottom-cta d-md-none">
+    <a class="btn btn-primary w-100" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
+</div>
+<div class="mobile-bottom-cta-spacer d-md-none"></div>
+{% endif %}
 {% endwith %}
 {% endblock %}
