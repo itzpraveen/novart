@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
+{% with entry_label=new_entry_label|default:"New entry" %}
 <div class="page-header">
-    <h2 class="mb-0">Cashbook</h2>
+    <h2 class="mb-0">{{ page_title|default:"Cashbook" }}</h2>
     <div class="actions">
+        {% if show_export %}
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
-        <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">New entry</a>
+        {% endif %}
+        <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
     </div>
 </div>
 <div class="d-md-flex gap-3 align-items-start">
@@ -70,7 +73,7 @@
                             <td>{{ txn.credit|rupee }}</td>
                         </tr>
                     {% empty %}
-                        {% include "includes/empty_state.html" with colspan=7 title="No cashbook entries" description="Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label="New entry" cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
+                        {% include "includes/empty_state.html" with colspan=7 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>
@@ -79,7 +82,7 @@
     </div>
     <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">New entry</h5>
+            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
             <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -98,4 +101,5 @@
         </div>
     </div>
 </div>
+{% endwith %}
 {% endblock %}

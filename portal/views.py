@@ -157,6 +157,7 @@ from .forms import (
     TaskForm,
     TaskCommentForm,
     TransactionForm,
+    PersonalExpenseForm,
     SalaryPaymentForm,
     ReminderSettingForm,
     UserForm,
@@ -1944,6 +1945,69 @@ def transaction_list(request):
             'form': form,
             'currency': '₹',
             'totals': {'debit': debit_total, 'credit': credit_total, 'net': net_total},
+            'show_export': True,
+        },
+    )
+
+
+@login_required
+@role_required(User.Roles.MANAGING_DIRECTOR)
+def transaction_my(request):
+    project_qs = Project.objects.all()
+    txn_filter = TransactionFilter(
+        request.GET,
+        queryset=Transaction.objects.filter(recorded_by=request.user).select_related(
+            'account',
+            'related_project',
+            'related_client',
+            'related_vendor',
+            'related_person',
+            'recorded_by',
+        ),
+    )
+    if 'related_project' in txn_filter.form.fields:
+        txn_filter.form.fields['related_project'].queryset = project_qs
+    filtered_totals = txn_filter.qs.aggregate(
+        debit=Sum('debit'),
+        credit=Sum('credit'),
+    )
+    debit_total = filtered_totals.get('debit') or Decimal('0')
+    credit_total = filtered_totals.get('credit') or Decimal('0')
+    net_total = credit_total - debit_total
+    if request.method == 'POST':
+        form = PersonalExpenseForm(request.POST)
+        if 'related_project' in form.fields:
+            form.fields['related_project'].queryset = project_qs
+        if form.is_valid():
+            txn = form.save(commit=False)
+            txn.recorded_by = request.user
+            txn.related_person = request.user
+            txn.save()
+            log_staff_activity(
+                actor=request.user,
+                category=StaffActivity.Category.FINANCE,
+                message=f"Added personal expense: {txn.description} (Dr {txn.debit}).",
+                related_url=reverse('transaction_my'),
+            )
+            messages.success(request, 'Expense saved.')
+            return redirect('transaction_my')
+    else:
+        form = PersonalExpenseForm(initial={'date': timezone.localdate()})
+        if 'related_project' in form.fields:
+            form.fields['related_project'].queryset = project_qs
+    return render(
+        request,
+        'portal/transactions.html',
+        {
+            'filter': txn_filter,
+            'form': form,
+            'currency': '₹',
+            'totals': {'debit': debit_total, 'credit': credit_total, 'net': net_total},
+            'page_title': 'My Cashbook',
+            'show_export': False,
+            'new_entry_label': 'New expense',
+            'empty_state_title': 'No expenses yet',
+            'empty_state_description': 'Add your first expense to track your spending.',
         },
     )
 

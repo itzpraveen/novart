@@ -43,6 +43,7 @@ urlpatterns = [
     path('receipts/generate/<int:payment_pk>/', views.receipt_create, name='receipt_create'),
     path('receipts/<int:receipt_pk>/pdf/', views.receipt_pdf, name='receipt_pdf'),
     path('transactions/', views.transaction_list, name='transaction_list'),
+    path('transactions/my/', views.transaction_my, name='transaction_my'),
     path('transactions/export.csv', views.export_transactions_csv, name='export_transactions_csv'),
     path('documents/', views.document_list, name='document_list'),
     path('finance/', views.finance_dashboard, name='finance_dashboard'),

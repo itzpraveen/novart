@@ -551,6 +551,48 @@ class TransactionForm(forms.ModelForm):
         return cleaned
 
 
+class PersonalExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = [
+            'date',
+            'description',
+            'category',
+            'account',
+            'debit',
+            'related_project',
+            'remarks',
+        ]
+        labels = {'debit': 'Amount'}
+        widgets = {'date': DateInput(), 'remarks': forms.Textarea(attrs={'rows': 3})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        expense_categories = {
+            Transaction.Category.MISC,
+            Transaction.Category.PROJECT_EXPENSE,
+            Transaction.Category.OTHER_EXPENSE,
+        }
+        self.fields['category'].choices = [
+            choice for choice in self.fields['category'].choices if choice[0] in expense_categories
+        ]
+        self.fields['category'].required = True
+
+    def clean(self):
+        cleaned = super().clean()
+        amount = cleaned.get('debit') or Decimal('0')
+        if amount <= 0:
+            self.add_error('debit', 'Amount must be greater than zero.')
+        return cleaned
+
+    def save(self, commit=True):
+        txn = super().save(commit=False)
+        txn.credit = Decimal('0')
+        if commit:
+            txn.save()
+        return txn
+
+
 class SalaryPaymentForm(forms.ModelForm):
     class Meta:
         model = Transaction
