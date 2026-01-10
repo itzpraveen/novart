@@ -975,6 +975,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .table-stack tbody {
         display: grid;
         gap: 0.75rem;
+        width: 100%;
     }
     .table-stack tr {
         display: grid;
@@ -984,6 +985,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         border: 1px solid var(--border-color);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-sm);
+        width: 100%;
+        box-sizing: border-box;
     }
     .table-stack td {
         display: flex;
@@ -992,6 +995,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         gap: 0.75rem;
         padding: 0.15rem 0;
         border: 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
     .table-stack td::before {
         content: attr(data-label);
