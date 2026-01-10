@@ -2393,16 +2393,6 @@ button:focus-visible,
     opacity: 0.7;
 }
 
-/* Sticky mobile action CTA (e.g., personal cashbook) */
-.mobile-bottom-cta,
-.mobile-bottom-cta-spacer {
-    display: none;
-}
-
-.mobile-bottom-cta .btn {
-    box-shadow: var(--shadow-lg);
-}
-
 /* Show bottom nav on mobile/tablet (below md breakpoint) */
 @media (max-width: 767px) {
     .bottom-nav {
@@ -2418,23 +2408,6 @@ button:focus-visible,
     /* Adjust sticky form actions to sit above bottom nav */
     .form-actions-sticky {
         bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
-    }
-
-    .mobile-bottom-cta,
-    .mobile-bottom-cta-spacer {
-        display: block;
-    }
-
-    .mobile-bottom-cta {
-        position: fixed;
-        left: 1rem;
-        right: 1rem;
-        bottom: calc(var(--bottom-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px));
-        z-index: 1035;
-    }
-
-    .mobile-bottom-cta-spacer {
-        height: 4.5rem;
     }
 }
 
