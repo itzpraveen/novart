@@ -2411,6 +2411,65 @@ button:focus-visible,
     }
 }
 
+/* ===== PWA INSTALL PROMPT ===== */
+
+.pwa-install-prompt {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 1045;
+    display: none;
+}
+
+.pwa-install-prompt.is-visible {
+    display: block;
+}
+
+.pwa-install-card {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.pwa-install-icon img {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+.pwa-install-title {
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.15rem;
+}
+
+.pwa-install-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.pwa-install-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 820px) {
+    .pwa-install-prompt {
+        left: auto;
+        right: 1.5rem;
+        max-width: 360px;
+    }
+}
+
 /* ===== THEME TOGGLE ===== */
 
 .theme-toggle {
