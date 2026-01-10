@@ -331,6 +331,15 @@
                 <span class="bottom-nav-label">Invoices</span>
             </a>
             {% endif %}
+            {% if request.user.role == 'managing_director' or request.user.role == 'admin' or request.user.is_superuser %}
+            <a href="{% url 'transaction_my' %}" class="bottom-nav-item bottom-nav-action" aria-label="Add expense">
+                <svg class="bottom-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span class="bottom-nav-label">Add</span>
+            </a>
+            {% endif %}
             <div class="bottom-nav-more">
                 <button type="button" class="bottom-nav-item bottom-nav-more-toggle" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="bottomNavMoreMenu">
                 <svg class="bottom-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

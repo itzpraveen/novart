@@ -2315,6 +2315,27 @@ button:focus-visible,
     border-radius: 0 0 3px 3px;
 }
 
+.bottom-nav-action {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+}
+
+.bottom-nav-action:hover,
+.bottom-nav-action:focus {
+    color: #fff;
+    background: var(--primary-color);
+}
+
+.bottom-nav-action.active::after {
+    display: none;
+}
+
+.bottom-nav-action .bottom-nav-icon,
+.bottom-nav-action .bottom-nav-label {
+    color: inherit;
+}
+
 .bottom-nav-icon {
     width: 24px;
     height: 24px;
