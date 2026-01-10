@@ -2005,9 +2005,11 @@ def transaction_my(request):
             'totals': {'debit': debit_total, 'credit': credit_total, 'net': net_total},
             'page_title': 'My Cashbook',
             'show_export': False,
+            'simple_view': True,
             'new_entry_label': 'New expense',
             'empty_state_title': 'No expenses yet',
             'empty_state_description': 'Add your first expense to track your spending.',
+            'empty_state_colspan': 4,
         },
     )
 
