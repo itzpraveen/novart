@@ -2266,6 +2266,7 @@ button:focus-visible,
     z-index: 1030;
     padding: 0.5rem 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    overflow-x: hidden;
 }
 
 .bottom-nav-inner {
@@ -2273,7 +2274,8 @@ button:focus-visible,
     justify-content: space-around;
     align-items: center;
     height: 100%;
-    max-width: 500px;
+    max-width: 520px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 0.5rem;
 }
@@ -2284,12 +2286,13 @@ button:focus-visible,
     align-items: center;
     justify-content: center;
     gap: 0.2rem;
-    padding: 0.4rem 0.75rem;
+    padding: 0.35rem 0.45rem;
     border-radius: var(--radius-md);
     color: var(--text-muted);
     text-decoration: none;
     transition: var(--transition-fast);
-    min-width: 56px;
+    min-width: 0;
+    flex: 1 1 0;
     position: relative;
 }
 
@@ -2347,6 +2350,10 @@ button:focus-visible,
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .bottom-nav-badge {
@@ -2429,6 +2436,16 @@ button:focus-visible,
     /* Adjust sticky form actions to sit above bottom nav */
     .form-actions-sticky {
         bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (max-width: 380px) {
+    .bottom-nav-icon {
+        width: 22px;
+        height: 22px;
+    }
+    .bottom-nav-label {
+        font-size: 0.55rem;
     }
 }
 
