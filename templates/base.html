@@ -110,7 +110,7 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
                                 <li><a class="dropdown-item" href="{% url 'my_tasks' %}">My Tasks</a></li>
-                                {% if request.user.role == 'managing_director' %}
+                                {% if request.user.role == 'managing_director' or request.user.role == 'admin' or request.user.is_superuser %}
                                 <li><a class="dropdown-item" href="{% url 'transaction_my' %}">My Cashbook</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'reminder_settings' %}">Settings</a></li>
@@ -236,7 +236,7 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
                                 <li><a class="dropdown-item" href="{% url 'my_tasks' %}">My Tasks</a></li>
-                                {% if request.user.role == 'managing_director' %}
+                                {% if request.user.role == 'managing_director' or request.user.role == 'admin' or request.user.is_superuser %}
                                 <li><a class="dropdown-item" href="{% url 'transaction_my' %}">My Cashbook</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'reminder_settings' %}">Settings</a></li>
@@ -254,7 +254,7 @@
                         </div>
                         <div class="w-100 d-md-none border-top pt-2 mt-1">
                             <a class="nav-link" href="{% url 'my_tasks' %}">My Tasks</a>
-                            {% if request.user.role == 'managing_director' %}
+                            {% if request.user.role == 'managing_director' or request.user.role == 'admin' or request.user.is_superuser %}
                             <a class="nav-link" href="{% url 'transaction_my' %}">My Cashbook</a>
                             {% endif %}
                             <a class="nav-link" href="{% url 'reminder_settings' %}">Settings</a>
@@ -431,7 +431,7 @@
                         </svg>
                         My Tasks
                     </a>
-                    {% if request.user.role == 'managing_director' %}
+                    {% if request.user.role == 'managing_director' or request.user.role == 'admin' or request.user.is_superuser %}
                     <a href="{% url 'transaction_my' %}" class="bottom-nav-menu-item" role="menuitem">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M12 1v22"></path>

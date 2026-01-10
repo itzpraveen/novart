@@ -1951,7 +1951,7 @@ def transaction_list(request):
 
 
 @login_required
-@role_required(User.Roles.MANAGING_DIRECTOR)
+@role_required(User.Roles.MANAGING_DIRECTOR, User.Roles.ADMIN)
 def transaction_my(request):
     project_qs = Project.objects.all()
     txn_filter = TransactionFilter(
