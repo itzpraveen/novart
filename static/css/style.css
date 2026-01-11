@@ -1249,11 +1249,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .txn-card__header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    row-gap: 0.2rem;
-    column-gap: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
     margin-bottom: 0.5rem;
+}
+
+.txn-card__item {
+    flex: 1 1 0;
+}
+
+.txn-card__item--amount {
+    flex: 0 0 auto;
+    min-width: 120px;
 }
 
 .txn-date {
@@ -1267,6 +1276,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: 700;
     font-size: 1.05rem;
     white-space: nowrap;
+    text-align: right;
 }
 
 .txn-title {
