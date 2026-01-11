@@ -54,8 +54,50 @@ Reviewed the Django/Bootstrap UI across all template-driven screens, focusing on
 - `portal/forms.py`: improved `autocomplete` attributes for user creation fields (reduces browser warnings and improves password manager behavior).
 - `portal/migrations/0019_alter_receipt_generated_by.py`: generated the missing migration so a fresh DB matches current models.
 
-## Next Steps (If You Want Me To Implement)
+## Changes Applied (Second Pass)
 
-- Unify empty states and add per-screen CTAs (especially Notifications, Documents, My Tasks).
-- Add mobile “Add” drawers for the busiest hybrid screens (Issues, Documents, Transactions, Project Tasks).
-- Do a targeted accessibility pass: label/input associations, focus order, and keyboard interactions for custom controls.
+### 1. Standardized Empty States
+Updated 15+ templates to use the reusable `includes/empty_state.html` component:
+- `dashboard.html` - Upcoming handovers
+- `project_detail.html` - Tasks, documents, visits, issues, stage history
+- `receipts.html` - Receipt list
+- `team_list.html` - Team directory
+- `user_admin.html` - Users table
+- `advances.html` - Client advances
+- `accounts.html` - Bank accounts
+- `vendors.html` - Vendor list
+- `activity.html` - Staff activity
+- `payroll.html` - Employee list and salary payments
+- `expense_claims_my.html` - Personal claims
+- `expense_claims_admin.html` - Admin claims view
+- `recurring_rules.html` - Recurring transaction rules
+
+All empty states now include:
+- Consistent icon and title styling
+- Helpful description text
+- Contextual CTA buttons where applicable
+
+### 2. Redesigned Users/Permissions Page
+Complete UX overhaul using tabbed navigation:
+- **Tab 1: Team Members** - Clean table with avatar initials, search, and status badges
+- **Tab 2: Add/Edit User** - Centered form with better visual hierarchy
+- **Tab 3: Role Permissions** - Nested pill navigation for each role with card-based toggle grid
+
+Benefits:
+- Progressive disclosure reduces cognitive load
+- Role permissions are now one-at-a-time instead of all visible
+- Mobile-optimized with responsive tab labels
+- Auto-switches to form tab when editing
+
+### 3. Hybrid Screens (List + Form)
+Already well-implemented with offcanvas pattern in previous pass. Screens like Issues, Documents, Transactions, and Project Tasks use offcanvas drawers for forms on mobile.
+
+### 4. Confirmation Dialogs
+Already in place for destructive actions (delete invoice, reject claim, generate recurring transactions).
+
+## Remaining Improvements (Nice to Have)
+
+- Form label/input associations: Audit remaining templates for `for`/`id` consistency
+- File input styling: Create a custom upload component
+- Charts: Add empty-state messaging when no data exists
+- Breadcrumbs: Add to deeply nested pages for navigation context

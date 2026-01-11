@@ -80,9 +80,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No claims found.</td>
-                </tr>
+                {% include "includes/empty_state.html" with colspan=7 title="No expense claims" description="Staff expense claims will appear here for review." compact=True %}
             {% endfor %}
             </tbody>
         </table>

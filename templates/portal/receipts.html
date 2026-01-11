@@ -69,7 +69,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">No receipts yet. Record payments on invoices to auto-create receipts.</td></tr>
+                {% include "includes/empty_state.html" with colspan=8 title="No receipts yet" description="Record payments on invoices to auto-create receipts." cta_url="invoice_list" cta_label="View Invoices" cta_class="btn btn-sm btn-primary" compact=True %}
             {% endfor %}
             </tbody>
         </table>

@@ -58,9 +58,7 @@
                     <td data-label="Available" class="text-end">{{ adv.available_amount|rupee }}</td>
                 </tr>
             {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No advances yet.</td>
-                </tr>
+                {% include "includes/empty_state.html" with colspan=6 title="No advances yet" description="Record client advance payments to track against invoices." cta_label="New Advance" cta_class="btn btn-sm btn-primary" cta_attrs='data-bs-toggle="offcanvas" href="#advanceOffcanvas"' compact=True %}
             {% endfor %}
             </tbody>
         </table>

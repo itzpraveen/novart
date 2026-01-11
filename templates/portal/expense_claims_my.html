@@ -43,9 +43,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No claims yet.</td>
-                        </tr>
+                        {% include "includes/empty_state.html" with colspan=5 title="No claims yet" description="Submit expense claims for reimbursement." cta_label="New Claim" cta_class="btn btn-sm btn-primary" cta_attrs='data-bs-toggle="offcanvas" href="#claimOffcanvas"' compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>

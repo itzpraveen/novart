@@ -3628,6 +3628,58 @@ button:focus-visible,
     background-color: var(--bg-surface);
 }
 
+/* ===== USER ADMIN TABS ===== */
+
+.user-admin-tabs {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.user-admin-tabs .nav-link {
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-admin-tabs .nav-link:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.user-admin-tabs .nav-link.active {
+    background: var(--primary-color);
+    color: var(--text-inverse);
+}
+
+.user-admin-tabs .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: inherit !important;
+}
+
+@media (max-width: 575.98px) {
+    .user-admin-tabs {
+        padding: 0.25rem;
+    }
+    .user-admin-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    .user-admin-tabs .nav-link svg {
+        display: none;
+    }
+}
+
+[data-theme="dark"] .user-admin-tabs {
+    background: var(--bg-elevated);
+}
+
 /* ===== CARD ENHANCEMENTS ===== */
 
 .card-elevated {

@@ -33,7 +33,7 @@
     </div>
     {% empty %}
     <div class="col-12">
-        <div class="alert alert-info">No team members found.</div>
+        {% include "includes/empty_state.html" with title="No team members yet" description="Add users to your organization to see team workload." cta_url="user_admin_list" cta_label="Add Users" %}
     </div>
     {% endfor %}
 </div>

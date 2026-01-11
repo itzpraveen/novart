@@ -56,7 +56,7 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">No activity recorded yet.</td></tr>
+                    {% include "includes/empty_state.html" with colspan=5 title="No activity recorded" description="Staff actions across projects, tasks, and finance will appear here." compact=True %}
                 {% endfor %}
             </tbody>
         </table>

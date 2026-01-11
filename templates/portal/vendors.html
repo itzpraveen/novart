@@ -32,9 +32,7 @@
                             <td data-label="Tax ID">{{ vendor.tax_id|default:"—" }}</td>
                         </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">No vendors yet.</td>
-                        </tr>
+                        {% include "includes/empty_state.html" with colspan=4 title="No vendors yet" description="Add vendors to track bills and payments." cta_label="New Vendor" cta_class="btn btn-sm btn-primary" cta_attrs='data-bs-toggle="offcanvas" href="#vendorOffcanvas"' compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>

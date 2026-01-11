@@ -91,7 +91,7 @@
                     {% for change in stage_history %}
                         <div class="mb-1">{{ change.changed_on|date:"d M Y" }} · {{ change.stage }} · {{ change.changed_by }}</div>
                     {% empty %}
-                        <p>No history yet.</p>
+                        <p class="text-muted small mb-0">No stage changes recorded yet.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -214,7 +214,7 @@
                         </div>
                     </li>
                 {% empty %}
-                    <li class="list-group-item">No tasks yet.</li>
+                    {% include "includes/empty_state.html" with as_list_item=True title="No tasks yet" description="Add tasks from the Kanban board." cta_url=project.pk|make_url:"project_tasks" cta_label="Open Kanban" cta_class="btn btn-sm btn-primary" compact=True %}
                 {% endfor %}
             </ul>
         </div>
@@ -227,7 +227,7 @@
                         <span>{{ doc.created_at|date:"d M Y" }}</span>
                     </li>
                 {% empty %}
-                    <li class="list-group-item">No documents uploaded.</li>
+                    {% include "includes/empty_state.html" with as_list_item=True title="No documents yet" description="Upload project documents to keep everything organized." cta_url="document_list" cta_label="Upload" cta_class="btn btn-sm btn-outline-primary" compact=True %}
                 {% endfor %}
             </ul>
         </div>
@@ -260,7 +260,7 @@
                         <div><a href="{% url 'site_visit_detail' visit.pk %}">View</a></div>
                     </li>
                 {% empty %}
-                    <li class="list-group-item">No visits logged.</li>
+                    {% include "includes/empty_state.html" with as_list_item=True title="No visits logged" description="Log site visits to track progress." cta_url="site_visit_create" cta_label="Log Visit" cta_class="btn btn-sm btn-outline-primary" compact=True %}
                 {% endfor %}
             </ul>
         </div>
@@ -275,7 +275,7 @@
                         </span>
                     </li>
                 {% empty %}
-                    <li class="list-group-item">No issues!</li>
+                    {% include "includes/empty_state.html" with as_list_item=True title="No issues" description="Great! No issues have been reported." compact=True %}
                 {% endfor %}
             </ul>
         </div>

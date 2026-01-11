@@ -95,9 +95,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No employees with salary configured.</td>
-                        </tr>
+                        {% include "includes/empty_state.html" with colspan=5 title="No employees configured" description="Add salary information to user profiles to track payroll." cta_url="user_admin_list" cta_label="Manage Users" cta_class="btn btn-sm btn-outline-primary" compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>
@@ -129,9 +127,7 @@
                             <td data-label="Remarks">{{ txn.remarks|default:"—" }}</td>
                         </tr>
                     {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No salary payments recorded for this month.</td>
-                        </tr>
+                        {% include "includes/empty_state.html" with colspan=6 title="No payments this month" description="Salary payments will appear here when recorded." compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>
