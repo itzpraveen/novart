@@ -722,6 +722,9 @@
             if (isStandalone) return;
 
             const isMobile = window.matchMedia('(max-width: 820px)').matches;
+            // Always reset visibility on load; only re-enable on mobile when we explicitly show it
+            prompt.classList.remove('is-visible');
+            prompt.setAttribute('aria-hidden', 'true');
             if (!isMobile) return;
 
             const installBtn = prompt.querySelector('[data-pwa-action="install"]');
@@ -736,6 +739,7 @@
 
             function showPrompt(mode) {
                 prompt.classList.add('is-visible');
+                prompt.setAttribute('aria-hidden', 'false');
                 if (mode === 'ios') {
                     if (iosHint) iosHint.hidden = false;
                     if (standardHint) standardHint.hidden = true;
@@ -750,6 +754,7 @@
 
             function dismissPrompt() {
                 prompt.classList.remove('is-visible');
+                prompt.setAttribute('aria-hidden', 'true');
                 localStorage.setItem(dismissedKey, '1');
             }
 
