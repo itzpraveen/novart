@@ -3,17 +3,17 @@
 {% block content %}
 {% with entry_label=new_entry_label|default:"New expense" %}
 
-<div class="cb">
+<div class="cb page-transition">
     {# ===== HEADER ===== #}
     <header class="cb-header">
         <h1 class="cb-header__title">{{ page_title|default:"My Cashbook" }}</h1>
         <div class="cb-header__actions">
             {% if show_export %}
-            <a class="cb-btn cb-btn--ghost" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+            <a class="btn btn-ghost btn-icon" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" title="Export CSV">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             </a>
             {% endif %}
-            <button class="cb-btn cb-btn--primary d-none d-md-flex" onclick="openExpenseForm()">
+            <button class="btn btn-primary d-none d-md-flex" onclick="openExpenseForm()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 <span>{{ entry_label }}</span>
             </button>
@@ -23,72 +23,120 @@
     {# ===== STATS STRIP ===== #}
     <div class="cb-stats">
         <div class="cb-stat cb-stat--out">
-            <span class="cb-stat__label">Out</span>
-            <span class="cb-stat__value">{{ totals.debit|rupee }}</span>
+            <div class="cb-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            </div>
+            <div class="cb-stat__content">
+                <span class="cb-stat__label">Spent</span>
+                <span class="cb-stat__value">{{ totals.debit|rupee }}</span>
+            </div>
         </div>
         <div class="cb-stat cb-stat--in">
-            <span class="cb-stat__label">In</span>
-            <span class="cb-stat__value">{{ totals.credit|rupee }}</span>
+            <div class="cb-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </div>
+            <div class="cb-stat__content">
+                <span class="cb-stat__label">Received</span>
+                <span class="cb-stat__value">{{ totals.credit|rupee }}</span>
+            </div>
         </div>
         <div class="cb-stat cb-stat--bal {% if totals.net >= 0 %}cb-stat--positive{% else %}cb-stat--negative{% endif %}">
-            <span class="cb-stat__label">Balance</span>
-            <span class="cb-stat__value">{{ totals.net|rupee }}</span>
+            <div class="cb-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M8 16l4-4 4 4"/></svg>
+            </div>
+            <div class="cb-stat__content">
+                <span class="cb-stat__label">Balance</span>
+                <span class="cb-stat__value">{{ totals.net|rupee }}</span>
+            </div>
         </div>
     </div>
 
-    {# ===== FILTER BAR ===== #}
-    <div class="cb-filterbar">
-        <button class="cb-filterbar__toggle" type="button" onclick="toggleFilters()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            <span>Filter</span>
-            {% if request.GET %}<span class="cb-filterbar__badge"></span>{% endif %}
+    {# ===== SEARCH & FILTER BAR ===== #}
+    <div class="cb-toolbar">
+        <div class="cb-search">
+            <svg class="cb-search__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="cb-search__input" placeholder="Search transactions..." id="txnSearch" onkeyup="filterTransactions()">
+        </div>
+        <button class="cb-toolbar__btn {% if request.GET %}cb-toolbar__btn--active{% endif %}" type="button" onclick="toggleFilters()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            {% if request.GET %}<span class="cb-toolbar__badge"></span>{% endif %}
         </button>
-        <div class="cb-filterbar__panel" id="filterPanel">
-            <form method="get" class="cb-filterbar__form">
+    </div>
+
+    {# ===== FILTER PANEL ===== #}
+    <div class="cb-filter-panel" id="filterPanel">
+        <form method="get" class="cb-filter-form">
+            <div class="cb-filter-grid">
                 {% for field in filter.form %}
-                <div class="cb-field cb-field--compact">
-                    <label class="cb-field__label">{{ field.label }}</label>
-                    {{ field|add_class:"cb-input" }}
+                <div class="cb-filter-field">
+                    <label class="cb-filter-field__label">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
                 </div>
                 {% endfor %}
-                <div class="cb-filterbar__actions">
-                    <button type="submit" class="cb-btn cb-btn--primary cb-btn--sm">Apply</button>
-                    {% if request.GET %}<a href="{{ request.path }}" class="cb-btn cb-btn--ghost cb-btn--sm">Clear</a>{% endif %}
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="cb-filter-actions">
+                <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+                {% if request.GET %}<a href="{{ request.path }}" class="btn btn-ghost btn-sm">Clear All</a>{% endif %}
+            </div>
+        </form>
     </div>
 
     {# ===== TRANSACTIONS LIST ===== #}
-    <div class="cb-list">
+    <div class="cb-list" id="txnList">
         <div class="cb-list__header">
             <span class="cb-list__title">Transactions</span>
             <span class="cb-list__count">{{ filter.qs|length }}</span>
         </div>
 
-        {% for txn in filter.qs %}
-        <article class="cb-txn">
-            <div class="cb-txn__date">
-                <span class="cb-txn__day">{{ txn.date|date:"d" }}</span>
-                <span class="cb-txn__mon">{{ txn.date|date:"M" }}</span>
+        {% regroup filter.qs by date as date_list %}
+        {% for date_group in date_list %}
+        <div class="cb-date-group" data-date="{{ date_group.grouper|date:'Y-m-d' }}">
+            <div class="cb-date-header">
+                <span class="cb-date-header__date">
+                    {% with today=date_group.grouper|date:"Y-m-d" %}
+                    {% now "Y-m-d" as now_date %}
+                    {% if today == now_date %}
+                        Today
+                    {% else %}
+                        {{ date_group.grouper|date:"D, d M Y" }}
+                    {% endif %}
+                    {% endwith %}
+                </span>
+                <span class="cb-date-header__count">{{ date_group.list|length }} item{{ date_group.list|length|pluralize }}</span>
             </div>
-            <div class="cb-txn__body">
-                <div class="cb-txn__title">{{ txn.description }}</div>
-                <div class="cb-txn__tags">
-                    {% if txn.category %}<span class="cb-tag">{{ txn.get_category_display }}</span>{% endif %}
-                    {% if txn.account %}<span class="cb-tag cb-tag--accent">{{ txn.account.name }}</span>{% endif %}
-                    {% if txn.related_project %}<span class="cb-tag cb-tag--info">{{ txn.related_project.code }}</span>{% endif %}
+            {% for txn in date_group.list %}
+            <article class="cb-txn tap-target" data-description="{{ txn.description|lower }}" data-category="{{ txn.get_category_display|lower }}">
+                <div class="cb-txn__icon {% if txn.debit > 0 %}cb-txn__icon--out{% else %}cb-txn__icon--in{% endif %}">
+                    {% if txn.debit > 0 %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    {% else %}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    {% endif %}
                 </div>
-            </div>
-            <div class="cb-txn__amt {% if txn.debit > 0 %}cb-txn__amt--out{% else %}cb-txn__amt--in{% endif %}">
-                {% if txn.debit > 0 %}-{% else %}+{% endif %}{{ txn.debit|default:txn.credit|rupee }}
-            </div>
-        </article>
+                <div class="cb-txn__body">
+                    <div class="cb-txn__title">{{ txn.description }}</div>
+                    <div class="cb-txn__meta">
+                        {% if txn.category %}<span class="cb-txn__category">{{ txn.get_category_display }}</span>{% endif %}
+                        {% if txn.account %}<span class="cb-txn__account">{{ txn.account.name }}</span>{% endif %}
+                    </div>
+                </div>
+                <div class="cb-txn__amt {% if txn.debit > 0 %}cb-txn__amt--out{% else %}cb-txn__amt--in{% endif %}">
+                    {% if txn.debit > 0 %}-{% else %}+{% endif %}{{ txn.debit|default:txn.credit|rupee }}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
         {% empty %}
-        <div class="cb-empty">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="2"/></svg>
-            <p>No expenses yet</p>
-            <button class="cb-btn cb-btn--primary" onclick="openExpenseForm()">Add your first expense</button>
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="2"/></svg>
+            </div>
+            <div class="empty-state-title">No transactions yet</div>
+            <div class="empty-state-description">Start tracking your expenses by adding your first transaction.</div>
+            <button class="btn btn-primary" onclick="openExpenseForm()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Expense
+            </button>
         </div>
         {% endfor %}
     </div>
@@ -138,7 +186,7 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Date
                     </label>
-                    {{ field|add_class:"cb-input" }}
+                    {{ field|add_class:"form-control" }}
                     {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
                 </div>
                 {% endif %}
@@ -152,39 +200,40 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                         Description
                     </label>
-                    {{ field|add_class:"cb-input" }}
+                    {{ field|add_class:"form-control" }}
                     {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
                 </div>
                 {% endif %}
                 {% endfor %}
 
-                {# Category #}
-                {% for field in form %}
-                {% if field.name == 'category' %}
-                <div class="cb-field">
-                    <label class="cb-field__label" for="{{ field.id_for_label }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                        Category
-                    </label>
-                    {{ field|add_class:"cb-input cb-select" }}
-                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
-                </div>
-                {% endif %}
-                {% endfor %}
+                {# Category & Account Row #}
+                <div class="cb-field-row">
+                    {% for field in form %}
+                    {% if field.name == 'category' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                            Category
+                        </label>
+                        {{ field|add_class:"form-select" }}
+                        {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
 
-                {# Account #}
-                {% for field in form %}
-                {% if field.name == 'account' %}
-                <div class="cb-field">
-                    <label class="cb-field__label" for="{{ field.id_for_label }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        Account
-                    </label>
-                    {{ field|add_class:"cb-input cb-select" }}
-                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                    {% for field in form %}
+                    {% if field.name == 'account' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            Account
+                        </label>
+                        {{ field|add_class:"form-select" }}
+                        {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endif %}
-                {% endfor %}
 
                 {# Optional Fields Toggle #}
                 <button type="button" class="cb-more-toggle" onclick="toggleMoreFields()">
@@ -193,63 +242,57 @@
                 </button>
 
                 <div class="cb-more-fields" id="moreFields">
-                    {# Project #}
                     {% for field in form %}
                     {% if field.name == 'related_project' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Project</label>
-                        {{ field|add_class:"cb-input cb-select" }}
+                        {{ field|add_class:"form-select" }}
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Client #}
                     {% for field in form %}
                     {% if field.name == 'related_client' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Client</label>
-                        {{ field|add_class:"cb-input cb-select" }}
+                        {{ field|add_class:"form-select" }}
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Vendor #}
                     {% for field in form %}
                     {% if field.name == 'related_vendor' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Vendor</label>
-                        {{ field|add_class:"cb-input cb-select" }}
+                        {{ field|add_class:"form-select" }}
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Person #}
                     {% for field in form %}
                     {% if field.name == 'related_person' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Person</label>
-                        {{ field|add_class:"cb-input cb-select" }}
+                        {{ field|add_class:"form-select" }}
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Remarks #}
                     {% for field in form %}
                     {% if field.name == 'remarks' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Notes</label>
-                        {{ field|add_class:"cb-input cb-textarea" }}
+                        {{ field|add_class:"form-control" }}
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Credit (for full view) #}
                     {% if not simple_view %}
                     {% for field in form %}
                     {% if field.name == 'credit' %}
                     <div class="cb-field">
                         <label class="cb-field__label" for="{{ field.id_for_label }}">Credit Amount</label>
-                        {{ field|add_class:"cb-input" }}
+                        {{ field|add_class:"form-control" }}
                         {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
                     </div>
                     {% endif %}
@@ -259,7 +302,7 @@
             </div>
 
             <div class="cb-form__footer">
-                <button type="submit" class="cb-btn cb-btn--primary cb-btn--lg cb-btn--block">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     Save Expense
                 </button>
@@ -273,13 +316,12 @@ function openExpenseForm() {
     const overlay = document.getElementById('expenseOverlay');
     const panel = document.getElementById('expensePanel');
     overlay.classList.add('active');
-    panel.classList.add('active');
+    setTimeout(() => panel.classList.add('active'), 10);
     document.body.style.overflow = 'hidden';
-    // Focus first input after animation
     setTimeout(() => {
-        const firstInput = panel.querySelector('.cb-input--hero, .cb-input');
+        const firstInput = panel.querySelector('.cb-input--hero, .form-control');
         if (firstInput) firstInput.focus();
-    }, 300);
+    }, 350);
 }
 
 function closeExpenseForm() {
@@ -302,6 +344,25 @@ function toggleMoreFields() {
     const btn = event.currentTarget;
     fields.classList.toggle('active');
     btn.classList.toggle('active');
+}
+
+function filterTransactions() {
+    const query = document.getElementById('txnSearch').value.toLowerCase();
+    const transactions = document.querySelectorAll('.cb-txn');
+    const dateGroups = document.querySelectorAll('.cb-date-group');
+
+    transactions.forEach(txn => {
+        const desc = txn.dataset.description || '';
+        const cat = txn.dataset.category || '';
+        const match = desc.includes(query) || cat.includes(query);
+        txn.style.display = match ? '' : 'none';
+    });
+
+    // Hide empty date groups
+    dateGroups.forEach(group => {
+        const visibleTxns = group.querySelectorAll('.cb-txn:not([style*="display: none"])');
+        group.style.display = visibleTxns.length > 0 ? '' : 'none';
+    });
 }
 
 // Close on escape
