@@ -59,75 +59,81 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="table-responsive">
-                <table class="table mb-0{% if simple_view %} align-middle table-stack{% endif %}">
-                    <thead>
-                    {% if simple_view %}
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Project</th>
-                            <th class="text-end">Amount</th>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Account</th>
-                            <th>Category</th>
-                            <th>Linked to</th>
-                            <th>Debit</th>
-                            <th>Credit</th>
-                        </tr>
-                    {% endif %}
-                    </thead>
-                    <tbody>
+            {% if simple_view %}
+                <div class="txn-cards">
                     {% for txn in filter.qs %}
-                    {% if simple_view %}
-                        <tr>
-                            <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
-                            <td data-label="Description">
-                                <div class="fw-semibold">{{ txn.description }}</div>
-                                <div class="d-flex flex-wrap gap-1 small text-muted">
+                        <article class="txn-card">
+                            <div class="txn-card__header">
+                                <div>
+                                    <div class="eyebrow text-uppercase">Date</div>
+                                    <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="eyebrow text-uppercase">Amount</div>
+                                    <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %}">{{ txn.debit|rupee }}</div>
+                                </div>
+                            </div>
+                            <div class="txn-card__body">
+                                <div class="txn-title">{{ txn.description }}</div>
+                                <div class="txn-meta">
                                     {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
                                     {% if txn.account %}<span class="chip chip-soft">Acct · {{ txn.account.name }}</span>{% endif %}
+                                    {% if txn.related_project %}<span class="chip chip-soft">Project · {{ txn.related_project.code }}</span>{% endif %}
+                                    {% if txn.related_client %}<span class="chip chip-soft">Client · {{ txn.related_client }}</span>{% endif %}
                                 </div>
-                            </td>
-                            <td data-label="Project">{% if txn.related_project %}{{ txn.related_project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Amount" class="text-end fw-semibold">{{ txn.debit|rupee }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
-                            <td data-label="Description">{{ txn.description }}</td>
-                            <td data-label="Account">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Category">{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Linked to">
-                                {% if txn.related_project %}
-                                    <div>{{ txn.related_project }}</div>
-                                    {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
-                                    {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
-                                {% elif txn.related_client %}
-                                    <div>{{ txn.related_client }}</div>
-                                    {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
-                                {% elif txn.related_vendor %}
-                                    {{ txn.related_vendor }}
-                                {% elif txn.related_person %}
-                                    {{ txn.related_person }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td data-label="Debit">{{ txn.debit|rupee }}</td>
-                            <td data-label="Credit">{{ txn.credit|rupee }}</td>
-                        </tr>
-                        {% endif %}
+                            </div>
+                        </article>
                     {% empty %}
-                        {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:7 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
+                        {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
                     {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle table-stack">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Account</th>
+                                <th>Category</th>
+                                <th>Linked to</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for txn in filter.qs %}
+                            <tr>
+                                <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
+                                <td data-label="Description">{{ txn.description }}</td>
+                                <td data-label="Account">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                <td data-label="Category">{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                <td data-label="Linked to">
+                                    {% if txn.related_project %}
+                                        <div>{{ txn.related_project }}</div>
+                                        {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
+                                        {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
+                                    {% elif txn.related_client %}
+                                        <div>{{ txn.related_client }}</div>
+                                        {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
+                                    {% elif txn.related_vendor %}
+                                        {{ txn.related_vendor }}
+                                    {% elif txn.related_person %}
+                                        {{ txn.related_person }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Debit">{{ txn.debit|rupee }}</td>
+                                <td data-label="Credit">{{ txn.credit|rupee }}</td>
+                            </tr>
+                        {% empty %}
+                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:7 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
