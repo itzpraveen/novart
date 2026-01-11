@@ -14,40 +14,31 @@
 
 <div class="d-md-flex gap-3 align-items-start">
     <div class="flex-grow-1">
-        <div class="card shadow-sm">
-            <div class="table-responsive">
-                <table class="table mb-0 align-middle table-stack">
-                    <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Project</th>
-                        <th>Description</th>
-                        <th class="text-end">Amount</th>
-                        <th>Status</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for claim in claims %}
-                        <tr>
-                            <td data-label="Date">{{ claim.expense_date|date:"d M Y" }}</td>
-                            <td data-label="Project">{% if claim.project %}{{ claim.project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Description">
-                                <div class="fw-semibold">{{ claim.category|default:"Expense" }}</div>
-                                <small class="text-muted">{{ claim.description|default:"—" }}</small>
-                            </td>
-                            <td data-label="Amount" class="text-end fw-semibold">{{ claim.amount|rupee }}</td>
-                            <td data-label="Status">
-                                <span class="badge bg-{% if claim.status == 'paid' %}success{% elif claim.status == 'approved' %}info{% elif claim.status == 'rejected' %}danger{% else %}secondary{% endif %}">
-                                    {{ claim.get_status_display }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        {% include "includes/empty_state.html" with colspan=5 title="No claims yet" description="Submit expense claims for reimbursement." cta_label="New Claim" cta_class="btn btn-sm btn-primary" cta_attrs='data-bs-toggle="offcanvas" href="#claimOffcanvas"' compact=True %}
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="txn-cards">
+            {% for claim in claims %}
+            <article class="txn-card">
+                <div class="txn-card__header">
+                    <div>
+                        <div class="eyebrow text-uppercase">Date</div>
+                        <div class="txn-date">{{ claim.expense_date|date:"d MMM YYYY" }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="eyebrow text-uppercase">Amount</div>
+                        <div class="txn-amount">{{ claim.amount|rupee }}</div>
+                    </div>
+                </div>
+                <div class="txn-card__body">
+                    <div class="txn-title">{{ claim.category|default:"Expense" }}</div>
+                    <div class="txn-meta">
+                        {% if claim.project %}<span class="chip chip-soft">Project · {{ claim.project.code }}</span>{% endif %}
+                        {% if claim.description %}<span class="chip chip-ghost">{{ claim.description }}</span>{% endif %}
+                        <span class="chip chip-soft bg-light text-dark border">Status · {{ claim.get_status_display }}</span>
+                    </div>
+                </div>
+            </article>
+            {% empty %}
+                {% include "includes/empty_state.html" with colspan=5 title="No claims yet" description="Submit expense claims for reimbursement." cta_label="New Claim" cta_class="btn btn-sm btn-primary" cta_attrs='data-bs-toggle="offcanvas" href="#claimOffcanvas"' compact=True %}
+            {% endfor %}
         </div>
     </div>
 
@@ -73,4 +64,3 @@
     </div>
 </div>
 {% endblock %}
-
