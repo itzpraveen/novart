@@ -9,8 +9,8 @@
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
         {% if simple_view %}
-        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="modal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
-        <a class="btn btn-primary d-md-none" data-bs-toggle="modal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
+        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
+        <a class="btn btn-primary d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
         {% else %}
         <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
@@ -84,7 +84,7 @@
                                 </div>
                             </article>
                         {% empty %}
-                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionModal" cta_label=entry_label cta_attrs='data-bs-toggle="modal" role="button" aria-controls="transactionModal"' compact=True %}
+                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionModal" cta_label=entry_label cta_attrs='data-bs-toggle="modal" data-bs-target="#transactionModal" role="button" aria-controls="transactionModal"' compact=True %}
                         {% endfor %}
                     </div>
                 {% else %}
