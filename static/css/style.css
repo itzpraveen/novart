@@ -3857,3 +3857,797 @@ button:focus-visible,
     );
     background-size: 200% 100%;
 }
+
+/* =====================================================
+   CASHBOOK PAGE - Modern Redesign
+   ===================================================== */
+
+/* ----- Page Container ----- */
+.cashbook-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ----- Header ----- */
+.cashbook-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.cashbook-header__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cashbook-header__title h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ink);
+}
+
+.cashbook-header__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.cashbook-header__cta svg {
+    flex-shrink: 0;
+}
+
+/* ----- Stats Section ----- */
+.cashbook-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.cashbook-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+}
+
+.cashbook-stat:hover {
+    border-color: var(--border-color-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.cashbook-stat__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.cashbook-stat--debit .cashbook-stat__icon {
+    background: var(--danger-light);
+    color: var(--danger-color);
+}
+
+.cashbook-stat--credit .cashbook-stat__icon {
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+.cashbook-stat--net .cashbook-stat__icon {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+}
+
+.cashbook-stat--positive .cashbook-stat__icon {
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+.cashbook-stat--negative .cashbook-stat__icon {
+    background: var(--danger-light);
+    color: var(--danger-color);
+}
+
+.cashbook-stat__content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cashbook-stat__label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+}
+
+.cashbook-stat__value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cashbook-stat--debit .cashbook-stat__value {
+    color: var(--danger-color);
+}
+
+.cashbook-stat--credit .cashbook-stat__value {
+    color: var(--success-color);
+}
+
+.cashbook-stat--positive .cashbook-stat__value {
+    color: var(--success-color);
+}
+
+.cashbook-stat--negative .cashbook-stat__value {
+    color: var(--danger-color);
+}
+
+/* ----- Main Layout ----- */
+.cashbook-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+/* ----- Filters Panel ----- */
+.cashbook-filters {
+    position: sticky;
+    top: 80px;
+}
+
+.cashbook-filters__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.cashbook-filters__toggle:hover {
+    border-color: var(--border-color-hover);
+}
+
+.cashbook-filters__toggle[aria-expanded="true"] .cashbook-filters__chevron {
+    transform: rotate(180deg);
+}
+
+.cashbook-filters__chevron {
+    transition: transform 0.2s ease;
+}
+
+.cashbook-filters__body {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.cashbook-filters__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cashbook-filters__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.cashbook-filter-field__label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.cashbook-filters__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ----- Entries Section ----- */
+.cashbook-entries {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.cashbook-entries__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cashbook-entries__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+}
+
+.cashbook-entries__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--primary-subtle);
+    color: var(--primary-color);
+    border-radius: var(--radius-full);
+}
+
+.cashbook-entries__summary {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* ----- Card View ----- */
+.cashbook-cards {
+    display: flex;
+    flex-direction: column;
+}
+
+.cashbook-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition-fast);
+}
+
+.cashbook-card:last-child {
+    border-bottom: none;
+}
+
+.cashbook-card:hover {
+    background: var(--bg-hover);
+}
+
+.cashbook-card__date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 52px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.cashbook-card__day {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+}
+
+.cashbook-card__month {
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-light);
+}
+
+.cashbook-card__main {
+    min-width: 0;
+}
+
+.cashbook-card__title {
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cashbook-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.cashbook-card__meta .chip {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.5rem;
+}
+
+.cashbook-card__amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    white-space: nowrap;
+    padding-left: 0.5rem;
+}
+
+.cashbook-card__amount--debit {
+    color: var(--danger-color);
+}
+
+.cashbook-card__amount--credit {
+    color: var(--success-color);
+}
+
+/* ----- Table View ----- */
+.cashbook-table-wrap {
+    overflow-x: auto;
+}
+
+.cashbook-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cashbook-table thead {
+    background: var(--bg-subtle);
+}
+
+.cashbook-table th {
+    padding: 0.85rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.cashbook-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.cashbook-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.cashbook-table__date {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.cashbook-table__date .day {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.cashbook-table__date .rest {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.cashbook-table__desc {
+    font-weight: 500;
+}
+
+.cashbook-table__mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+/* ----- Empty State ----- */
+.cashbook-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+.cashbook-empty__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-xl);
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.cashbook-empty__text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+/* ----- Floating Action Button ----- */
+.cashbook-fab {
+    position: fixed;
+    bottom: calc(var(--bottom-nav-height) + 16px);
+    right: 16px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.cashbook-fab:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.cashbook-fab:active {
+    transform: scale(0.98);
+}
+
+/* ----- Form Styles ----- */
+.cashbook-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.cashbook-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.cashbook-form__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.cashbook-form__field--date {
+    flex: 1;
+}
+
+.cashbook-form__field--amount {
+    flex: 1.2;
+}
+
+.cashbook-form__label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.cashbook-form__label svg {
+    color: var(--text-light);
+}
+
+.cashbook-form__details {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.cashbook-form__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.cashbook-form__summary:hover {
+    color: var(--text-main);
+    background: var(--bg-hover);
+}
+
+.cashbook-form__summary::-webkit-details-marker {
+    display: none;
+}
+
+.cashbook-form__details[open] .cashbook-form__summary {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cashbook-form__details-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+}
+
+.cashbook-form__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+/* ----- Chip Extra Small Variant ----- */
+.chip-xs {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.4rem;
+}
+
+/* ----- Ghost Button ----- */
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.btn-ghost:hover {
+    border-color: var(--border-color-hover);
+    color: var(--primary-color);
+    background: var(--bg-hover);
+}
+
+/* ===== CASHBOOK RESPONSIVE STYLES ===== */
+
+@media (max-width: 991px) {
+    .cashbook-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cashbook-filters {
+        position: static;
+    }
+
+    .cashbook-filters__body {
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .cashbook-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cashbook-header__title {
+        justify-content: space-between;
+    }
+
+    .cashbook-header__cta {
+        display: none;
+    }
+
+    .cashbook-stats {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .cashbook-stat {
+        padding: 0.85rem 1rem;
+    }
+
+    .cashbook-stat__icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .cashbook-stat__icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .cashbook-stat__value {
+        font-size: 1.1rem;
+    }
+
+    .cashbook-card {
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+    }
+
+    .cashbook-card__amount {
+        grid-column: 2;
+        justify-self: end;
+        font-size: 1rem;
+        padding-left: 0;
+        order: -1;
+        margin-bottom: -1.25rem;
+    }
+
+    .cashbook-card__date {
+        width: 42px;
+        height: 46px;
+    }
+
+    .cashbook-card__day {
+        font-size: 1rem;
+    }
+
+    .cashbook-card__title {
+        font-size: 0.9rem;
+        padding-right: 4.5rem;
+    }
+
+    .cashbook-form__row {
+        grid-template-columns: 1fr;
+    }
+
+    .cashbook-entries__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.85rem 1rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .cashbook-page {
+        gap: 1rem;
+    }
+
+    .cashbook-header__title h1 {
+        font-size: 1.25rem;
+    }
+
+    .cashbook-card__meta {
+        gap: 0.25rem;
+    }
+
+    .cashbook-card__meta .chip {
+        font-size: 0.68rem;
+        padding: 0.1rem 0.4rem;
+    }
+}
+
+/* ===== CASHBOOK DARK MODE ===== */
+
+[data-theme="dark"] .cashbook-stat {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .cashbook-stat--debit .cashbook-stat__icon {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+}
+
+[data-theme="dark"] .cashbook-stat--credit .cashbook-stat__icon {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+[data-theme="dark"] .cashbook-stat--net .cashbook-stat__icon {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cashbook-stat--positive .cashbook-stat__icon {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+[data-theme="dark"] .cashbook-stat--negative .cashbook-stat__icon {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+}
+
+[data-theme="dark"] .cashbook-stat--debit .cashbook-stat__value {
+    color: #f87171;
+}
+
+[data-theme="dark"] .cashbook-stat--credit .cashbook-stat__value {
+    color: #34d399;
+}
+
+[data-theme="dark"] .cashbook-stat--positive .cashbook-stat__value {
+    color: #34d399;
+}
+
+[data-theme="dark"] .cashbook-stat--negative .cashbook-stat__value {
+    color: #f87171;
+}
+
+[data-theme="dark"] .cashbook-filters__toggle,
+[data-theme="dark"] .cashbook-filters__body,
+[data-theme="dark"] .cashbook-entries {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .cashbook-entries__header {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cashbook-card__date {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cashbook-table thead {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cashbook-empty__icon {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cashbook-form__details {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .btn-ghost {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+    color: var(--primary-color);
+    background: var(--bg-hover);
+}

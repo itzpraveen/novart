@@ -1,221 +1,447 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-<style>
-@media (min-width: 768px) {
-    #transactionModal .modal-dialog {
-        max-width: 480px;
-    }
-}
-</style>
 {% with entry_label=new_entry_label|default:"New entry" %}
-<div class="page-header">
-    <h2 class="mb-0">{{ page_title|default:"Cashbook" }}</h2>
-    <div class="actions">
-        {% if show_export %}
-        <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
-        {% endif %}
-        {% if simple_view %}
-        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvasDesktop" role="button" aria-controls="transactionOffcanvasDesktop">{{ entry_label }}</a>
-        <a class="btn btn-primary d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
-        {% else %}
-        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
-        <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
-        {% endif %}
-    </div>
-</div>
-<div class="finance-summary mb-3">
-    <div class="stat-pill">
-        <div class="label">Debits</div>
-        <div class="value text-danger">{{ totals.debit|rupee }}</div>
-    </div>
-    <div class="stat-pill">
-        <div class="label">Credits</div>
-        <div class="value text-success">{{ totals.credit|rupee }}</div>
-    </div>
-    <div class="stat-pill">
-        <div class="label">Net</div>
-        <div class="value {% if totals.net < 0 %}text-danger{% elif totals.net > 0 %}text-success{% else %}text-muted{% endif %}">{{ totals.net|rupee }}</div>
-    </div>
-</div>
-<div class="d-md-flex gap-3 align-items-start">
-    <div class="flex-grow-1">
-        <button class="btn btn-outline-secondary w-100 d-md-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#transactionFilters" aria-expanded="false" aria-controls="transactionFilters">
-            Filters
+
+{# ===== PAGE HEADER ===== #}
+<div class="cashbook-page">
+    <header class="cashbook-header">
+        <div class="cashbook-header__title">
+            <h1>{{ page_title|default:"Cashbook" }}</h1>
+            {% if show_export %}
+            <a class="btn btn-ghost btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                <span class="d-none d-sm-inline">Export</span>
+            </a>
+            {% endif %}
+        </div>
+        <button class="btn btn-primary cashbook-header__cta" data-bs-toggle="modal" data-bs-target="#transactionModal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>{{ entry_label }}</span>
         </button>
-        <div class="card shadow-sm mb-3">
-            <div class="card-body collapse show d-md-block" id="transactionFilters">
-                <form method="get" class="row g-3">
-                    {% for field in filter.form %}
-                        <div class="col-md-6">
-                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    </header>
+
+    {# ===== SUMMARY STATS ===== #}
+    <div class="cashbook-stats">
+        <div class="cashbook-stat cashbook-stat--debit">
+            <div class="cashbook-stat__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                    <polyline points="17 18 23 18 23 12"></polyline>
+                </svg>
+            </div>
+            <div class="cashbook-stat__content">
+                <span class="cashbook-stat__label">Debits</span>
+                <span class="cashbook-stat__value">{{ totals.debit|rupee }}</span>
+            </div>
+        </div>
+        <div class="cashbook-stat cashbook-stat--credit">
+            <div class="cashbook-stat__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+            </div>
+            <div class="cashbook-stat__content">
+                <span class="cashbook-stat__label">Credits</span>
+                <span class="cashbook-stat__value">{{ totals.credit|rupee }}</span>
+            </div>
+        </div>
+        <div class="cashbook-stat cashbook-stat--net {% if totals.net < 0 %}cashbook-stat--negative{% elif totals.net > 0 %}cashbook-stat--positive{% endif %}">
+            <div class="cashbook-stat__icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+            </div>
+            <div class="cashbook-stat__content">
+                <span class="cashbook-stat__label">Net Balance</span>
+                <span class="cashbook-stat__value">{{ totals.net|rupee }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ===== MAIN CONTENT ===== #}
+    <div class="cashbook-layout">
+        {# ===== FILTERS PANEL ===== #}
+        <aside class="cashbook-filters">
+            <button class="cashbook-filters__toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <span>Filters</span>
+                <svg class="cashbook-filters__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div class="collapse d-md-block" id="filterPanel">
+                <div class="cashbook-filters__body">
+                    <div class="cashbook-filters__header d-none d-md-flex">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                        <span>Filters</span>
+                    </div>
+                    <form method="get" class="cashbook-filters__form">
+                        {% for field in filter.form %}
+                        <div class="cashbook-filter-field">
+                            <label class="cashbook-filter-field__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field|add_class:"form-control" }}
                         </div>
-                    {% endfor %}
-                    <div class="col-12">
-                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                        {% endfor %}
+                        <div class="cashbook-filters__actions">
+                            <button class="btn btn-primary btn-sm w-100" type="submit">Apply Filters</button>
+                            {% if request.GET %}
+                            <a href="{{ request.path }}" class="btn btn-ghost btn-sm w-100">Clear All</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        {# ===== ENTRIES LIST ===== #}
+        <main class="cashbook-entries">
+            <div class="cashbook-entries__header">
+                <h2 class="cashbook-entries__title">
+                    <span>Entries</span>
+                    <span class="cashbook-entries__count">{{ filter.qs|length }}</span>
+                </h2>
+                <div class="cashbook-entries__summary">
+                    {% if simple_view %}
+                    Total {{ totals.debit|rupee }}
+                    {% else %}
+                    <span class="d-none d-sm-inline">Dr {{ totals.debit|rupee }} · Cr {{ totals.credit|rupee }} ·</span> Net {{ totals.net|rupee }}
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if simple_view %}
+            {# ===== CARD VIEW (Simple) ===== #}
+            <div class="cashbook-cards">
+                {% for txn in filter.qs %}
+                <article class="cashbook-card">
+                    <div class="cashbook-card__date">
+                        <span class="cashbook-card__day">{{ txn.date|date:"d" }}</span>
+                        <span class="cashbook-card__month">{{ txn.date|date:"M Y" }}</span>
                     </div>
+                    <div class="cashbook-card__main">
+                        <div class="cashbook-card__title">{{ txn.description }}</div>
+                        <div class="cashbook-card__meta">
+                            {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
+                            {% if txn.account %}<span class="chip chip-soft">{{ txn.account.name }}</span>{% endif %}
+                            {% if txn.related_project %}<span class="chip chip-info">{{ txn.related_project.code }}</span>{% endif %}
+                            {% if txn.related_client %}<span class="chip chip-warning">{{ txn.related_client }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="cashbook-card__amount {% if txn.debit > 0 %}cashbook-card__amount--debit{% else %}cashbook-card__amount--credit{% endif %}">
+                        {% if txn.debit > 0 %}-{% endif %}{{ txn.debit|default:txn.credit|rupee }}
+                    </div>
+                </article>
+                {% empty %}
+                <div class="cashbook-empty">
+                    <div class="cashbook-empty__icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </div>
+                    <p class="cashbook-empty__text">No cashbook entries yet</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                        {{ entry_label }}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            {# ===== TABLE VIEW (Full) ===== #}
+            <div class="cashbook-table-wrap">
+                <table class="cashbook-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th class="d-none d-lg-table-cell">Account</th>
+                            <th class="d-none d-md-table-cell">Category</th>
+                            <th class="d-none d-lg-table-cell">Linked to</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for txn in filter.qs %}
+                        <tr>
+                            <td data-label="Date">
+                                <div class="cashbook-table__date">
+                                    <span class="day">{{ txn.date|date:"d" }}</span>
+                                    <span class="rest">{{ txn.date|date:"M 'y" }}</span>
+                                </div>
+                            </td>
+                            <td data-label="Description">
+                                <div class="cashbook-table__desc">{{ txn.description }}</div>
+                                <div class="cashbook-table__mobile-meta d-lg-none">
+                                    {% if txn.account %}<span class="chip chip-soft chip-xs">{{ txn.account.name }}</span>{% endif %}
+                                    {% if txn.category %}<span class="chip chip-ghost chip-xs">{{ txn.get_category_display }}</span>{% endif %}
+                                </div>
+                            </td>
+                            <td data-label="Account" class="d-none d-lg-table-cell">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td data-label="Category" class="d-none d-md-table-cell">{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td data-label="Linked to" class="d-none d-lg-table-cell">
+                                {% if txn.related_project %}
+                                    <div>{{ txn.related_project }}</div>
+                                    {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
+                                {% elif txn.related_client %}
+                                    {{ txn.related_client }}
+                                {% elif txn.related_vendor %}
+                                    {{ txn.related_vendor }}
+                                {% elif txn.related_person %}
+                                    {{ txn.related_person }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Debit" class="text-end {% if txn.debit > 0 %}text-danger fw-semibold{% endif %}">{{ txn.debit|rupee }}</td>
+                            <td data-label="Credit" class="text-end {% if txn.credit > 0 %}text-success fw-semibold{% endif %}">{{ txn.credit|rupee }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="cashbook-empty">
+                                    <div class="cashbook-empty__icon">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                                        </svg>
+                                    </div>
+                                    <p class="cashbook-empty__text">No transactions found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+{# ===== TRANSACTION MODAL ===== #}
+<div class="modal fade modal-sheet" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transactionModalLabel">{{ entry_label }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" class="cashbook-form" id="transactionForm">
+                    {% csrf_token %}
+
+                    {# Date & Amount Row #}
+                    <div class="cashbook-form__row">
+                        {% for field in form %}
+                            {% if field.name == 'date' %}
+                            <div class="cashbook-form__field cashbook-form__field--date">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    {{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-control" }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% for field in form %}
+                            {% if field.name == 'debit' or field.name == 'amount' %}
+                            <div class="cashbook-form__field cashbook-form__field--amount">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
+                                    </svg>
+                                    {{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-control form-control-lg" }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {# Description #}
+                    {% for field in form %}
+                        {% if field.name == 'description' %}
+                        <div class="cashbook-form__field">
+                            <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="17" y1="10" x2="3" y2="10"></line>
+                                    <line x1="21" y1="6" x2="3" y2="6"></line>
+                                    <line x1="21" y1="14" x2="3" y2="14"></line>
+                                    <line x1="17" y1="18" x2="3" y2="18"></line>
+                                </svg>
+                                {{ field.label }}
+                            </label>
+                            {{ field|add_class:"form-control" }}
+                            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Category & Account Row #}
+                    <div class="cashbook-form__row">
+                        {% for field in form %}
+                            {% if field.name == 'category' %}
+                            <div class="cashbook-form__field">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path>
+                                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                    </svg>
+                                    {{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-select" }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% for field in form %}
+                            {% if field.name == 'account' %}
+                            <div class="cashbook-form__field">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                                    </svg>
+                                    {{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-select" }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {# Related Fields - Collapsible #}
+                    <details class="cashbook-form__details">
+                        <summary class="cashbook-form__summary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Link to project, client, or vendor
+                        </summary>
+                        <div class="cashbook-form__details-body">
+                            {% for field in form %}
+                                {% if field.name == 'related_project' %}
+                                <div class="cashbook-form__field">
+                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field|add_class:"form-select" }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% for field in form %}
+                                {% if field.name == 'related_client' %}
+                                <div class="cashbook-form__field">
+                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field|add_class:"form-select" }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% for field in form %}
+                                {% if field.name == 'related_vendor' %}
+                                <div class="cashbook-form__field">
+                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field|add_class:"form-select" }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% for field in form %}
+                                {% if field.name == 'related_person' %}
+                                <div class="cashbook-form__field">
+                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field|add_class:"form-select" }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </details>
+
+                    {# Remarks - Only for non-simple forms #}
+                    {% for field in form %}
+                        {% if field.name == 'remarks' %}
+                        <div class="cashbook-form__field">
+                            <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+                                </svg>
+                                {{ field.label }}
+                            </label>
+                            {{ field|add_class:"form-control" }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Credit field for non-simple view #}
+                    {% if not simple_view %}
+                        {% for field in form %}
+                            {% if field.name == 'credit' %}
+                            <div class="cashbook-form__field">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
+                                    </svg>
+                                    {{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-control" }}
+                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% for field in form %}
+                            {% if field.name == 'subcategory' %}
+                            <div class="cashbook-form__field">
+                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field|add_class:"form-control" }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 cashbook-form__submit">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Save Entry
+                    </button>
                 </form>
             </div>
         </div>
     </div>
-    <div class="card shadow-sm">
-        <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
-            <div class="fw-semibold">Entries</div>
-            <div class="small text-muted">
-                {% if simple_view %}
-                    Total {{ totals.debit|rupee }}
-                    {% else %}
-                        Dr {{ totals.debit|rupee }} · Cr {{ totals.credit|rupee }} · Net {{ totals.net|rupee }}
-                    {% endif %}
-                </div>
-            </div>
-                {% if simple_view %}
-                    <div class="txn-cards">
-                        {% for txn in filter.qs %}
-                            <article class="txn-card">
-                                <div class="txn-card__header">
-                                    <div class="txn-card__item">
-                                        <div class="eyebrow text-uppercase">Date</div>
-                                        <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
-                                    </div>
-                                    <div class="txn-card__item txn-card__item--amount text-end">
-                                        <div class="eyebrow text-uppercase">Amount</div>
-                                        <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %}">{{ txn.debit|rupee }}</div>
-                                    </div>
-                                </div>
-                                <div class="txn-card__body">
-                                    <div class="txn-title">{{ txn.description }}</div>
-                                    <div class="txn-meta">
-                                        {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
-                                        {% if txn.account %}<span class="chip chip-soft">Acct · {{ txn.account.name }}</span>{% endif %}
-                                        {% if txn.related_project %}<span class="chip chip-soft">Project · {{ txn.related_project.code }}</span>{% endif %}
-                                        {% if txn.related_client %}<span class="chip chip-soft">Client · {{ txn.related_client }}</span>{% endif %}
-                                    </div>
-                                </div>
-                            </article>
-                        {% empty %}
-                            <div class="text-center text-muted py-4">No cashbook entries. {{ entry_label }} to get started.</div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                <div class="table-responsive">
-                    <table class="table mb-0 align-middle table-stack">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Account</th>
-                                <th>Category</th>
-                                <th>Linked to</th>
-                                <th>Debit</th>
-                                <th>Credit</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for txn in filter.qs %}
-                            <tr>
-                                <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
-                                <td data-label="Description">{{ txn.description }}</td>
-                                <td data-label="Account">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td data-label="Category">{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td data-label="Linked to">
-                                    {% if txn.related_project %}
-                                        <div>{{ txn.related_project }}</div>
-                                        {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
-                                        {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
-                                    {% elif txn.related_client %}
-                                        <div>{{ txn.related_client }}</div>
-                                        {% if txn.related_vendor %}<small class="text-muted">Vendor · {{ txn.related_vendor }}</small>{% endif %}
-                                    {% elif txn.related_vendor %}
-                                        {{ txn.related_vendor }}
-                                    {% elif txn.related_person %}
-                                        {{ txn.related_person }}
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-                                <td data-label="Debit">{{ txn.debit|rupee }}</td>
-                                <td data-label="Credit">{{ txn.credit|rupee }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">No cashbook entries.</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-    {% if simple_view %}
-    <div class="modal fade modal-sheet" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="transactionModalLabel">{{ entry_label }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
-                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                            </div>
-                        {% endfor %}
-                        <button class="btn btn-primary w-100">{{ entry_label }}</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="offcanvas offcanvas-end offcanvas-glow d-none d-md-block" tabindex="-1" id="transactionOffcanvasDesktop" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" data-bs-backdrop="false" style="--bs-offcanvas-width: 420px;">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                    </div>
-                {% endfor %}
-                <button class="btn btn-primary w-100">{{ entry_label }}</button>
-            </form>
-        </div>
-    </div>
-    {% else %}
-    <div class="offcanvas offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
-            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                    </div>
-                {% endfor %}
-                <button class="btn btn-primary w-100">Save</button>
-            </form>
-        </div>
-    </div>
-    {% endif %}
 </div>
+
+{# ===== FLOATING ACTION BUTTON (Mobile) ===== #}
+<button class="cashbook-fab d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" aria-label="{{ entry_label }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+</button>
+
 {% endwith %}
 {% endblock %}
