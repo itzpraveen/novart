@@ -714,6 +714,11 @@
         (function() {
             const prompt = document.getElementById('pwaInstallPrompt');
             if (!prompt) return;
+            const enablePrompt = false; // disable intrusive install overlay for now
+            if (!enablePrompt) {
+                prompt.remove();
+                return;
+            }
 
             const dismissedKey = 'pwa-install-dismissed';
             if (localStorage.getItem(dismissedKey)) return;
