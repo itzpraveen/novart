@@ -1344,6 +1344,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     z-index: 9999;
 }
 
+.offcanvas:not(.show) {
+    pointer-events: none;
+}
+
 .modal-sheet .modal-dialog {
     margin: 0 auto;
     height: 100%;
