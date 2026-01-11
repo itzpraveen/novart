@@ -4647,6 +4647,294 @@ button:focus-visible,
     display: flex;
 }
 
+/* ===== CASHBOOK TOOLBAR & SEARCH ===== */
+
+.cb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+    border: 1px solid var(--border-color);
+}
+
+.cb-search {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.cb-search__icon {
+    position: absolute;
+    left: var(--space-3);
+    color: var(--text-light);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cb-search__input {
+    width: 100%;
+    padding: var(--space-2) var(--space-3) var(--space-2) 2.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-main);
+    font-size: var(--text-sm);
+    transition: var(--transition-fast);
+    min-height: 40px;
+}
+
+.cb-search__input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+
+.cb-search__input::placeholder {
+    color: var(--text-placeholder);
+}
+
+.cb-toolbar__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.cb-toolbar__btn:hover {
+    border-color: var(--primary-light);
+    color: var(--primary-color);
+    background: var(--primary-subtle);
+}
+
+.cb-toolbar__btn--active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-subtle);
+}
+
+.cb-toolbar__badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== CASHBOOK FILTER PANEL ===== */
+
+.cb-filter-panel {
+    display: none;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+    animation: slideDown 0.2s ease;
+}
+
+.cb-filter-panel.active {
+    display: block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cb-filter-form {
+    padding: var(--space-4);
+}
+
+.cb-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+    .cb-filter-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.cb-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.cb-filter-field label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.cb-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ===== CASHBOOK DATE GROUPING ===== */
+
+.cb-date-group {
+    margin-bottom: var(--space-4);
+}
+
+.cb-date-group:last-child {
+    margin-bottom: 0;
+}
+
+.cb-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-2);
+    background: var(--bg-subtle);
+    border-radius: var(--radius-md);
+}
+
+.cb-date-header__date {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-main);
+}
+
+.cb-date-header__count {
+    font-size: var(--text-xs);
+    color: var(--text-light);
+    background: var(--bg-surface);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+/* ===== CASHBOOK TRANSACTION ENHANCEMENTS ===== */
+
+.cb-txn__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    margin-right: var(--space-3);
+}
+
+.cb-txn__icon--out {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.cb-txn__icon--in {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.cb-txn__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.cb-txn__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+}
+
+.cb-txn__category,
+.cb-txn__account {
+    font-size: var(--text-xs);
+    color: var(--text-light);
+    background: var(--bg-subtle);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.cb-txn__account {
+    background: transparent;
+    color: var(--text-placeholder);
+}
+
+/* Field row layout for filter forms */
+.cb-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+@media (max-width: 480px) {
+    .cb-field-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Enhanced stats with icons */
+.cb-stat__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    margin-bottom: var(--space-2);
+}
+
+.cb-stat--out .cb-stat__icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.cb-stat--in .cb-stat__icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.cb-stat--balance .cb-stat__icon {
+    background: var(--primary-subtle);
+    color: var(--primary-color);
+}
+
+.cb-stat__icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* ===== CASHBOOK RESPONSIVE ===== */
 
 @media (min-width: 768px) {
@@ -4783,6 +5071,87 @@ button:focus-visible,
 [data-theme="dark"] .cb-stat--negative .cb-stat__value { color: #f87171; }
 [data-theme="dark"] .cb-txn__amt--out { color: #f87171; }
 [data-theme="dark"] .cb-txn__amt--in { color: #34d399; }
+
+/* Dark mode for toolbar & search */
+[data-theme="dark"] .cb-toolbar {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .cb-search__input {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .cb-search__input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+[data-theme="dark"] .cb-toolbar__btn {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .cb-toolbar__btn:hover,
+[data-theme="dark"] .cb-toolbar__btn--active {
+    background: var(--primary-subtle);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Dark mode for filter panel */
+[data-theme="dark"] .cb-filter-panel {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .cb-filter-actions {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+}
+
+/* Dark mode for date grouping */
+[data-theme="dark"] .cb-date-header {
+    background: var(--bg-elevated);
+}
+
+[data-theme="dark"] .cb-date-header__count {
+    background: var(--bg-surface);
+}
+
+/* Dark mode for transaction icons */
+[data-theme="dark"] .cb-txn__icon--out {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+}
+
+[data-theme="dark"] .cb-txn__icon--in {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+[data-theme="dark"] .cb-txn__category {
+    background: var(--bg-elevated);
+}
+
+/* Dark mode for stat icons */
+[data-theme="dark"] .cb-stat--out .cb-stat__icon {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+}
+
+[data-theme="dark"] .cb-stat--in .cb-stat__icon {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+[data-theme="dark"] .cb-stat--balance .cb-stat__icon {
+    background: rgba(45, 212, 191, 0.15);
+    color: var(--primary-color);
+}
 
 /* =====================================================
    UNIFIED UI COMPONENTS - Global Design System
