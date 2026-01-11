@@ -8,8 +8,13 @@
         {% if show_export %}
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
+        {% if simple_view %}
+        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="modal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
+        <a class="btn btn-primary d-md-none" data-bs-toggle="modal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
+        {% else %}
         <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
+        {% endif %}
     </div>
 </div>
 <div class="finance-summary mb-3">
@@ -28,7 +33,6 @@
 </div>
 <div class="d-md-flex gap-3 align-items-start">
     <div class="flex-grow-1">
-        {% if not simple_view %}
         <button class="btn btn-outline-secondary w-100 d-md-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#transactionFilters" aria-expanded="false" aria-controls="transactionFilters">
             Filters
         </button>
@@ -47,47 +51,47 @@
                 </form>
             </div>
         </div>
-        {% endif %}
-        <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                <div class="fw-semibold">Entries</div>
-                <div class="small text-muted">
-                    {% if simple_view %}
-                        Total {{ totals.debit|rupee }}
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="fw-semibold">Entries</div>
+            <div class="small text-muted">
+                {% if simple_view %}
+                    Total {{ totals.debit|rupee }}
                     {% else %}
                         Dr {{ totals.debit|rupee }} · Cr {{ totals.credit|rupee }} · Net {{ totals.net|rupee }}
                     {% endif %}
                 </div>
             </div>
-            {% if simple_view %}
-                <div class="txn-cards">
-                    {% for txn in filter.qs %}
-                        <article class="txn-card">
-                            <div class="txn-card__header">
-                                <div>
-                                    <div class="eyebrow text-uppercase">Date</div>
-                                    <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
+                {% if simple_view %}
+                    <div class="txn-cards">
+                        {% for txn in filter.qs %}
+                            <article class="txn-card">
+                                <div class="txn-card__header">
+                                    <div>
+                                        <div class="eyebrow text-uppercase">Date</div>
+                                        <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="eyebrow text-uppercase">Amount</div>
+                                        <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %}">{{ txn.debit|rupee }}</div>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <div class="eyebrow text-uppercase">Amount</div>
-                                    <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %}">{{ txn.debit|rupee }}</div>
+                                <div class="txn-card__body">
+                                    <div class="txn-title">{{ txn.description }}</div>
+                                    <div class="txn-meta">
+                                        {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
+                                        {% if txn.account %}<span class="chip chip-soft">Acct · {{ txn.account.name }}</span>{% endif %}
+                                        {% if txn.related_project %}<span class="chip chip-soft">Project · {{ txn.related_project.code }}</span>{% endif %}
+                                        {% if txn.related_client %}<span class="chip chip-soft">Client · {{ txn.related_client }}</span>{% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="txn-card__body">
-                                <div class="txn-title">{{ txn.description }}</div>
-                                <div class="txn-meta">
-                                    {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
-                                    {% if txn.account %}<span class="chip chip-soft">Acct · {{ txn.account.name }}</span>{% endif %}
-                                    {% if txn.related_project %}<span class="chip chip-soft">Project · {{ txn.related_project.code }}</span>{% endif %}
-                                    {% if txn.related_client %}<span class="chip chip-soft">Client · {{ txn.related_client }}</span>{% endif %}
-                                </div>
-                            </div>
-                        </article>
-                    {% empty %}
-                        {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
-                    {% endfor %}
-                </div>
-            {% else %}
+                            </article>
+                        {% empty %}
+                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionModal" cta_label=entry_label cta_attrs='data-bs-toggle="modal" role="button" aria-controls="transactionModal"' compact=True %}
+                        {% endfor %}
+                    </div>
+                {% else %}
                 <div class="table-responsive">
                     <table class="table mb-0 align-middle table-stack">
                         <thead>
@@ -136,6 +140,32 @@
             {% endif %}
         </div>
     </div>
+    {% if simple_view %}
+    <div class="modal fade modal-sheet" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionModalLabel">{{ entry_label }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field|add_class:"form-control" }}
+                                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <button class="btn btn-primary w-100">{{ entry_label }}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
@@ -156,6 +186,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endwith %}
 {% endblock %}

@@ -1329,6 +1329,36 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     z-index: 9999;
 }
 
+.modal-sheet .modal-dialog {
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    max-width: 560px;
+    width: 100%;
+}
+
+.modal-sheet .modal-content {
+    border-radius: 16px 16px 0 0;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-sheet .modal-body {
+    padding-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .modal-sheet .modal-dialog {
+        align-items: center;
+        height: auto;
+    }
+
+    .modal-sheet .modal-content {
+        border-radius: var(--radius-lg);
+    }
+}
+
 .modal-elevated .form-control,
 .modal-elevated .form-select {
     border-radius: var(--radius-md);
