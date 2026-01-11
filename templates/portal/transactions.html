@@ -168,7 +168,7 @@
         </div>
     </div>
     {% endif %}
-    <div class="offcanvas offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+    <div class="offcanvas offcanvas-md offcanvas-end offcanvas-glow {% if simple_view %}d-none d-md-block{% endif %}" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
             <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
