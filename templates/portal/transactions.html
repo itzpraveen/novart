@@ -68,14 +68,10 @@
                         {% for txn in filter.qs %}
                             <article class="txn-card">
                                 <div class="txn-card__header">
-                                    <div>
-                                        <div class="eyebrow text-uppercase">Date</div>
-                                        <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="eyebrow text-uppercase">Amount</div>
-                                        <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %}">{{ txn.debit|rupee }}</div>
-                                    </div>
+                                    <div class="eyebrow text-uppercase">Date</div>
+                                    <div class="eyebrow text-uppercase text-end">Amount</div>
+                                    <div class="txn-date">{{ txn.date|date:"d MMM YYYY" }}</div>
+                                    <div class="txn-amount {% if txn.debit > 0 %}text-danger{% endif %} text-end">{{ txn.debit|rupee }}</div>
                                 </div>
                                 <div class="txn-card__body">
                                     <div class="txn-title">{{ txn.description }}</div>

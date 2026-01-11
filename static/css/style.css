@@ -1249,25 +1249,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .txn-card__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    row-gap: 0.2rem;
+    column-gap: 0.75rem;
     margin-bottom: 0.5rem;
 }
 
 .txn-date {
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .txn-amount {
     font-weight: 700;
     font-size: 1.05rem;
+    white-space: nowrap;
 }
 
 .txn-title {
     font-weight: 700;
     margin-bottom: 0.35rem;
+    word-break: break-word;
 }
 
 .txn-meta {
