@@ -1,19 +1,10 @@
-{#-
-  Reusable breadcrumb navigation component.
+{# Reusable breadcrumb navigation component.
 
   Params (via include + context):
     - items (required): List of dicts with 'label' and optional 'url' keys
       Example: [{'label': 'Home', 'url': '/'}, {'label': 'Projects', 'url': '/projects/'}, {'label': 'Current'}]
     - current (optional): Label for current page (alternative to adding it to items)
-
-  Usage (plain text examples):
-    include "includes/breadcrumb.html" with items=breadcrumb_items
-
-  Or with inline context:
-    with breadcrumb_items='[{"label": "Finance", "url": "/finance/"}, {"label": "Invoices"}]'
-    include "includes/breadcrumb.html" with items=breadcrumb_items
-    endwith
--#}
+#}
 
 <nav aria-label="Breadcrumb">
     <ol class="breadcrumb">
