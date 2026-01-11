@@ -5757,3 +5757,934 @@ textarea.form-control {
 [data-theme="dark"] .bottom-nav-badge {
     border-color: var(--bg-body);
 }
+
+/* =====================================================
+   UI/UX IMPROVEMENTS - Comprehensive Fixes
+   ===================================================== */
+
+/* ===== 1. FORM RESPONSIVENESS < 576px ===== */
+
+@media (max-width: 576px) {
+    /* Stack all form columns on small phones */
+    .row.g-3 > [class*="col-md-"],
+    .row.g-4 > [class*="col-md-"],
+    .row.g-3 > [class*="col-lg-"],
+    .row.g-4 > [class*="col-lg-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Exception: keep 2-col for small paired fields */
+    .row.g-3 > .col-6,
+    .row.g-4 > .col-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Form cards - reduce padding */
+    .card-body {
+        padding: 1rem;
+    }
+
+    /* Page header - stack on mobile */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .page-header .btn {
+        width: 100%;
+    }
+
+    /* Invoice sidebar - make full width on mobile */
+    .col-lg-4 .card.position-sticky {
+        position: relative !important;
+        top: auto !important;
+    }
+
+    /* Form labels - slightly larger on mobile */
+    .form-label {
+        font-size: var(--text-sm);
+    }
+
+    /* Reduce form-group spacing */
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+
+    .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
+}
+
+/* Very small screens (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .row.g-3 > .col-6,
+    .row.g-4 > .col-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .card-body {
+        padding: 0.875rem;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+}
+
+/* ===== 2. TOUCH TARGETS - 44px MINIMUM ===== */
+
+.action-dropdown-toggle {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+}
+
+@media (max-width: 768px) {
+    .action-dropdown-toggle {
+        width: var(--touch-target);
+        height: var(--touch-target);
+    }
+}
+
+/* Ensure all interactive elements meet touch target */
+.tap-target {
+    min-height: var(--touch-target);
+}
+
+.btn-sm {
+    min-height: var(--touch-target-sm);
+}
+
+.btn-icon {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+}
+
+.btn-icon.btn-sm {
+    min-width: var(--touch-target-sm);
+    min-height: var(--touch-target-sm);
+}
+
+/* Links in lists/tables should have adequate tap area */
+.table a,
+.list-group-item a {
+    display: inline-block;
+    padding: 0.25rem 0;
+    min-height: 32px;
+    line-height: 1.5;
+}
+
+/* Page link touch targets */
+.page-link {
+    min-width: var(--touch-target);
+    min-height: var(--touch-target);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== 3. FORM VALIDATION ACCESSIBILITY ===== */
+
+/* Error container with live region */
+.form-error-summary {
+    padding: 1rem;
+    background: var(--danger-light);
+    border: 1px solid var(--danger-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+}
+
+.form-error-summary h4 {
+    color: var(--danger-color);
+    font-size: var(--text-md);
+    font-weight: var(--font-semibold);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-error-summary ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--danger-color);
+}
+
+.form-error-summary li {
+    margin-bottom: 0.25rem;
+}
+
+/* Error messages styling - enhanced visibility */
+.invalid-feedback,
+.text-danger.small,
+.field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    font-size: var(--text-sm);
+    color: var(--danger-color);
+    font-weight: var(--font-medium);
+}
+
+/* Ensure error messages are always visible */
+.form-control.is-invalid ~ .invalid-feedback,
+.form-select.is-invalid ~ .invalid-feedback {
+    display: flex;
+}
+
+/* Focus indicator for invalid fields */
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    box-shadow: var(--focus-ring-danger);
+}
+
+/* ===== 4. TABLE LAYOUT FOR 768-820px TABLETS ===== */
+
+@media (min-width: 768px) and (max-width: 820px) {
+    /* Tighter table cells on tablets */
+    .table > :not(caption) > * > * {
+        padding: 0.5rem 0.4rem;
+        font-size: var(--text-sm);
+    }
+
+    /* Hide less important columns on small tablets */
+    .table .hide-tablet {
+        display: none;
+    }
+
+    /* Truncate long text in cells */
+    .table td {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Exception for action buttons */
+    .table td:last-child {
+        max-width: none;
+        white-space: normal;
+    }
+
+    /* Stack layout-duo on tablets */
+    .layout-duo {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Tablet portrait mode */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Horizontal scroll indicator */
+    .table-responsive::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 40px;
+        background: linear-gradient(to right, transparent, var(--bg-surface));
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .table-responsive.has-scroll::after {
+        opacity: 1;
+    }
+}
+
+/* ===== 5. DARK MODE CONTRAST IMPROVEMENTS ===== */
+
+[data-theme="dark"] {
+    /* Increase secondary text contrast */
+    --text-light: #8b9cb8;  /* Increased from #64748b to ~5.5:1 contrast */
+    --text-muted: #a1b1c9;  /* Increased from #94a3b8 for better readability */
+    --text-placeholder: #6b7a8f;
+}
+
+/* Ensure badges/chips have sufficient contrast */
+[data-theme="dark"] .badge,
+[data-theme="dark"] .chip {
+    font-weight: var(--font-semibold);
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .text-secondary {
+    color: var(--text-light) !important;
+}
+
+/* Better contrast for form hints */
+[data-theme="dark"] .form-text {
+    color: var(--text-muted);
+}
+
+/* ===== 6. STANDARDIZED EMPTY STATES ===== */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-10) var(--space-6);
+    min-height: 200px;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--bg-subtle);
+    margin-bottom: var(--space-4);
+    color: var(--text-light);
+}
+
+.empty-state-icon svg {
+    width: 40px;
+    height: 40px;
+    stroke-width: 1.5;
+}
+
+.empty-state-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-main);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+    font-size: var(--text-base);
+    color: var(--text-muted);
+    max-width: 300px;
+    margin-bottom: var(--space-5);
+}
+
+.empty-state .btn {
+    margin-top: var(--space-2);
+}
+
+/* Compact empty state for cards/sidebars */
+.empty-state-compact {
+    padding: var(--space-6) var(--space-4);
+    min-height: auto;
+}
+
+.empty-state-compact .empty-state-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-3);
+}
+
+.empty-state-compact .empty-state-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.empty-state-compact .empty-state-title {
+    font-size: var(--text-base);
+}
+
+.empty-state-compact .empty-state-description {
+    font-size: var(--text-sm);
+}
+
+/* ===== 7. MOBILE-OPTIMIZED PAGINATION ===== */
+
+.pagination {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.page-item {
+    margin: 0;
+}
+
+.page-link {
+    padding: 0;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    transition: var(--transition-fast);
+}
+
+.page-link:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.page-item.disabled .page-link {
+    background: var(--bg-subtle);
+    color: var(--text-placeholder);
+    cursor: not-allowed;
+}
+
+@media (max-width: 576px) {
+    /* Compact pagination on mobile */
+    .pagination {
+        gap: 0.125rem;
+    }
+
+    .page-link {
+        min-width: 36px;
+        min-height: 36px;
+        font-size: var(--text-xs);
+    }
+
+    /* Hide extra page numbers, show only essential */
+    .page-item:not(.active):not(:first-child):not(:last-child):not(:nth-child(2)):not(:nth-last-child(2)) {
+        display: none;
+    }
+
+    /* Always show first, last, prev, next, current */
+    .page-item.active,
+    .page-item:first-child,
+    .page-item:last-child {
+        display: block;
+    }
+}
+
+/* Pagination info text */
+.pagination-info {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: var(--space-2);
+}
+
+/* ===== 8. SKELETON LOADING COMPONENTS ===== */
+
+.skeleton-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* Skeleton card for dashboards */
+.skeleton-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.skeleton-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.skeleton-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* Skeleton lines with shimmer */
+.skeleton-line {
+    height: 1rem;
+    background: var(--bg-skeleton);
+    background-size: 200% 100%;
+    border-radius: var(--radius-sm);
+    animation: skeleton-shimmer 1.5s infinite;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.full { width: 100%; }
+.skeleton-line.tiny { width: 40%; height: 0.75rem; }
+
+/* Skeleton circle (avatars) */
+.skeleton-circle {
+    border-radius: var(--radius-full);
+    background: var(--bg-skeleton);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+}
+
+.skeleton-circle.sm { width: 32px; height: 32px; }
+.skeleton-circle.md { width: 48px; height: 48px; }
+.skeleton-circle.lg { width: 64px; height: 64px; }
+
+/* Skeleton for table rows */
+.skeleton-table-row {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.skeleton-table-cell {
+    flex: 1;
+}
+
+/* Skeleton for stat cards */
+.skeleton-stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Reduce motion: disable shimmer */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-line,
+    .skeleton-circle {
+        animation: none;
+        background: var(--bg-subtle);
+    }
+}
+
+/* ===== 9. KEYBOARD NAVIGATION & FOCUS STATES ===== */
+
+/* High-visibility focus ring */
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-color);
+    color: white;
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-semibold);
+    z-index: 9999;
+    transition: top 0.2s;
+}
+
+.skip-link:focus {
+    top: var(--space-4);
+    color: white;
+}
+
+/* Focus visible on buttons */
+.btn:focus-visible {
+    box-shadow: var(--focus-ring);
+}
+
+/* Focus visible on form controls */
+.form-control:focus-visible,
+.form-select:focus-visible {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: var(--focus-ring);
+}
+
+/* Focus visible on links */
+a:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Focus visible on cards/list items */
+.card:focus-visible,
+.list-group-item:focus-visible,
+.dropdown-item:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
+/* Focus ring on nav items */
+.nav-link:focus-visible,
+.bottom-nav-item:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+    border-radius: var(--radius-md);
+}
+
+/* Keyboard focus indicator for dropdown menus */
+.dropdown-menu:focus-within {
+    box-shadow: var(--shadow-lg), var(--focus-ring);
+}
+
+/* Tab focus order visual indicator */
+[tabindex]:focus-visible {
+    box-shadow: var(--focus-ring);
+}
+
+/* ===== 10. ICON SIZING UTILITIES ===== */
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-xs { width: 12px; height: 12px; }
+.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 20px; height: 20px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 32px; height: 32px; }
+.icon-2xl { width: 40px; height: 40px; }
+.icon-3xl { width: 48px; height: 48px; }
+
+/* Icon colors */
+.icon-primary { color: var(--primary-color); }
+.icon-success { color: var(--success-color); }
+.icon-danger { color: var(--danger-color); }
+.icon-warning { color: var(--warning-color); }
+.icon-info { color: var(--info-color); }
+.icon-muted { color: var(--text-muted); }
+
+/* Icon in buttons - auto-size */
+.btn svg,
+.btn .icon {
+    width: 1.125em;
+    height: 1.125em;
+}
+
+.btn-sm svg,
+.btn-sm .icon {
+    width: 1em;
+    height: 1em;
+}
+
+.btn-lg svg,
+.btn-lg .icon {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+/* ===== 11. TOAST NOTIFICATION POSITIONING ===== */
+
+.toast-container {
+    position: fixed;
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 400px;
+    pointer-events: none;
+}
+
+/* Desktop: top-right, avoiding sidebar */
+@media (min-width: 992px) {
+    .toast-container {
+        top: calc(var(--header-height) + var(--space-4));
+        right: var(--space-4);
+    }
+}
+
+/* Tablet: top-center */
+@media (min-width: 768px) and (max-width: 991px) {
+    .toast-container {
+        top: calc(var(--header-height) + var(--space-4));
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* Mobile: bottom-center, above bottom nav */
+@media (max-width: 767px) {
+    .toast-container {
+        bottom: calc(var(--bottom-nav-height) + var(--space-4));
+        left: var(--space-4);
+        right: var(--space-4);
+        max-width: none;
+    }
+}
+
+.toast {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-4);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    pointer-events: auto;
+    animation: toastSlideIn 0.3s ease;
+}
+
+.toast-success { border-left: 4px solid var(--success-color); }
+.toast-danger { border-left: 4px solid var(--danger-color); }
+.toast-warning { border-left: 4px solid var(--warning-color); }
+.toast-info { border-left: 4px solid var(--info-color); }
+
+.toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-1);
+}
+
+.toast-message {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.toast-close {
+    flex-shrink: 0;
+    padding: var(--space-1);
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+}
+
+.toast-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 767px) {
+    @keyframes toastSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* ===== 12. BREADCRUMB NAVIGATION ===== */
+
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0;
+    margin: 0 0 var(--space-3) 0;
+    background: transparent;
+    font-size: var(--text-sm);
+    list-style: none;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: var(--transition-fast);
+    padding: var(--space-1) 0;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--primary-color);
+}
+
+.breadcrumb-item.active {
+    color: var(--text-main);
+    font-weight: var(--font-medium);
+}
+
+.breadcrumb-separator {
+    color: var(--text-placeholder);
+    margin: 0 var(--space-1);
+}
+
+.breadcrumb-separator svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Truncate long breadcrumb on mobile */
+@media (max-width: 576px) {
+    .breadcrumb {
+        font-size: var(--text-xs);
+    }
+
+    .breadcrumb-item a,
+    .breadcrumb-item.active {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Hide middle items if too many */
+    .breadcrumb-item:not(:first-child):not(:last-child):not(:nth-child(2)) {
+        display: none;
+    }
+
+    /* Show ellipsis */
+    .breadcrumb-item.breadcrumb-ellipsis {
+        display: flex;
+    }
+}
+
+/* ===== 13. DATE INPUT CROSS-BROWSER FIXES ===== */
+
+/* Standard date input styling */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    padding-right: 2.5rem;
+}
+
+/* Custom calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+/* Firefox date input */
+input[type="date"]::-moz-focus-inner {
+    border: 0;
+}
+
+/* Ensure minimum font size to prevent iOS zoom */
+@media (max-width: 768px) {
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        font-size: 16px;
+    }
+}
+
+/* Safari iOS date picker overrides */
+@supports (-webkit-touch-callout: none) {
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        min-height: var(--touch-target);
+    }
+}
+
+/* Dark mode date picker icon */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+}
+
+/* ===== ADDITIONAL POLISH ===== */
+
+/* Smooth scroll for anchor links */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Better text selection */
+::selection {
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] ::selection {
+    background: var(--primary-subtle);
+    color: var(--primary-color);
+}
+
+/* Print styles */
+@media print {
+    .bottom-nav,
+    .sidebar,
+    .navbar,
+    .fab,
+    .toast-container,
+    .btn-icon,
+    .action-dropdown {
+        display: none !important;
+    }
+
+    .page-shell {
+        padding: 0;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}

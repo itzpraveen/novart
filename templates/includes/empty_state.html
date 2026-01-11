@@ -4,66 +4,103 @@
   Params (via {% include ... with ... %}):
     - title (required)
     - description (optional)
+    - icon (optional; "folder", "inbox", "search", "users", "file", "chart", "wallet" - default: "folder")
     - cta_url (optional)
     - cta_label (optional)
     - cta_class (optional, default: "btn btn-primary")
     - cta_attrs (optional; extra attributes for CTA link)
     - colspan (optional; renders a <tr><td colspan=...>)
     - as_list_item (optional; renders a <li>)
-    - compact (optional; reduces padding for tighter contexts)
+    - compact (optional; uses smaller variant for cards/sidebars)
 -#}
 
 {% with btn_class=cta_class|default:"btn btn-primary" %}
-    {% if colspan %}
-        <tr>
-            <td colspan="{{ colspan }}">
-                <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
-                    <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M4 4h16v12H4z"></path>
-                        <path d="M22 20H2"></path>
-                        <path d="M8 8h8"></path>
-                        <path d="M8 12h5"></path>
-                    </svg>
-                    <div class="empty-state-title">{{ title }}</div>
-                    {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
-                    {% if cta_url and cta_label %}
-                        <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
-                    {% endif %}
-                </div>
-            </td>
-        </tr>
-    {% elif as_list_item %}
-        <li class="list-group-item">
-            <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
-                <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M4 4h16v12H4z"></path>
-                    <path d="M22 20H2"></path>
-                    <path d="M8 8h8"></path>
-                    <path d="M8 12h5"></path>
-                </svg>
-                <div class="empty-state-title">{{ title }}</div>
-                {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
-                {% if cta_url and cta_label %}
-                    <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
-                {% endif %}
-            </div>
-        </li>
-    {% else %}
-        <div class="empty-state{% if compact %} py-4 px-3{% endif %}">
-            <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 4h16v12H4z"></path>
-                <path d="M22 20H2"></path>
-                <path d="M8 8h8"></path>
-                <path d="M8 12h5"></path>
-            </svg>
-            <div class="empty-state-title">{{ title }}</div>
-            {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
-            {% if cta_url and cta_label %}
-                <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>{{ cta_label }}</a>
-            {% endif %}
-        </div>
+{% with icon_type=icon|default:"folder" %}
+
+{# Define SVG icons as reusable blocks #}
+{% if colspan %}
+<tr>
+    <td colspan="{{ colspan }}">
+{% endif %}
+{% if as_list_item %}
+<li class="list-group-item border-0">
+{% endif %}
+
+<div class="empty-state{% if compact %} empty-state-compact{% endif %}">
+    <div class="empty-state-icon">
+        {% if icon_type == "inbox" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+            <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"></path>
+        </svg>
+        {% elif icon_type == "search" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        {% elif icon_type == "users" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 010 7.75"></path>
+        </svg>
+        {% elif icon_type == "file" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        {% elif icon_type == "chart" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        {% elif icon_type == "wallet" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M2 10h20"></path>
+            <circle cx="16" cy="14" r="2"></circle>
+        </svg>
+        {% elif icon_type == "calendar" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        {% elif icon_type == "tasks" %}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+        </svg>
+        {% else %}
+        {# Default: folder icon #}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"></path>
+        </svg>
+        {% endif %}
+    </div>
+    <div class="empty-state-title">{{ title }}</div>
+    {% if description %}<div class="empty-state-description">{{ description }}</div>{% endif %}
+    {% if cta_url and cta_label %}
+    <a class="{{ btn_class }}" href="{{ cta_url }}"{% if cta_attrs %} {{ cta_attrs|safe }}{% endif %}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        {{ cta_label }}
+    </a>
     {% endif %}
+</div>
+
+{% if as_list_item %}
+</li>
+{% endif %}
+{% if colspan %}
+    </td>
+</tr>
+{% endif %}
+
+{% endwith %}
 {% endwith %}

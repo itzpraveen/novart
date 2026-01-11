@@ -1,0 +1,112 @@
+{#-
+  Reusable skeleton loading components.
+
+  Params (via {% include ... with ... %}):
+    - type (required): "card", "table", "stat", "list", "text"
+    - count (optional): Number of items to show (default: 3)
+
+  Usage:
+    {% include "includes/skeleton.html" with type="card" count=4 %}
+    {% include "includes/skeleton.html" with type="table" count=5 %}
+-#}
+
+{% with item_count=count|default:3 %}
+
+{% if type == "card" %}
+{# Skeleton cards for dashboards #}
+<div class="row g-4">
+    {% for i in "xxx"|make_list %}
+    {% if forloop.counter <= item_count %}
+    <div class="col-md-6 col-lg-4">
+        <div class="skeleton-card">
+            <div class="skeleton-card-header">
+                <div class="skeleton-line short" style="height: 0.75rem;"></div>
+                <div class="skeleton-circle sm"></div>
+            </div>
+            <div class="skeleton-card-body">
+                <div class="skeleton-line full"></div>
+                <div class="skeleton-line medium"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% elif type == "stat" %}
+{# Skeleton stat cards #}
+<div class="row g-3">
+    {% for i in "xxxx"|make_list %}
+    {% if forloop.counter <= item_count %}
+    <div class="col-6 col-md-3">
+        <div class="skeleton-stat-card">
+            <div class="skeleton-line tiny"></div>
+            <div class="skeleton-line medium" style="height: 1.5rem;"></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% elif type == "table" %}
+{# Skeleton table rows #}
+<div class="skeleton-container">
+    {% for i in "xxxxx"|make_list %}
+    {% if forloop.counter <= item_count %}
+    <div class="skeleton-table-row">
+        <div class="skeleton-table-cell" style="flex: 0.5;">
+            <div class="skeleton-circle sm"></div>
+        </div>
+        <div class="skeleton-table-cell" style="flex: 2;">
+            <div class="skeleton-line medium"></div>
+        </div>
+        <div class="skeleton-table-cell">
+            <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton-table-cell" style="flex: 0.8;">
+            <div class="skeleton-line tiny"></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% elif type == "list" %}
+{# Skeleton list items #}
+<div class="skeleton-container">
+    {% for i in "xxxxx"|make_list %}
+    {% if forloop.counter <= item_count %}
+    <div class="d-flex gap-3 p-3 border-bottom">
+        <div class="skeleton-circle md"></div>
+        <div class="flex-grow-1">
+            <div class="skeleton-line medium mb-2"></div>
+            <div class="skeleton-line short"></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% elif type == "text" %}
+{# Skeleton text block #}
+<div class="skeleton-container" style="gap: 0.5rem;">
+    <div class="skeleton-line full"></div>
+    <div class="skeleton-line full"></div>
+    <div class="skeleton-line medium"></div>
+    <div class="skeleton-line short"></div>
+</div>
+
+{% else %}
+{# Default: simple skeleton lines #}
+<div class="skeleton-container" style="gap: 0.75rem;">
+    {% for i in "xxx"|make_list %}
+    {% if forloop.counter <= item_count %}
+    <div class="skeleton-line {% cycle 'full' 'medium' 'short' %}"></div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% endif %}
+
+{% endwith %}
