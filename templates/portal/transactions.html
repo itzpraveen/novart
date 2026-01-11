@@ -9,7 +9,7 @@
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
         {% if simple_view %}
-        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
+        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
         {% else %}
         <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
@@ -167,8 +167,8 @@
             </div>
         </div>
     </div>
-    {% endif %}
-    <div class="offcanvas offcanvas-md offcanvas-end offcanvas-glow {% if simple_view %}d-none d-md-block{% endif %}" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
+    {% else %}
+    <div class="offcanvas offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="transactionOffcanvas" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
             <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -188,6 +188,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endwith %}
 {% endblock %}
