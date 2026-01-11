@@ -1236,6 +1236,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .txn-cards {
     display: grid;
     gap: 1rem;
+    grid-template-columns: 1fr;
+    width: 100%;
 }
 
 .txn-card {

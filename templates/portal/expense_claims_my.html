@@ -8,7 +8,7 @@
         {% if module_perms.finance %}
             <a class="btn btn-outline-secondary btn-sm" href="{% url 'expense_claim_admin' %}">All claims</a>
         {% endif %}
-        <a class="btn btn-primary btn-sm d-md-none" data-bs-toggle="offcanvas" href="#claimOffcanvas" role="button" aria-controls="claimOffcanvas">New claim</a>
+        <a class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" href="#claimOffcanvas" role="button" aria-controls="claimOffcanvas">New claim</a>
     </div>
 </div>
 
@@ -45,7 +45,7 @@
     <div class="offcanvas-md offcanvas-end offcanvas-glow" tabindex="-1" id="claimOffcanvas" aria-labelledby="claimOffcanvasLabel" data-bs-scroll="true" style="--bs-offcanvas-width: 420px;">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="claimOffcanvasLabel">New expense claim</h5>
-            <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             <form method="post" enctype="multipart/form-data">
