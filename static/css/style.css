@@ -1211,6 +1211,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: var(--ink);
 }
 
+.finance-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.finance-summary .stat-pill {
+    border-style: solid;
+    box-shadow: var(--shadow-sm);
+}
+
 .btn-soft {
     background: rgba(13, 148, 136, 0.08);
     color: var(--primary-color);

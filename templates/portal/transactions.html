@@ -8,14 +8,32 @@
         {% if show_export %}
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
+        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
+    </div>
+</div>
+<div class="finance-summary mb-3">
+    <div class="stat-pill">
+        <div class="label">Debits</div>
+        <div class="value text-danger">{{ totals.debit|rupee }}</div>
+    </div>
+    <div class="stat-pill">
+        <div class="label">Credits</div>
+        <div class="value text-success">{{ totals.credit|rupee }}</div>
+    </div>
+    <div class="stat-pill">
+        <div class="label">Net</div>
+        <div class="value {% if totals.net < 0 %}text-danger{% elif totals.net > 0 %}text-success{% else %}text-muted{% endif %}">{{ totals.net|rupee }}</div>
     </div>
 </div>
 <div class="d-md-flex gap-3 align-items-start">
     <div class="flex-grow-1">
         {% if not simple_view %}
+        <button class="btn btn-outline-secondary w-100 d-md-none filter-toggle mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#transactionFilters" aria-expanded="false" aria-controls="transactionFilters">
+            Filters
+        </button>
         <div class="card shadow-sm mb-3">
-            <div class="card-body">
+            <div class="card-body collapse show d-md-block" id="transactionFilters">
                 <form method="get" class="row g-3">
                     {% for field in filter.form %}
                         <div class="col-md-6">
@@ -65,16 +83,19 @@
                     </thead>
                     <tbody>
                     {% for txn in filter.qs %}
-                        {% if simple_view %}
-                            <tr>
-                                <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
-                                <td data-label="Description">
-                                    <div class="fw-semibold">{{ txn.description }}</div>
-                                    {% if txn.category %}<small class="text-muted">{{ txn.get_category_display }}</small>{% endif %}
-                                </td>
-                                <td data-label="Project">{% if txn.related_project %}{{ txn.related_project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                                <td data-label="Amount" class="text-end fw-semibold">{{ txn.debit|rupee }}</td>
-                            </tr>
+                    {% if simple_view %}
+                        <tr>
+                            <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
+                            <td data-label="Description">
+                                <div class="fw-semibold">{{ txn.description }}</div>
+                                <div class="d-flex flex-wrap gap-1 small text-muted">
+                                    {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
+                                    {% if txn.account %}<span class="chip chip-soft">Acct · {{ txn.account.name }}</span>{% endif %}
+                                </div>
+                            </td>
+                            <td data-label="Project">{% if txn.related_project %}{{ txn.related_project.code }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            <td data-label="Amount" class="text-end fw-semibold">{{ txn.debit|rupee }}</td>
+                        </tr>
                         {% else %}
                         <tr>
                             <td data-label="Date">{{ txn.date|date:"d M Y" }}</td>
