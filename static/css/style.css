@@ -2308,7 +2308,7 @@ button:focus-visible,
     z-index: 1030;
     padding: 0.5rem 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-    overflow-x: hidden;
+    overflow: visible; /* allow More menu to extend above bar */
 }
 
 .bottom-nav-inner {
