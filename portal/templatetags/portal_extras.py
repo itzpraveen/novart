@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from django.utils.safestring import mark_safe
+from django.urls import reverse
 
 from django import template
 
@@ -42,6 +43,17 @@ def get_item(dictionary, key):
     if hasattr(dictionary, 'get'):
         return dictionary.get(key, [])
     return []
+
+
+@register.filter
+def make_url(pk, view_name: str) -> str:
+    """Build a URL for the given view using the primary key as the positional arg."""
+    if pk is None:
+        return ""
+    try:
+        return reverse(view_name, args=[pk])
+    except Exception:
+        return ""
 
 
 @register.simple_tag

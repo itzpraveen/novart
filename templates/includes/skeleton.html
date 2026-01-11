@@ -1,13 +1,13 @@
 {#-
   Reusable skeleton loading components.
 
-  Params (via {% include ... with ... %}):
+  Params (via include + context):
     - type (required): "card", "table", "stat", "list", "text"
     - count (optional): Number of items to show (default: 3)
 
-  Usage:
-    {% include "includes/skeleton.html" with type="card" count=4 %}
-    {% include "includes/skeleton.html" with type="table" count=5 %}
+  Usage examples (plain text):
+    include "includes/skeleton.html" with type="card" count=4
+    include "includes/skeleton.html" with type="table" count=5
 -#}
 
 {% with item_count=count|default:3 %}
