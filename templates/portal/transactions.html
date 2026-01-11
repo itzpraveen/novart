@@ -1,447 +1,319 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-{% with entry_label=new_entry_label|default:"New entry" %}
+{% with entry_label=new_entry_label|default:"New expense" %}
 
-{# ===== PAGE HEADER ===== #}
-<div class="cashbook-page">
-    <header class="cashbook-header">
-        <div class="cashbook-header__title">
-            <h1>{{ page_title|default:"Cashbook" }}</h1>
+<div class="cb">
+    {# ===== HEADER ===== #}
+    <header class="cb-header">
+        <h1 class="cb-header__title">{{ page_title|default:"My Cashbook" }}</h1>
+        <div class="cb-header__actions">
             {% if show_export %}
-            <a class="btn btn-ghost btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                </svg>
-                <span class="d-none d-sm-inline">Export</span>
+            <a class="cb-btn cb-btn--ghost" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             </a>
             {% endif %}
+            <button class="cb-btn cb-btn--primary d-none d-md-flex" onclick="openExpenseForm()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>{{ entry_label }}</span>
+            </button>
         </div>
-        <button class="btn btn-primary cashbook-header__cta" data-bs-toggle="modal" data-bs-target="#transactionModal">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>{{ entry_label }}</span>
-        </button>
     </header>
 
-    {# ===== SUMMARY STATS ===== #}
-    <div class="cashbook-stats">
-        <div class="cashbook-stat cashbook-stat--debit">
-            <div class="cashbook-stat__icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                    <polyline points="17 18 23 18 23 12"></polyline>
-                </svg>
-            </div>
-            <div class="cashbook-stat__content">
-                <span class="cashbook-stat__label">Debits</span>
-                <span class="cashbook-stat__value">{{ totals.debit|rupee }}</span>
-            </div>
+    {# ===== STATS STRIP ===== #}
+    <div class="cb-stats">
+        <div class="cb-stat cb-stat--out">
+            <span class="cb-stat__label">Out</span>
+            <span class="cb-stat__value">{{ totals.debit|rupee }}</span>
         </div>
-        <div class="cashbook-stat cashbook-stat--credit">
-            <div class="cashbook-stat__icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                    <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
-            </div>
-            <div class="cashbook-stat__content">
-                <span class="cashbook-stat__label">Credits</span>
-                <span class="cashbook-stat__value">{{ totals.credit|rupee }}</span>
-            </div>
+        <div class="cb-stat cb-stat--in">
+            <span class="cb-stat__label">In</span>
+            <span class="cb-stat__value">{{ totals.credit|rupee }}</span>
         </div>
-        <div class="cashbook-stat cashbook-stat--net {% if totals.net < 0 %}cashbook-stat--negative{% elif totals.net > 0 %}cashbook-stat--positive{% endif %}">
-            <div class="cashbook-stat__icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 6v6l4 2"></path>
-                </svg>
-            </div>
-            <div class="cashbook-stat__content">
-                <span class="cashbook-stat__label">Net Balance</span>
-                <span class="cashbook-stat__value">{{ totals.net|rupee }}</span>
-            </div>
+        <div class="cb-stat cb-stat--bal {% if totals.net >= 0 %}cb-stat--positive{% else %}cb-stat--negative{% endif %}">
+            <span class="cb-stat__label">Balance</span>
+            <span class="cb-stat__value">{{ totals.net|rupee }}</span>
         </div>
     </div>
 
-    {# ===== MAIN CONTENT ===== #}
-    <div class="cashbook-layout">
-        {# ===== FILTERS PANEL ===== #}
-        <aside class="cashbook-filters">
-            <button class="cashbook-filters__toggle d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="false">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                <span>Filters</span>
-                <svg class="cashbook-filters__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
-            <div class="collapse d-md-block" id="filterPanel">
-                <div class="cashbook-filters__body">
-                    <div class="cashbook-filters__header d-none d-md-flex">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                        </svg>
-                        <span>Filters</span>
-                    </div>
-                    <form method="get" class="cashbook-filters__form">
-                        {% for field in filter.form %}
-                        <div class="cashbook-filter-field">
-                            <label class="cashbook-filter-field__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field|add_class:"form-control" }}
-                        </div>
-                        {% endfor %}
-                        <div class="cashbook-filters__actions">
-                            <button class="btn btn-primary btn-sm w-100" type="submit">Apply Filters</button>
-                            {% if request.GET %}
-                            <a href="{{ request.path }}" class="btn btn-ghost btn-sm w-100">Clear All</a>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </aside>
-
-        {# ===== ENTRIES LIST ===== #}
-        <main class="cashbook-entries">
-            <div class="cashbook-entries__header">
-                <h2 class="cashbook-entries__title">
-                    <span>Entries</span>
-                    <span class="cashbook-entries__count">{{ filter.qs|length }}</span>
-                </h2>
-                <div class="cashbook-entries__summary">
-                    {% if simple_view %}
-                    Total {{ totals.debit|rupee }}
-                    {% else %}
-                    <span class="d-none d-sm-inline">Dr {{ totals.debit|rupee }} · Cr {{ totals.credit|rupee }} ·</span> Net {{ totals.net|rupee }}
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if simple_view %}
-            {# ===== CARD VIEW (Simple) ===== #}
-            <div class="cashbook-cards">
-                {% for txn in filter.qs %}
-                <article class="cashbook-card">
-                    <div class="cashbook-card__date">
-                        <span class="cashbook-card__day">{{ txn.date|date:"d" }}</span>
-                        <span class="cashbook-card__month">{{ txn.date|date:"M Y" }}</span>
-                    </div>
-                    <div class="cashbook-card__main">
-                        <div class="cashbook-card__title">{{ txn.description }}</div>
-                        <div class="cashbook-card__meta">
-                            {% if txn.category %}<span class="chip chip-ghost">{{ txn.get_category_display }}</span>{% endif %}
-                            {% if txn.account %}<span class="chip chip-soft">{{ txn.account.name }}</span>{% endif %}
-                            {% if txn.related_project %}<span class="chip chip-info">{{ txn.related_project.code }}</span>{% endif %}
-                            {% if txn.related_client %}<span class="chip chip-warning">{{ txn.related_client }}</span>{% endif %}
-                        </div>
-                    </div>
-                    <div class="cashbook-card__amount {% if txn.debit > 0 %}cashbook-card__amount--debit{% else %}cashbook-card__amount--credit{% endif %}">
-                        {% if txn.debit > 0 %}-{% endif %}{{ txn.debit|default:txn.credit|rupee }}
-                    </div>
-                </article>
-                {% empty %}
-                <div class="cashbook-empty">
-                    <div class="cashbook-empty__icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                    </div>
-                    <p class="cashbook-empty__text">No cashbook entries yet</p>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#transactionModal">
-                        {{ entry_label }}
-                    </button>
+    {# ===== FILTER BAR ===== #}
+    <div class="cb-filterbar">
+        <button class="cb-filterbar__toggle" type="button" onclick="toggleFilters()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span>Filter</span>
+            {% if request.GET %}<span class="cb-filterbar__badge"></span>{% endif %}
+        </button>
+        <div class="cb-filterbar__panel" id="filterPanel">
+            <form method="get" class="cb-filterbar__form">
+                {% for field in filter.form %}
+                <div class="cb-field cb-field--compact">
+                    <label class="cb-field__label">{{ field.label }}</label>
+                    {{ field|add_class:"cb-input" }}
                 </div>
                 {% endfor %}
-            </div>
-            {% else %}
-            {# ===== TABLE VIEW (Full) ===== #}
-            <div class="cashbook-table-wrap">
-                <table class="cashbook-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th class="d-none d-lg-table-cell">Account</th>
-                            <th class="d-none d-md-table-cell">Category</th>
-                            <th class="d-none d-lg-table-cell">Linked to</th>
-                            <th class="text-end">Debit</th>
-                            <th class="text-end">Credit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for txn in filter.qs %}
-                        <tr>
-                            <td data-label="Date">
-                                <div class="cashbook-table__date">
-                                    <span class="day">{{ txn.date|date:"d" }}</span>
-                                    <span class="rest">{{ txn.date|date:"M 'y" }}</span>
-                                </div>
-                            </td>
-                            <td data-label="Description">
-                                <div class="cashbook-table__desc">{{ txn.description }}</div>
-                                <div class="cashbook-table__mobile-meta d-lg-none">
-                                    {% if txn.account %}<span class="chip chip-soft chip-xs">{{ txn.account.name }}</span>{% endif %}
-                                    {% if txn.category %}<span class="chip chip-ghost chip-xs">{{ txn.get_category_display }}</span>{% endif %}
-                                </div>
-                            </td>
-                            <td data-label="Account" class="d-none d-lg-table-cell">{% if txn.account %}{{ txn.account.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Category" class="d-none d-md-table-cell">{% if txn.category %}{{ txn.get_category_display }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td data-label="Linked to" class="d-none d-lg-table-cell">
-                                {% if txn.related_project %}
-                                    <div>{{ txn.related_project }}</div>
-                                    {% if txn.related_client %}<small class="text-muted">{{ txn.related_client }}</small>{% endif %}
-                                {% elif txn.related_client %}
-                                    {{ txn.related_client }}
-                                {% elif txn.related_vendor %}
-                                    {{ txn.related_vendor }}
-                                {% elif txn.related_person %}
-                                    {{ txn.related_person }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td data-label="Debit" class="text-end {% if txn.debit > 0 %}text-danger fw-semibold{% endif %}">{{ txn.debit|rupee }}</td>
-                            <td data-label="Credit" class="text-end {% if txn.credit > 0 %}text-success fw-semibold{% endif %}">{{ txn.credit|rupee }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7">
-                                <div class="cashbook-empty">
-                                    <div class="cashbook-empty__icon">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                                        </svg>
-                                    </div>
-                                    <p class="cashbook-empty__text">No transactions found</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
-        </main>
-    </div>
-</div>
-
-{# ===== TRANSACTION MODAL ===== #}
-<div class="modal fade modal-sheet" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="transactionModalLabel">{{ entry_label }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="post" class="cashbook-form" id="transactionForm">
-                    {% csrf_token %}
-
-                    {# Date & Amount Row #}
-                    <div class="cashbook-form__row">
-                        {% for field in form %}
-                            {% if field.name == 'date' %}
-                            <div class="cashbook-form__field cashbook-form__field--date">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    {{ field.label }}
-                                </label>
-                                {{ field|add_class:"form-control" }}
-                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                        {% for field in form %}
-                            {% if field.name == 'debit' or field.name == 'amount' %}
-                            <div class="cashbook-form__field cashbook-form__field--amount">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                                        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
-                                    </svg>
-                                    {{ field.label }}
-                                </label>
-                                {{ field|add_class:"form-control form-control-lg" }}
-                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    {# Description #}
-                    {% for field in form %}
-                        {% if field.name == 'description' %}
-                        <div class="cashbook-form__field">
-                            <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="17" y1="10" x2="3" y2="10"></line>
-                                    <line x1="21" y1="6" x2="3" y2="6"></line>
-                                    <line x1="21" y1="14" x2="3" y2="14"></line>
-                                    <line x1="17" y1="18" x2="3" y2="18"></line>
-                                </svg>
-                                {{ field.label }}
-                            </label>
-                            {{ field|add_class:"form-control" }}
-                            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# Category & Account Row #}
-                    <div class="cashbook-form__row">
-                        {% for field in form %}
-                            {% if field.name == 'category' %}
-                            <div class="cashbook-form__field">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path>
-                                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
-                                    </svg>
-                                    {{ field.label }}
-                                </label>
-                                {{ field|add_class:"form-select" }}
-                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                        {% for field in form %}
-                            {% if field.name == 'account' %}
-                            <div class="cashbook-form__field">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                                    </svg>
-                                    {{ field.label }}
-                                </label>
-                                {{ field|add_class:"form-select" }}
-                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-
-                    {# Related Fields - Collapsible #}
-                    <details class="cashbook-form__details">
-                        <summary class="cashbook-form__summary">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-                            Link to project, client, or vendor
-                        </summary>
-                        <div class="cashbook-form__details-body">
-                            {% for field in form %}
-                                {% if field.name == 'related_project' %}
-                                <div class="cashbook-form__field">
-                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                    {{ field|add_class:"form-select" }}
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                            {% for field in form %}
-                                {% if field.name == 'related_client' %}
-                                <div class="cashbook-form__field">
-                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                    {{ field|add_class:"form-select" }}
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                            {% for field in form %}
-                                {% if field.name == 'related_vendor' %}
-                                <div class="cashbook-form__field">
-                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                    {{ field|add_class:"form-select" }}
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                            {% for field in form %}
-                                {% if field.name == 'related_person' %}
-                                <div class="cashbook-form__field">
-                                    <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                    {{ field|add_class:"form-select" }}
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </details>
-
-                    {# Remarks - Only for non-simple forms #}
-                    {% for field in form %}
-                        {% if field.name == 'remarks' %}
-                        <div class="cashbook-form__field">
-                            <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
-                                </svg>
-                                {{ field.label }}
-                            </label>
-                            {{ field|add_class:"form-control" }}
-                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# Credit field for non-simple view #}
-                    {% if not simple_view %}
-                        {% for field in form %}
-                            {% if field.name == 'credit' %}
-                            <div class="cashbook-form__field">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                                        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
-                                    </svg>
-                                    {{ field.label }}
-                                </label>
-                                {{ field|add_class:"form-control" }}
-                                {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                        {% for field in form %}
-                            {% if field.name == 'subcategory' %}
-                            <div class="cashbook-form__field">
-                                <label class="cashbook-form__label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-
-                    <button type="submit" class="btn btn-primary btn-lg w-100 cashbook-form__submit">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Save Entry
-                    </button>
-                </form>
-            </div>
+                <div class="cb-filterbar__actions">
+                    <button type="submit" class="cb-btn cb-btn--primary cb-btn--sm">Apply</button>
+                    {% if request.GET %}<a href="{{ request.path }}" class="cb-btn cb-btn--ghost cb-btn--sm">Clear</a>{% endif %}
+                </div>
+            </form>
         </div>
     </div>
+
+    {# ===== TRANSACTIONS LIST ===== #}
+    <div class="cb-list">
+        <div class="cb-list__header">
+            <span class="cb-list__title">Transactions</span>
+            <span class="cb-list__count">{{ filter.qs|length }}</span>
+        </div>
+
+        {% for txn in filter.qs %}
+        <article class="cb-txn">
+            <div class="cb-txn__date">
+                <span class="cb-txn__day">{{ txn.date|date:"d" }}</span>
+                <span class="cb-txn__mon">{{ txn.date|date:"M" }}</span>
+            </div>
+            <div class="cb-txn__body">
+                <div class="cb-txn__title">{{ txn.description }}</div>
+                <div class="cb-txn__tags">
+                    {% if txn.category %}<span class="cb-tag">{{ txn.get_category_display }}</span>{% endif %}
+                    {% if txn.account %}<span class="cb-tag cb-tag--accent">{{ txn.account.name }}</span>{% endif %}
+                    {% if txn.related_project %}<span class="cb-tag cb-tag--info">{{ txn.related_project.code }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="cb-txn__amt {% if txn.debit > 0 %}cb-txn__amt--out{% else %}cb-txn__amt--in{% endif %}">
+                {% if txn.debit > 0 %}-{% else %}+{% endif %}{{ txn.debit|default:txn.credit|rupee }}
+            </div>
+        </article>
+        {% empty %}
+        <div class="cb-empty">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="2"/></svg>
+            <p>No expenses yet</p>
+            <button class="cb-btn cb-btn--primary" onclick="openExpenseForm()">Add your first expense</button>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
-{# ===== FLOATING ACTION BUTTON (Mobile) ===== #}
-<button class="cashbook-fab d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" aria-label="{{ entry_label }}">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
+{# ===== MOBILE FAB ===== #}
+<button class="cb-fab d-md-none" onclick="openExpenseForm()" aria-label="{{ entry_label }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
+
+{# ===== FULL-SCREEN EXPENSE FORM ===== #}
+<div class="cb-form-overlay" id="expenseOverlay">
+    <div class="cb-form-panel" id="expensePanel">
+        <header class="cb-form-header">
+            <button type="button" class="cb-form-close" onclick="closeExpenseForm()" aria-label="Close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h2 class="cb-form-title">{{ entry_label }}</h2>
+            <div class="cb-form-header__spacer"></div>
+        </header>
+
+        <form method="post" class="cb-form" id="expenseForm">
+            {% csrf_token %}
+            <div class="cb-form__body">
+                {# Amount - Hero field #}
+                {% for field in form %}
+                {% if field.name == 'debit' %}
+                <div class="cb-field cb-field--hero">
+                    <label class="cb-field__label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        Amount
+                    </label>
+                    <div class="cb-field__hero-wrap">
+                        <span class="cb-field__currency">₹</span>
+                        {{ field|add_class:"cb-input cb-input--hero" }}
+                    </div>
+                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Date #}
+                {% for field in form %}
+                {% if field.name == 'date' %}
+                <div class="cb-field">
+                    <label class="cb-field__label" for="{{ field.id_for_label }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Date
+                    </label>
+                    {{ field|add_class:"cb-input" }}
+                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Description #}
+                {% for field in form %}
+                {% if field.name == 'description' %}
+                <div class="cb-field">
+                    <label class="cb-field__label" for="{{ field.id_for_label }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                        Description
+                    </label>
+                    {{ field|add_class:"cb-input" }}
+                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Category #}
+                {% for field in form %}
+                {% if field.name == 'category' %}
+                <div class="cb-field">
+                    <label class="cb-field__label" for="{{ field.id_for_label }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                        Category
+                    </label>
+                    {{ field|add_class:"cb-input cb-select" }}
+                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Account #}
+                {% for field in form %}
+                {% if field.name == 'account' %}
+                <div class="cb-field">
+                    <label class="cb-field__label" for="{{ field.id_for_label }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        Account
+                    </label>
+                    {{ field|add_class:"cb-input cb-select" }}
+                    {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Optional Fields Toggle #}
+                <button type="button" class="cb-more-toggle" onclick="toggleMoreFields()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>More options</span>
+                </button>
+
+                <div class="cb-more-fields" id="moreFields">
+                    {# Project #}
+                    {% for field in form %}
+                    {% if field.name == 'related_project' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Project</label>
+                        {{ field|add_class:"cb-input cb-select" }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Client #}
+                    {% for field in form %}
+                    {% if field.name == 'related_client' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Client</label>
+                        {{ field|add_class:"cb-input cb-select" }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Vendor #}
+                    {% for field in form %}
+                    {% if field.name == 'related_vendor' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Vendor</label>
+                        {{ field|add_class:"cb-input cb-select" }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Person #}
+                    {% for field in form %}
+                    {% if field.name == 'related_person' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Person</label>
+                        {{ field|add_class:"cb-input cb-select" }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Remarks #}
+                    {% for field in form %}
+                    {% if field.name == 'remarks' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Notes</label>
+                        {{ field|add_class:"cb-input cb-textarea" }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Credit (for full view) #}
+                    {% if not simple_view %}
+                    {% for field in form %}
+                    {% if field.name == 'credit' %}
+                    <div class="cb-field">
+                        <label class="cb-field__label" for="{{ field.id_for_label }}">Credit Amount</label>
+                        {{ field|add_class:"cb-input" }}
+                        {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="cb-form__footer">
+                <button type="submit" class="cb-btn cb-btn--primary cb-btn--lg cb-btn--block">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Save Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openExpenseForm() {
+    const overlay = document.getElementById('expenseOverlay');
+    const panel = document.getElementById('expensePanel');
+    overlay.classList.add('active');
+    panel.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // Focus first input after animation
+    setTimeout(() => {
+        const firstInput = panel.querySelector('.cb-input--hero, .cb-input');
+        if (firstInput) firstInput.focus();
+    }, 300);
+}
+
+function closeExpenseForm() {
+    const overlay = document.getElementById('expenseOverlay');
+    const panel = document.getElementById('expensePanel');
+    panel.classList.remove('active');
+    setTimeout(() => {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }, 300);
+}
+
+function toggleFilters() {
+    const panel = document.getElementById('filterPanel');
+    panel.classList.toggle('active');
+}
+
+function toggleMoreFields() {
+    const fields = document.getElementById('moreFields');
+    const btn = event.currentTarget;
+    fields.classList.toggle('active');
+    btn.classList.toggle('active');
+}
+
+// Close on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeExpenseForm();
+});
+
+// Close on overlay click
+document.getElementById('expenseOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeExpenseForm();
+});
+</script>
 
 {% endwith %}
 {% endblock %}
