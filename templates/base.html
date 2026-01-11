@@ -717,6 +717,7 @@
 
             const dismissedKey = 'pwa-install-dismissed';
             if (localStorage.getItem(dismissedKey)) return;
+            document.body.classList.remove('show-pwa-prompt');
 
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             if (isStandalone) return;
@@ -740,6 +741,7 @@
             function showPrompt(mode) {
                 prompt.classList.add('is-visible');
                 prompt.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('show-pwa-prompt');
                 if (mode === 'ios') {
                     if (iosHint) iosHint.hidden = false;
                     if (standardHint) standardHint.hidden = true;
@@ -755,6 +757,7 @@
             function dismissPrompt() {
                 prompt.classList.remove('is-visible');
                 prompt.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('show-pwa-prompt');
                 localStorage.setItem(dismissedKey, '1');
             }
 

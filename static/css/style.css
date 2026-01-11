@@ -2606,11 +2606,11 @@ button:focus-visible,
     right: 1rem;
     bottom: calc(var(--bottom-nav-height) + 1rem + env(safe-area-inset-bottom, 0px));
     z-index: 1045;
-    display: none;
+    display: none !important;
 }
 
-.pwa-install-prompt.is-visible {
-    display: block;
+.show-pwa-prompt .pwa-install-prompt.is-visible {
+    display: block !important;
 }
 
 .pwa-install-card {
@@ -2654,7 +2654,6 @@ button:focus-visible,
         left: auto;
         right: 1.5rem;
         max-width: 360px;
-        display: none !important; /* hide install prompt on desktop */
     }
 }
 
