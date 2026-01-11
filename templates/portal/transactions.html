@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
+<style>
+@media (min-width: 768px) {
+    #transactionModal .modal-dialog {
+        max-width: 480px;
+    }
+}
+</style>
 {% with entry_label=new_entry_label|default:"New entry" %}
 <div class="page-header">
     <h2 class="mb-0">{{ page_title|default:"Cashbook" }}</h2>
