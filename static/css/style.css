@@ -4256,14 +4256,14 @@ button:focus-visible,
     left: 0;
     right: 0;
     z-index: 10000;
-    max-height: 95vh;
-    background: var(--bg-body);
-    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    background: var(--bg-elevated);
+    border-radius: 16px 16px 0 0;
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.15);
 }
 
 .cb-form-panel.active {
@@ -4279,11 +4279,12 @@ button:focus-visible,
         bottom: auto;
         width: 100%;
         max-width: 480px;
-        max-height: 90vh;
+        max-height: 85vh;
         border-radius: var(--radius-xl);
         transform: translate(-50%, -50%) scale(0.95);
         opacity: 0;
         transition: transform 0.3s ease, opacity 0.3s ease;
+        box-shadow: var(--shadow-xl);
     }
 
     .cb-form-panel.active {
@@ -4297,9 +4298,29 @@ button:focus-visible,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1rem 0.75rem;
+    padding: 1.25rem 1rem 1rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-elevated);
+    flex-shrink: 0;
+}
+
+/* Drag handle for mobile */
+.cb-form-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: var(--border-color-strong);
+    border-radius: 2px;
+}
+
+@media (min-width: 768px) {
+    .cb-form-header::before {
+        display: none;
+    }
 }
 
 .cb-form-close {
@@ -4387,36 +4408,53 @@ button:focus-visible,
 
 /* ----- Hero Field (Amount) ----- */
 .cb-field--hero {
-    padding: 1rem;
-    background: var(--bg-subtle);
+    padding: 1.25rem 1rem;
+    background: linear-gradient(135deg, var(--primary-subtle) 0%, var(--bg-subtle) 100%);
+    border: 1px solid var(--primary-light);
     border-radius: var(--radius-lg);
+    margin-bottom: 0.5rem;
+}
+
+.cb-field--hero .cb-field__label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary-color);
     margin-bottom: 0.5rem;
 }
 
 .cb-field__hero-wrap {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.35rem;
 }
 
 .cb-field__currency {
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 700;
-    color: var(--text-light);
+    color: var(--text-muted);
+    line-height: 1;
 }
 
 .cb-input--hero {
-    font-size: 2rem !important;
+    font-size: 2.5rem !important;
     font-weight: 700 !important;
-    padding: 0.25rem 0 !important;
+    padding: 0 !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    line-height: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
 }
 
 .cb-input--hero:focus {
     outline: none !important;
     box-shadow: none !important;
+}
+
+.cb-input--hero::placeholder {
+    color: var(--text-light);
+    opacity: 0.5;
 }
 
 /* ----- Inputs ----- */
@@ -4588,7 +4626,12 @@ button:focus-visible,
 }
 
 [data-theme="dark"] .cb-field--hero {
-    background: var(--bg-elevated);
+    background: linear-gradient(135deg, var(--primary-subtle) 0%, var(--bg-elevated) 100%);
+    border-color: rgba(45, 212, 191, 0.2);
+}
+
+[data-theme="dark"] .cb-field--hero .cb-field__label {
+    color: var(--primary-color);
 }
 
 [data-theme="dark"] .cb-input {
