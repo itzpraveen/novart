@@ -2654,6 +2654,7 @@ button:focus-visible,
         left: auto;
         right: 1.5rem;
         max-width: 360px;
+        display: none !important; /* hide install prompt on desktop */
     }
 }
 
