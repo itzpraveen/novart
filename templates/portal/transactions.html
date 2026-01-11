@@ -16,7 +16,7 @@
         <a class="btn btn-outline-secondary btn-sm" href="{% url 'export_transactions_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Export CSV</a>
         {% endif %}
         {% if simple_view %}
-        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
+        <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvasDesktop" role="button" aria-controls="transactionOffcanvasDesktop">{{ entry_label }}</a>
         <a class="btn btn-primary d-md-none" data-bs-toggle="modal" data-bs-target="#transactionModal" href="#transactionModal" role="button" aria-controls="transactionModal">{{ entry_label }}</a>
         {% else %}
         <a class="btn btn-primary btn-sm d-none d-md-inline-flex" data-bs-toggle="offcanvas" href="#transactionOffcanvas" role="button" aria-controls="transactionOffcanvas">{{ entry_label }}</a>
@@ -172,6 +172,26 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="offcanvas offcanvas-end offcanvas-glow d-none d-md-block" tabindex="-1" id="transactionOffcanvasDesktop" aria-labelledby="transactionOffcanvasLabel" data-bs-scroll="true" data-bs-backdrop="false" style="--bs-offcanvas-width: 420px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="transactionOffcanvasLabel">{{ entry_label }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for {{ field.id_for_label }}>{{ field.label }}</label>
+                        {{ field|add_class:"form-control" }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary w-100">{{ entry_label }}</button>
+            </form>
         </div>
     </div>
     {% else %}
