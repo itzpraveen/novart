@@ -88,7 +88,7 @@
                                 </div>
                             </article>
                         {% empty %}
-                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:4 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first expense to track spending." cta_url="#transactionModal" cta_label=entry_label cta_attrs='data-bs-toggle="modal" data-bs-target="#transactionModal" role="button" aria-controls="transactionModal"' compact=True %}
+                            {% include "includes/empty_state.html" with colspan=4 title="No cashbook entries" description="Add your first expense to track spending." cta_url="#transactionModal" cta_label=entry_label cta_attrs='data-bs-toggle="modal" data-bs-target="#transactionModal" role="button" aria-controls="transactionModal"' compact=True %}
                         {% endfor %}
                     </div>
                 {% else %}
@@ -132,7 +132,7 @@
                                 <td data-label="Credit">{{ txn.credit|rupee }}</td>
                             </tr>
                         {% empty %}
-                            {% include "includes/empty_state.html" with colspan=empty_state_colspan|default:7 title=empty_state_title|default:"No cashbook entries" description=empty_state_description|default:"Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
+                            {% include "includes/empty_state.html" with colspan=7 title="No cashbook entries" description="Add your first debit/credit entry to track cashflow." cta_url="#transactionOffcanvas" cta_label=entry_label cta_attrs='data-bs-toggle="offcanvas" role="button" aria-controls="transactionOffcanvas"' compact=True %}
                         {% endfor %}
                         </tbody>
                     </table>
