@@ -4236,17 +4236,24 @@ button:focus-visible,
 /* ----- Full-Screen Form Overlay ----- */
 .cb-form-overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 9999;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
 }
 
 .cb-form-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* ----- Form Panel ----- */
@@ -4670,7 +4677,9 @@ button:focus-visible,
 }
 
 [data-theme="dark"] .cb-form-overlay {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 [data-theme="dark"] .cb-stat--out .cb-stat__value { color: #f87171; }
