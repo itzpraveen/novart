@@ -5,9 +5,10 @@
 <div class="page-header">
     <h2 class="mb-0">Leads</h2>
     <div class="actions flex-wrap">
-        <form method="get" class="d-flex align-items-center gap-2">
+        <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
             <input type="hidden" name="view" value="{{ view|default:'table' }}">
-            <select name="status" class="form-select" style="min-width: 140px;">
+            <label class="form-label visually-hidden" for="leadStatus">Status</label>
+            <select id="leadStatus" name="status" class="form-select" style="min-width: 140px;">
                 <option value="">All statuses</option>
                 {% for value,label in statuses %}
                     <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ label }}</option>

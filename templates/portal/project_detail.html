@@ -227,7 +227,10 @@
                         <span>{{ doc.created_at|date:"d M Y" }}</span>
                     </li>
                 {% empty %}
-                    {% include "includes/empty_state.html" with as_list_item=True title="No documents yet" description="Upload project documents to keep everything organized." cta_url="document_list" cta_label="Upload" cta_class="btn btn-sm btn-outline-primary" compact=True %}
+                    {% url 'document_list' as document_list_base %}
+                    {% with document_list_url=document_list_base|add:"?project="|add:project.pk %}
+                        {% include "includes/empty_state.html" with as_list_item=True title="No documents yet" description="Upload project documents to keep everything organized." cta_url=document_list_url cta_label="Upload" cta_class="btn btn-sm btn-outline-primary" compact=True %}
+                    {% endwith %}
                 {% endfor %}
             </ul>
         </div>
@@ -260,7 +263,10 @@
                         <div><a href="{% url 'site_visit_detail' visit.pk %}">View</a></div>
                     </li>
                 {% empty %}
-                    {% include "includes/empty_state.html" with as_list_item=True title="No visits logged" description="Log site visits to track progress." cta_url="site_visit_create" cta_label="Log Visit" cta_class="btn btn-sm btn-outline-primary" compact=True %}
+                    {% url 'site_visit_create' as site_visit_base %}
+                    {% with site_visit_url=site_visit_base|add:"?project="|add:project.pk %}
+                        {% include "includes/empty_state.html" with as_list_item=True title="No visits logged" description="Log site visits to track progress." cta_url=site_visit_url cta_label="Log Visit" cta_class="btn btn-sm btn-outline-primary" compact=True %}
+                    {% endwith %}
                 {% endfor %}
             </ul>
         </div>

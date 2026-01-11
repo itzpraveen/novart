@@ -1,12 +1,15 @@
 {% load static %}
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `studioflow-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `studioflow-dynamic-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   "{% static 'css/style.css' %}",
   "{% static 'img/novart.png' %}",
   "{% static 'favicon.ico' %}",
   "{% static 'pwa/icon-192.png' %}",
-  "{% static 'pwa/icon-512.png' %}"
+  "{% static 'pwa/icon-512.png' %}",
+  "{% url 'manifest' %}",
+  "{% url 'service_worker' %}"
 ];
 
 const OFFLINE_HTML = `<!doctype html>
@@ -82,7 +85,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys
-        .filter(key => key.startsWith('studioflow-static-') && key !== STATIC_CACHE)
+        .filter(key => (key.startsWith('studioflow-static-') && key !== STATIC_CACHE) || (key.startsWith('studioflow-dynamic-') && key !== DYNAMIC_CACHE))
         .map(key => caches.delete(key))
     )).then(() => self.clients.claim())
   );
@@ -102,7 +105,7 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => new Response(OFFLINE_HTML, {
+      networkThenCache(request).catch(() => new Response(OFFLINE_HTML, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' }
       }))
     );
@@ -120,3 +123,24 @@ async function cacheFirst(request) {
   }
   return response;
 }
+
+async function networkThenCache(request) {
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open(DYNAMIC_CACHE);
+    cache.put(request, response.clone());
+    return response;
+  } catch (err) {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
+// Allow clients to tell this worker to activate immediately
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});

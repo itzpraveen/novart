@@ -33,7 +33,8 @@
     </div>
     {% empty %}
     <div class="col-12">
-        {% include "includes/empty_state.html" with title="No team members yet" description="Add users to your organization to see team workload." cta_url="user_admin_list" cta_label="Add Users" %}
+        {% url 'user_admin_list' as user_admin_url %}
+        {% include "includes/empty_state.html" with title="No team members yet" description="Add users to your organization to see team workload." cta_url=user_admin_url cta_label="Add Users" %}
     </div>
     {% endfor %}
 </div>

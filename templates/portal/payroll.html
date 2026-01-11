@@ -95,7 +95,8 @@
                             </td>
                         </tr>
                     {% empty %}
-                        {% include "includes/empty_state.html" with colspan=5 title="No employees configured" description="Add salary information to user profiles to track payroll." cta_url="user_admin_list" cta_label="Manage Users" cta_class="btn btn-sm btn-outline-primary" compact=True %}
+                        {% url 'user_admin_list' as user_admin_url %}
+                        {% include "includes/empty_state.html" with colspan=5 title="No employees configured" description="Add salary information to user profiles to track payroll." cta_url=user_admin_url cta_label="Manage Users" cta_class="btn btn-sm btn-outline-primary" compact=True %}
                     {% endfor %}
                     </tbody>
                 </table>
