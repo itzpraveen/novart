@@ -4477,6 +4477,9 @@ button:focus-visible,
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     background: var(--bg-elevated);
     border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
 }
 
 /* ----- Form Fields ----- */
