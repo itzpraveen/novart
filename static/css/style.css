@@ -3965,6 +3965,13 @@ button:focus-visible,
     padding-bottom: 1rem;
 }
 
+/* Extra padding on mobile for FAB + bottom nav */
+@media (max-width: 767.98px) {
+    .cb {
+        padding-bottom: calc(var(--bottom-nav-height) + 80px);
+    }
+}
+
 /* ----- Header ----- */
 .cb-header {
     display: flex;
