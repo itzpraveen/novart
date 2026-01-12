@@ -4358,6 +4358,7 @@ button:focus-visible,
     left: 0;
     right: 0;
     z-index: 10000;
+    height: 90vh;
     max-height: 90vh;
     background: var(--bg-elevated);
     border-radius: 16px 16px 0 0;
@@ -4366,6 +4367,7 @@ button:focus-visible,
     display: flex;
     flex-direction: column;
     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
 }
 
 .cb-form-panel.active {
@@ -4459,7 +4461,8 @@ button:focus-visible,
 .cb-form {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -4478,8 +4481,6 @@ button:focus-visible,
     background: var(--bg-elevated);
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
 }
 
 /* ----- Form Fields ----- */
