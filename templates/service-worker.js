@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = `novarterp-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `novarterp-dynamic-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
