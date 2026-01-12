@@ -372,6 +372,7 @@ function openExpenseForm() {
     overlay.classList.add('active');
     setTimeout(() => panel.classList.add('active'), 10);
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('cb-form-open');
     // Reset to expense type when opening
     document.getElementById('txnTypeExpense').checked = true;
     updateFormForType('expense');
@@ -388,6 +389,7 @@ function closeExpenseForm() {
     setTimeout(() => {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
+        document.body.classList.remove('cb-form-open');
     }, 300);
 }
 

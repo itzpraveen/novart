@@ -1,6 +1,6 @@
-# StudioFlow – Architecture Operations Hub
+# NovartERP – Architecture Operations Hub
 
-StudioFlow is an internal operations tool for small Kerala-based architecture practices. It keeps client/lead data, live project tracking, field activity, documents, light-weight finance, and reminder automation in one reliable Django application.
+NovartERP is an internal operations tool for small Kerala-based architecture practices. It keeps client/lead data, live project tracking, field activity, documents, light-weight finance, and reminder automation in one reliable Django application.
 
 ## Stack & Rationale
 - **Backend/UI**: Django 5 with Django templates – batteries-included admin, mature auth/ORM, fast forms and filters, and simple VPS deployment.
@@ -55,7 +55,7 @@ Reminders run through a management command; schedule it with cron:
 
 ```bash
 # Every morning at 7 AM IST
-0 7 * * * /path/to/.venv/bin/python /path/to/manage.py send_reminders >> /var/log/studioflow-reminders.log 2>&1
+0 7 * * * /path/to/.venv/bin/python /path/to/manage.py send_reminders >> /var/log/novarterp-reminders.log 2>&1
 ```
 
 The command inspects configured `ReminderSetting` records (pre-seeded for task due dates, handovers, invoice due, and overdue) and writes in-app notifications to the assigned staff + admins.
@@ -67,7 +67,7 @@ Use `ops/backup_postgres.sh` with cron or a systemd timer. It dumps `DATABASE_UR
 
 Example cron (2 AM daily):
 ```bash
-0 2 * * * DATABASE_URL="postgres://USER:PASS@HOST:5432/DB" BACKUP_DIR="/var/backups/studioflow" OFFSITE_REMOTE="s3://your-bucket/studioflow" /path/to/repo/ops/backup_postgres.sh >> /var/log/studioflow-backup.log 2>&1
+0 2 * * * DATABASE_URL="postgres://USER:PASS@HOST:5432/DB" BACKUP_DIR="/var/backups/novarterp" OFFSITE_REMOTE="s3://your-bucket/novarterp" /path/to/repo/ops/backup_postgres.sh >> /var/log/novarterp-backup.log 2>&1
 ```
 
 ### Basic monitoring

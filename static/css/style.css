@@ -4488,8 +4488,26 @@ button:focus-visible,
     background: var(--bg-elevated);
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
 }
 
+/* Ensure bottom CTA stays visible on mobile when bottom nav is present */
+@media (max-width: 767.98px) {
+    .cb-form-panel {
+        height: 100vh;
+        max-height: 100vh;
+    }
+    .cb-form__footer {
+        padding-bottom: calc(1rem + var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* Hide bottom nav when the cashbook form is open to avoid overlap */
+body.cb-form-open .bottom-nav {
+    display: none !important;
+}
 /* ----- Form Fields ----- */
 .cb-field {
     display: flex;

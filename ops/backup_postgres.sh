@@ -3,16 +3,16 @@ set -euo pipefail
 
 # Nightly Postgres backup helper.
 # Usage (cron/systemd):
-#   DATABASE_URL="postgres://..." BACKUP_DIR="/var/backups/studioflow" OFFSITE_REMOTE="s3:bucket/path" ./backup_postgres.sh
+#   DATABASE_URL="postgres://..." BACKUP_DIR="/var/backups/novarterp" OFFSITE_REMOTE="s3:bucket/path" ./backup_postgres.sh
 
 : "${DATABASE_URL:?DATABASE_URL not set}"
 
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/studioflow}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/novarterp}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 OFFSITE_REMOTE="${OFFSITE_REMOTE:-}"  # Optional: rclone remote or s3:// URL
 
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-FILENAME="studioflow-${TIMESTAMP}.sql.gz"
+FILENAME="novarterp-${TIMESTAMP}.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -20,7 +20,7 @@ echo "[backup] dumping database to ${BACKUP_DIR}/${FILENAME}"
 pg_dump "$DATABASE_URL" | gzip > "${BACKUP_DIR}/${FILENAME}"
 
 echo "[backup] pruning backups older than ${RETENTION_DAYS} days"
-find "$BACKUP_DIR" -type f -name "studioflow-*.sql.gz" -mtime +"$RETENTION_DAYS" -delete || true
+find "$BACKUP_DIR" -type f -name "novarterp-*.sql.gz" -mtime +"$RETENTION_DAYS" -delete || true
 
 if [[ -n "$OFFSITE_REMOTE" ]]; then
   echo "[backup] uploading offsite to ${OFFSITE_REMOTE}"
@@ -34,4 +34,3 @@ if [[ -n "$OFFSITE_REMOTE" ]]; then
 fi
 
 echo "[backup] done"
-

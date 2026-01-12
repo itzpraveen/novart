@@ -1,7 +1,7 @@
 {% load static %}
 const CACHE_VERSION = 'v3';
-const STATIC_CACHE = `studioflow-static-${CACHE_VERSION}`;
-const DYNAMIC_CACHE = `studioflow-dynamic-${CACHE_VERSION}`;
+const STATIC_CACHE = `novarterp-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `novarterp-dynamic-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   "{% static 'css/style.css' %}",
   "{% static 'img/novart.png' %}",
@@ -17,7 +17,7 @@ const OFFLINE_HTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Offline - StudioFlow</title>
+  <title>Offline - NovartERP</title>
   <style>
     :root { color-scheme: light; }
     body {
@@ -66,7 +66,7 @@ const OFFLINE_HTML = `<!doctype html>
   <div class="wrap">
     <div class="card">
       <div class="title">You're offline</div>
-      <div class="text">Reconnect to continue using StudioFlow.</div>
+      <div class="text">Reconnect to continue using NovartERP.</div>
       <a class="btn" href="/">Retry</a>
     </div>
   </div>
@@ -85,7 +85,12 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys
-        .filter(key => (key.startsWith('studioflow-static-') && key !== STATIC_CACHE) || (key.startsWith('studioflow-dynamic-') && key !== DYNAMIC_CACHE))
+        .filter(key => (
+          (key.startsWith('novarterp-static-') && key !== STATIC_CACHE) ||
+          (key.startsWith('novarterp-dynamic-') && key !== DYNAMIC_CACHE) ||
+          key.startsWith('studioflow-static-') ||
+          key.startsWith('studioflow-dynamic-')
+        ))
         .map(key => caches.delete(key))
     )).then(() => self.clients.claim())
   );

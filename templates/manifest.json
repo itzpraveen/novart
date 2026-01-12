@@ -1,7 +1,7 @@
 {% load static %}
 {
-  "name": "Novart Architecture StudioFlow",
-  "short_name": "StudioFlow",
+  "name": "NovartERP",
+  "short_name": "NovartERP",
   "description": "Architecture operations hub for projects, tasks, and finance.",
   "start_url": "/?source=pwa",
   "scope": "/",

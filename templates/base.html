@@ -9,8 +9,8 @@
     <meta name="theme-color" content="#0d9488" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="StudioFlow" />
-    <title>Novart Architecture</title>
+    <meta name="apple-mobile-web-app-title" content="NovartERP" />
+    <title>NovartERP</title>
     <link rel="icon" href="/favicon.ico">
     <link rel="manifest" href="{% url 'manifest' %}">
     <link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}">
@@ -483,13 +483,13 @@
     <!-- Toast container for notifications -->
     <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
     {% if request.resolver_match.url_name != 'login' %}
-    <div id="pwaInstallPrompt" class="pwa-install-prompt" role="dialog" aria-live="polite" aria-label="Install StudioFlow">
+    <div id="pwaInstallPrompt" class="pwa-install-prompt" role="dialog" aria-live="polite" aria-label="Install NovartERP">
         <div class="pwa-install-card">
             <div class="pwa-install-icon">
-                <img src="{% static 'pwa/icon-192.png' %}" alt="StudioFlow" loading="lazy">
+                <img src="{% static 'pwa/icon-192.png' %}" alt="NovartERP" loading="lazy">
             </div>
             <div class="pwa-install-content">
-                <div class="pwa-install-title">Install StudioFlow</div>
+                <div class="pwa-install-title">Install NovartERP</div>
                 <div class="pwa-install-text" data-pwa-variant="standard">Get faster access from your home screen.</div>
                 <div class="pwa-install-text" data-pwa-variant="ios" hidden>Tap Share, then "Add to Home Screen".</div>
                 <div class="pwa-install-actions">
