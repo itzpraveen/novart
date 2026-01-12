@@ -347,13 +347,13 @@
                 <span class="bottom-nav-label">Invoices</span>
             </a>
             {% endif %}
-            <a href="{% url 'transaction_my' %}" class="bottom-nav-item{% if request.resolver_match.url_name == 'transaction_my' %} active{% endif %}" aria-label="My Cashbook">
+            <a href="{% url 'transaction_my' %}" class="bottom-nav-item{% if request.resolver_match.url_name == 'transaction_my' %} active{% endif %}" aria-label="My Expenses">
                 <svg class="bottom-nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="2" y="4" width="20" height="16" rx="2"></rect>
                     <path d="M2 10h20"></path>
                     <circle cx="16" cy="14" r="2"></circle>
                 </svg>
-                <span class="bottom-nav-label">Expenses</span>
+                <span class="bottom-nav-label">My Expen...</span>
             </a>
             <div class="bottom-nav-more">
                 <button type="button" class="bottom-nav-item bottom-nav-more-toggle" aria-label="More options" aria-expanded="false" aria-haspopup="true" aria-controls="bottomNavMoreSheet">
