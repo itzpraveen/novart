@@ -552,6 +552,24 @@ class TransactionForm(forms.ModelForm):
 
 
 class PersonalExpenseForm(forms.ModelForm):
+    EXPENSE_CATEGORIES = {
+        Transaction.Category.MISC,
+        Transaction.Category.PROJECT_EXPENSE,
+        Transaction.Category.OTHER_EXPENSE,
+    }
+    INCOME_CATEGORIES = {
+        Transaction.Category.OTHER_INCOME,
+        Transaction.Category.REIMBURSEMENT,
+    }
+
+    txn_type = forms.ChoiceField(
+        choices=[('expense', 'Expense'), ('income', 'Income')],
+        initial='expense',
+        widget=forms.RadioSelect(attrs={'class': 'btn-check'}),
+        label='Type',
+    )
+    amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+
     class Meta:
         model = Transaction
         fields = [
@@ -559,35 +577,58 @@ class PersonalExpenseForm(forms.ModelForm):
             'description',
             'category',
             'account',
-            'debit',
             'related_project',
             'remarks',
         ]
-        labels = {'debit': 'Amount'}
         widgets = {'date': DateInput(), 'remarks': forms.Textarea(attrs={'rows': 3})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        expense_categories = {
-            Transaction.Category.MISC,
-            Transaction.Category.PROJECT_EXPENSE,
-            Transaction.Category.OTHER_EXPENSE,
-        }
+        # Set initial category choices to expense categories
         self.fields['category'].choices = [
-            choice for choice in self.fields['category'].choices if choice[0] in expense_categories
+            choice for choice in self.fields['category'].choices
+            if choice[0] in self.EXPENSE_CATEGORIES
         ]
         self.fields['category'].required = True
+        # Store all choices for dynamic switching in JS
+        self._expense_choices = [
+            choice for choice in Transaction.Category.choices
+            if choice[0] in self.EXPENSE_CATEGORIES
+        ]
+        self._income_choices = [
+            choice for choice in Transaction.Category.choices
+            if choice[0] in self.INCOME_CATEGORIES
+        ]
 
     def clean(self):
         cleaned = super().clean()
-        amount = cleaned.get('debit') or Decimal('0')
+        amount = cleaned.get('amount') or Decimal('0')
+        txn_type = cleaned.get('txn_type', 'expense')
+        category = cleaned.get('category', '')
+
         if amount <= 0:
-            self.add_error('debit', 'Amount must be greater than zero.')
+            self.add_error('amount', 'Amount must be greater than zero.')
+
+        # Validate category matches transaction type
+        if txn_type == 'expense' and category not in self.EXPENSE_CATEGORIES:
+            self.add_error('category', 'Please select an expense category.')
+        elif txn_type == 'income' and category not in self.INCOME_CATEGORIES:
+            self.add_error('category', 'Please select an income category.')
+
         return cleaned
 
     def save(self, commit=True):
         txn = super().save(commit=False)
-        txn.credit = Decimal('0')
+        amount = self.cleaned_data.get('amount', Decimal('0'))
+        txn_type = self.cleaned_data.get('txn_type', 'expense')
+
+        if txn_type == 'expense':
+            txn.debit = amount
+            txn.credit = Decimal('0')
+        else:
+            txn.credit = amount
+            txn.debit = Decimal('0')
+
         if commit:
             txn.save()
         return txn

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load portal_extras %}
 {% block content %}
-{% with entry_label=new_entry_label|default:"New expense" %}
+{% with entry_label=new_entry_label|default:"New entry" %}
 
 <div class="cb page-transition">
     {# ===== HEADER ===== #}
@@ -161,16 +161,32 @@
         <form method="post" class="cb-form" id="expenseForm">
             {% csrf_token %}
             <div class="cb-form__body">
+                {# Transaction Type Toggle #}
+                <div class="cb-field cb-type-toggle">
+                    <div class="btn-group w-100" role="group" aria-label="Transaction type">
+                        <input type="radio" class="btn-check" name="txn_type" id="txnTypeExpense" value="expense" checked>
+                        <label class="btn btn-outline-danger" for="txnTypeExpense">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            Expense
+                        </label>
+                        <input type="radio" class="btn-check" name="txn_type" id="txnTypeIncome" value="income">
+                        <label class="btn btn-outline-success" for="txnTypeIncome">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                            Income
+                        </label>
+                    </div>
+                </div>
+
                 {# Amount - Hero field #}
                 {% for field in form %}
-                {% if field.name == 'debit' %}
+                {% if field.name == 'amount' %}
                 <div class="cb-field cb-field--hero">
                     <label class="cb-field__label">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
                         Amount
                     </label>
                     <div class="cb-field__hero-wrap">
-                        <span class="cb-field__currency">₹</span>
+                        <span class="cb-field__currency" id="currencySign">₹</span>
                         {{ field|add_class:"cb-input cb-input--hero" }}
                     </div>
                     {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
@@ -287,24 +303,13 @@
                     {% endif %}
                     {% endfor %}
 
-                    {% if not simple_view %}
-                    {% for field in form %}
-                    {% if field.name == 'credit' %}
-                    <div class="cb-field">
-                        <label class="cb-field__label" for="{{ field.id_for_label }}">Credit Amount</label>
-                        {{ field|add_class:"form-control" }}
-                        {% for error in field.errors %}<span class="cb-field__error">{{ error }}</span>{% endfor %}
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
                 </div>
             </div>
 
             <div class="cb-form__footer">
-                <button type="submit" class="btn btn-primary btn-lg w-100">
+                <button type="submit" class="btn btn-primary btn-lg w-100" id="saveBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    Save Expense
+                    <span id="saveBtnText">Save Expense</span>
                 </button>
             </div>
         </form>
@@ -312,12 +317,64 @@
 </div>
 
 <script>
+// Category options for expense/income toggle
+const expenseCategories = [
+    {value: 'misc', label: 'Misc expense'},
+    {value: 'project_expense', label: 'Project expense'},
+    {value: 'other_expense', label: 'Other expense'}
+];
+const incomeCategories = [
+    {value: 'other_income', label: 'Other income'},
+    {value: 'reimbursement', label: 'Reimbursement'}
+];
+
+function updateFormForType(txnType) {
+    const categorySelect = document.getElementById('id_category');
+    const saveBtnText = document.getElementById('saveBtnText');
+    const heroField = document.querySelector('.cb-field--hero');
+    const currencySign = document.getElementById('currencySign');
+
+    // Update category options
+    const categories = txnType === 'income' ? incomeCategories : expenseCategories;
+    categorySelect.innerHTML = '';
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.value;
+        option.textContent = cat.label;
+        categorySelect.appendChild(option);
+    });
+
+    // Update button text
+    saveBtnText.textContent = txnType === 'income' ? 'Save Income' : 'Save Expense';
+
+    // Update visual styling
+    if (txnType === 'income') {
+        heroField.classList.add('cb-field--income');
+        heroField.classList.remove('cb-field--expense');
+        currencySign.textContent = '₹ +';
+    } else {
+        heroField.classList.add('cb-field--expense');
+        heroField.classList.remove('cb-field--income');
+        currencySign.textContent = '₹';
+    }
+}
+
+// Initialize type toggle listeners
+document.querySelectorAll('input[name="txn_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        updateFormForType(this.value);
+    });
+});
+
 function openExpenseForm() {
     const overlay = document.getElementById('expenseOverlay');
     const panel = document.getElementById('expensePanel');
     overlay.classList.add('active');
     setTimeout(() => panel.classList.add('active'), 10);
     document.body.style.overflow = 'hidden';
+    // Reset to expense type when opening
+    document.getElementById('txnTypeExpense').checked = true;
+    updateFormForType('expense');
     setTimeout(() => {
         const firstInput = panel.querySelector('.cb-input--hero, .form-control');
         if (firstInput) firstInput.focus();

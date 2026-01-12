@@ -4508,6 +4508,47 @@ button:focus-visible,
     color: var(--danger-color);
 }
 
+/* ----- Transaction Type Toggle ----- */
+.cb-type-toggle {
+    margin-bottom: 1rem;
+}
+
+.cb-type-toggle .btn-group {
+    display: flex;
+    gap: 0;
+}
+
+.cb-type-toggle .btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+.cb-type-toggle .btn:first-of-type {
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.cb-type-toggle .btn:last-of-type {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.cb-type-toggle .btn-check:checked + .btn-outline-danger {
+    background-color: var(--danger-color, #ef4444);
+    border-color: var(--danger-color, #ef4444);
+    color: #fff;
+}
+
+.cb-type-toggle .btn-check:checked + .btn-outline-success {
+    background-color: var(--success-color, #10b981);
+    border-color: var(--success-color, #10b981);
+    color: #fff;
+}
+
 /* ----- Hero Field (Amount) ----- */
 .cb-field--hero {
     padding: 1.25rem 1rem;
@@ -4515,6 +4556,16 @@ button:focus-visible,
     border: 1px solid var(--primary-light);
     border-radius: var(--radius-lg);
     margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.cb-field--hero.cb-field--income {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, var(--bg-subtle) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.cb-field--hero.cb-field--income .cb-field__label {
+    color: var(--success-color, #10b981);
 }
 
 .cb-field--hero .cb-field__label {

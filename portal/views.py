@@ -1983,13 +1983,20 @@ def transaction_my(request):
             txn.recorded_by = request.user
             txn.related_person = request.user
             txn.save()
+            txn_type = form.cleaned_data.get('txn_type', 'expense')
+            if txn_type == 'income':
+                log_msg = f"Added income: {txn.description} (Cr {txn.credit})."
+                success_msg = 'Income saved.'
+            else:
+                log_msg = f"Added expense: {txn.description} (Dr {txn.debit})."
+                success_msg = 'Expense saved.'
             log_staff_activity(
                 actor=request.user,
                 category=StaffActivity.Category.FINANCE,
-                message=f"Added personal expense: {txn.description} (Dr {txn.debit}).",
+                message=log_msg,
                 related_url=reverse('transaction_my'),
             )
-            messages.success(request, 'Expense saved.')
+            messages.success(request, success_msg)
             return redirect('transaction_my')
     else:
         form = PersonalExpenseForm(initial={'date': timezone.localdate()})
@@ -2006,9 +2013,9 @@ def transaction_my(request):
             'page_title': 'My Cashbook',
             'show_export': False,
             'simple_view': True,
-            'new_entry_label': 'New expense',
-            'empty_state_title': 'No expenses yet',
-            'empty_state_description': 'Add your first expense to track your spending.',
+            'new_entry_label': 'New entry',
+            'empty_state_title': 'No transactions yet',
+            'empty_state_description': 'Add your first transaction to track your expenses and income.',
             'empty_state_colspan': 4,
         },
     )
