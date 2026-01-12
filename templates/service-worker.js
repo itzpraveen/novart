@@ -1,5 +1,5 @@
 {% load static %}
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `studioflow-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `studioflow-dynamic-${CACHE_VERSION}`;
 const STATIC_ASSETS = [

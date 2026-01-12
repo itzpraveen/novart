@@ -3,24 +3,56 @@
   "name": "Novart Architecture StudioFlow",
   "short_name": "StudioFlow",
   "description": "Architecture operations hub for projects, tasks, and finance.",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "orientation": "any",
+  "background_color": "#0f172a",
   "theme_color": "#0d9488",
   "icons": [
     {
       "src": "{% static 'pwa/icon-192.png' %}",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "{% static 'pwa/icon-512.png' %}",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "{% static 'pwa/icon-192.png' %}",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "{% static 'pwa/icon-512.png' %}",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity"]
+  "shortcuts": [
+    {
+      "name": "My Expenses",
+      "short_name": "Expenses",
+      "description": "Track personal expenses",
+      "url": "/transactions/my/?source=pwa",
+      "icons": [{ "src": "{% static 'pwa/icon-192.png' %}", "sizes": "192x192" }]
+    },
+    {
+      "name": "Projects",
+      "short_name": "Projects",
+      "description": "View all projects",
+      "url": "/projects/?source=pwa",
+      "icons": [{ "src": "{% static 'pwa/icon-192.png' %}", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
 }
