@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../core/di/providers.dart';
 import '../common/date_field.dart';
@@ -145,6 +146,11 @@ class _ExpenseClaimFormScreenState
                         }
                         setState(() => _saving = true);
                         try {
+                          final userId = ref
+                              .read(authControllerProvider)
+                              .session
+                              ?.user
+                              .id;
                           final payload = {
                             'project': _projectId,
                             'expense_date': _dateController.text.trim(),
@@ -155,11 +161,12 @@ class _ExpenseClaimFormScreenState
                                 0,
                             'category': _categoryController.text.trim(),
                             'description': _descriptionController.text.trim(),
+                            if (!isEdit && userId != null) 'employee': userId,
                           };
                           final repo = ref.read(apiRepositoryProvider);
                           Map<String, dynamic> saved;
                           if (isEdit) {
-                            saved = await repo.update(
+                            saved = await repo.patch(
                               'expense-claims',
                               widget.claim!['id'] as int,
                               payload,
@@ -181,7 +188,7 @@ class _ExpenseClaimFormScreenState
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Failed to save expense claim: $error',
+                                'Failed to save expense claim: ${_formatError(error)}',
                               ),
                             ),
                           );
@@ -199,6 +206,24 @@ class _ExpenseClaimFormScreenState
       ),
     );
   }
+}
+
+String _formatError(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail']?.toString();
+      if (detail != null && detail.isNotEmpty) {
+        return detail;
+      }
+      return data.values.map((value) => value.toString()).join(' ');
+    }
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
+    return error.message ?? 'Request failed';
+  }
+  return error.toString();
 }
 
 class _SelectRow extends StatelessWidget {

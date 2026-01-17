@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../dashboard/dashboard_screen.dart';
-import '../expenses/expense_claims_list_screen.dart';
 import '../modules/modules_screen.dart';
 import '../projects/projects_list_screen.dart';
 import '../tasks/tasks_list_screen.dart';
+import '../transactions/transactions_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -23,13 +23,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final session = ref.watch(authControllerProvider).session;
     final role = session?.user.role ?? '';
     final isAdmin = role == 'admin';
-    final userId = session?.user.id;
+    final permissions = session?.permissions ?? {};
+    final showCashbook = permissions['finance'] == true || isAdmin;
     final pages = <Widget>[
       const DashboardScreen(),
       const ProjectsListScreen(),
       const TasksListScreen(),
-      if (isAdmin && userId != null)
-        ExpenseClaimsListScreen(employeeId: userId, title: 'My Expenses'),
+      if (showCashbook) const TransactionsScreen(),
       ModulesScreen.finance(),
       ModulesScreen.more(),
     ];
@@ -46,10 +46,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         icon: Icon(Icons.check_circle_outline),
         label: 'Tasks',
       ),
-      if (isAdmin && userId != null)
+      if (showCashbook)
         const NavigationDestination(
           icon: Icon(Icons.account_balance_wallet_outlined),
-          label: 'My Expenses',
+          label: 'Cashbook',
         ),
       const NavigationDestination(
         icon: Icon(Icons.account_balance_outlined),

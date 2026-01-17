@@ -2001,6 +2001,45 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.8;
 }
 
+/* File inputs */
+.form-control[type="file"] {
+    color: var(--text-main);
+    padding: 0.45rem 0.65rem;
+}
+
+.form-control[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    padding: 0.4rem 0.85rem;
+    transition: var(--transition-fast);
+    cursor: pointer;
+}
+
+.form-control[type="file"]::-webkit-file-upload-button {
+    margin-right: 0.75rem;
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    padding: 0.4rem 0.85rem;
+    transition: var(--transition-fast);
+    cursor: pointer;
+}
+
+.form-control[type="file"]:hover::file-selector-button,
+.form-control[type="file"]:hover::-webkit-file-upload-button {
+    background: var(--bg-hover);
+    border-color: var(--border-color-hover);
+}
+
+.form-control[type="file"]:focus::file-selector-button,
+.form-control[type="file"]:focus::-webkit-file-upload-button {
+    border-color: var(--primary-color);
+}
+
 .form-control:hover,
 .form-select:hover {
     border-color: var(--secondary-color);

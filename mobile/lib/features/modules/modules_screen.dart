@@ -8,6 +8,7 @@ import '../expenses/expense_claims_list_screen.dart';
 import '../leads/leads_list_screen.dart';
 import '../site_issues/site_issues_list_screen.dart';
 import '../site_visits/site_visits_list_screen.dart';
+import '../transactions/transactions_screen.dart';
 import 'simple_list_screen.dart';
 
 class ModuleItem {
@@ -78,10 +79,11 @@ class ModulesScreen extends ConsumerWidget {
           permissionKey: 'finance',
         ),
         ModuleItem(
-          title: 'Transactions',
+          title: 'Cashbook',
           endpoint: 'transactions',
           icon: Icons.sync_alt,
           permissionKey: 'finance',
+          builder: (context) => const TransactionsScreen(),
         ),
         ModuleItem(
           title: 'Client Advances',
