@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/di/providers.dart';
 import '../clients/clients_list_screen.dart';
 import '../documents/documents_list_screen.dart';
+import '../expenses/expense_claims_list_screen.dart';
 import '../leads/leads_list_screen.dart';
 import '../site_issues/site_issues_list_screen.dart';
 import '../site_visits/site_visits_list_screen.dart';
@@ -99,6 +100,7 @@ class ModulesScreen extends ConsumerWidget {
           endpoint: 'expense-claims',
           icon: Icons.receipt_long_outlined,
           permissionKey: 'finance',
+          builder: (context) => const ExpenseClaimsListScreen(),
         ),
         ModuleItem(
           title: 'Claim Payments',
