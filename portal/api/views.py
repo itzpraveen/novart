@@ -28,7 +28,7 @@ from portal.api.access import (
     visible_site_visits_for_user,
     visible_tasks_for_user,
 )
-from portal.api.permissions import ModulePermission, RolePermission
+from portal.api.permissions import ModulePermission, RolePermission as RolePermissionPermission
 from portal.api.serializers import (
     AccountSerializer,
     BankStatementImportSerializer,
@@ -97,7 +97,7 @@ from portal.models import (
     Receipt,
     RecurringTransactionRule,
     ReminderSetting,
-    RolePermission,
+    RolePermission as RolePermissionModel,
     SiteIssue,
     SiteIssueAttachment,
     SiteVisit,
@@ -286,7 +286,7 @@ class GlobalSearchView(APIView):
 
 
 class BaseModelViewSet(viewsets.ModelViewSet):
-    permission_classes = (ModulePermission, RolePermission)
+    permission_classes = (ModulePermission, RolePermissionPermission)
     module_permission: str | None = None
     role_map: dict[str, tuple[str, ...] | None] | None = None
 
@@ -851,7 +851,7 @@ class PaymentViewSet(BaseModelViewSet):
 class ReceiptViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Receipt.objects.select_related('payment', 'invoice', 'project', 'client')
     serializer_class = ReceiptSerializer
-    permission_classes = (ModulePermission, RolePermission)
+    permission_classes = (ModulePermission, RolePermissionPermission)
     module_permission = 'finance'
     allowed_roles = (User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT)
     filterset_fields = ('invoice', 'project', 'client')
@@ -1012,7 +1012,7 @@ class ClientAdvanceAllocationViewSet(BaseModelViewSet):
 class ExpenseClaimViewSet(BaseModelViewSet):
     serializer_class = ExpenseClaimSerializer
     module_permission = 'finance'
-    permission_classes = (RolePermission,)
+    permission_classes = (RolePermissionPermission,)
     role_map = {
         'approve': (User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT),
         'reject': (User.Roles.ADMIN, User.Roles.FINANCE, User.Roles.ACCOUNTANT),
@@ -1074,7 +1074,7 @@ class ExpenseClaimAttachmentViewSet(BaseModelViewSet):
     queryset = ExpenseClaimAttachment.objects.select_related('claim')
     serializer_class = ExpenseClaimAttachmentSerializer
     module_permission = 'finance'
-    permission_classes = (RolePermission,)
+    permission_classes = (RolePermissionPermission,)
     filterset_fields = ('claim',)
 
     def get_queryset(self):
@@ -1182,7 +1182,7 @@ class FirmProfileViewSet(BaseModelViewSet):
 
 
 class RolePermissionViewSet(BaseModelViewSet):
-    queryset = RolePermission.objects.all().order_by('role')
+    queryset = RolePermissionModel.objects.all().order_by('role')
     serializer_class = RolePermissionSerializer
     module_permission = 'settings'
 
@@ -1217,7 +1217,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 class StaffActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StaffActivity.objects.select_related('actor').order_by('-created_at')
     serializer_class = StaffActivitySerializer
-    permission_classes = (ModulePermission, RolePermission)
+    permission_classes = (ModulePermission, RolePermissionPermission)
     module_permission = 'settings'
     allowed_roles = (User.Roles.ADMIN,)
 
