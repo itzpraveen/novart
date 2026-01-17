@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../expenses/expense_claim_form_screen.dart';
+import '../expenses/expense_claims_list_screen.dart';
 import '../modules/detail_screen.dart';
 
 enum TransactionFilter { all, income, expense }
@@ -36,6 +38,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncTransactions = ref.watch(transactionsProvider);
+    final userId = ref.watch(authControllerProvider).session?.user.id;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
@@ -52,6 +55,48 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 _SummaryStrip(totals: totals),
+                const SizedBox(height: 16),
+                Text(
+                  'Expense Claims',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ExpenseClaimsListScreen(
+                                employeeId: userId,
+                                title: 'My Expenses',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        label: const Text('View claims'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          await Navigator.of(
+                            context,
+                          ).push<Map<String, dynamic>>(
+                            MaterialPageRoute(
+                              builder: (_) => const ExpenseClaimFormScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('New claim'),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _searchController,
