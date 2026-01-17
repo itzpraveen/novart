@@ -31,14 +31,16 @@ final projectsProvider =
       if (query.search.isNotEmpty) {
         params['search'] = query.search;
       }
-      if (query.stage.isNotEmpty) {
+      if (query.stage.isNotEmpty && query.stage != 'active') {
         params['current_stage'] = query.stage;
       }
       return repo.fetchList('projects', params: params.isEmpty ? null : params);
     });
 
 class ProjectsListScreen extends ConsumerStatefulWidget {
-  const ProjectsListScreen({super.key});
+  const ProjectsListScreen({super.key, this.initialStage = ''});
+
+  final String initialStage;
 
   @override
   ConsumerState<ProjectsListScreen> createState() => _ProjectsListScreenState();
@@ -47,6 +49,12 @@ class ProjectsListScreen extends ConsumerStatefulWidget {
 class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
   String _search = '';
   String _stage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _stage = widget.initialStage;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +103,7 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
                   decoration: const InputDecoration(labelText: 'Stage'),
                   items: const [
                     DropdownMenuItem(value: '', child: Text('All stages')),
+                    DropdownMenuItem(value: 'active', child: Text('Active')),
                     DropdownMenuItem(value: 'Enquiry', child: Text('Enquiry')),
                     DropdownMenuItem(value: 'Concept', child: Text('Concept')),
                     DropdownMenuItem(
@@ -127,7 +136,16 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
           Expanded(
             child: asyncProjects.when(
               data: (projects) {
-                if (projects.isEmpty) {
+                final visibleProjects = _stage == 'active'
+                    ? projects
+                          .where(
+                            (project) =>
+                                (project['current_stage']?.toString() ?? '') !=
+                                'Closed',
+                          )
+                          .toList()
+                    : projects;
+                if (visibleProjects.isEmpty) {
                   return const Center(child: Text('No projects found.'));
                 }
                 return RefreshIndicator(
@@ -137,7 +155,7 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
-                      final project = projects[index];
+                      final project = visibleProjects[index];
                       return AppListTile(
                         title: Text(
                           '${project['code'] ?? ''} ${project['name'] ?? ''}'
@@ -162,7 +180,7 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
                     },
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
-                    itemCount: projects.length,
+                    itemCount: visibleProjects.length,
                   ),
                 );
               },

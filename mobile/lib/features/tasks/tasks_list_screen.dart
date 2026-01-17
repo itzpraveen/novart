@@ -31,14 +31,16 @@ final tasksProvider =
       if (query.search.isNotEmpty) {
         params['search'] = query.search;
       }
-      if (query.status.isNotEmpty) {
+      if (query.status.isNotEmpty && query.status != 'open') {
         params['status'] = query.status;
       }
       return repo.fetchList('tasks', params: params.isEmpty ? null : params);
     });
 
 class TasksListScreen extends ConsumerStatefulWidget {
-  const TasksListScreen({super.key});
+  const TasksListScreen({super.key, this.initialStatus = ''});
+
+  final String initialStatus;
 
   @override
   ConsumerState<TasksListScreen> createState() => _TasksListScreenState();
@@ -47,6 +49,12 @@ class TasksListScreen extends ConsumerStatefulWidget {
 class _TasksListScreenState extends ConsumerState<TasksListScreen> {
   String _search = '';
   String _status = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.initialStatus;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +97,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: const [
                     DropdownMenuItem(value: '', child: Text('All statuses')),
+                    DropdownMenuItem(value: 'open', child: Text('Open')),
                     DropdownMenuItem(value: 'todo', child: Text('To Do')),
                     DropdownMenuItem(
                       value: 'in_progress',
@@ -104,7 +113,13 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
           Expanded(
             child: asyncTasks.when(
               data: (tasks) {
-                if (tasks.isEmpty) {
+                final visibleTasks = _status == 'open'
+                    ? tasks.where((task) {
+                        final status = task['status']?.toString() ?? '';
+                        return status == 'todo' || status == 'in_progress';
+                      }).toList()
+                    : tasks;
+                if (visibleTasks.isEmpty) {
                   return const Center(child: Text('No tasks found.'));
                 }
                 return RefreshIndicator(
@@ -114,7 +129,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
-                      final task = tasks[index];
+                      final task = visibleTasks[index];
                       return AppListTile(
                         title: Text(task['title']?.toString() ?? 'Task'),
                         subtitle: Text(
@@ -135,7 +150,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                     },
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
-                    itemCount: tasks.length,
+                    itemCount: visibleTasks.length,
                   ),
                 );
               },
