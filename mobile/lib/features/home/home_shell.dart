@@ -24,7 +24,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final role = session?.user.role ?? '';
     final isAdmin = role == 'admin';
     final permissions = session?.permissions ?? {};
-    final showCashbook = permissions['finance'] == true || isAdmin;
+    final showCashbook =
+        permissions['finance'] == true ||
+        isAdmin ||
+        role == 'managing_director';
     final pages = <Widget>[
       const DashboardScreen(),
       const ProjectsListScreen(),

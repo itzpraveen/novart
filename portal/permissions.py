@@ -35,6 +35,18 @@ MODULE_LABELS: Dict[str, str] = {
 
 BASE_ROLE_PERMS: Dict[str, Dict[str, bool]] = {
     User.Roles.ADMIN: {key: True for key in MODULE_KEYS},
+    User.Roles.MANAGING_DIRECTOR: {
+        'clients': True,
+        'leads': True,
+        'projects': True,
+        'site_visits': True,
+        'docs': True,
+        'team': True,
+        'finance': True,
+        'invoices': False,
+        'users': False,
+        'settings': False,
+    },
     User.Roles.ARCHITECT: {
         'clients': True,
         'leads': True,
@@ -138,7 +150,6 @@ ROLE_ALIASES: Dict[str, str] = {
     # Architect variants
     User.Roles.SENIOR_ARCHITECT: User.Roles.ARCHITECT,
     User.Roles.JUNIOR_ARCHITECT: User.Roles.ARCHITECT,
-    User.Roles.MANAGING_DIRECTOR: User.Roles.ARCHITECT,
     # Site engineer variants
     User.Roles.SENIOR_CIVIL_ENGINEER: User.Roles.SITE_ENGINEER,
     User.Roles.JUNIOR_CIVIL_ENGINEER: User.Roles.SITE_ENGINEER,

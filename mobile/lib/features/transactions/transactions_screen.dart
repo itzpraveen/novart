@@ -42,7 +42,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final asyncTransactions = ref.watch(transactionsProvider);
     final userId = ref.watch(authControllerProvider).session?.user.id;
     final role = ref.watch(authControllerProvider).session?.user.role ?? '';
+    final permissions =
+        ref.watch(authControllerProvider).session?.permissions ?? {};
     final isAdmin = role == 'admin';
+    final canManageCashbook =
+        permissions['finance'] == true ||
+        isAdmin ||
+        role == 'managing_director';
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
@@ -61,7 +67,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 _SummaryStrip(totals: totals),
                 const SizedBox(height: 10),
                 _BalanceRow(balance: totals.balance),
-                if (isAdmin) ...[
+                if (canManageCashbook) ...[
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () async {
