@@ -1133,6 +1133,9 @@ class TransactionViewSet(BaseModelViewSet):
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return qs.none()
+        mine = self.request.query_params.get('mine')
+        if mine in {'1', 'true', 'True', 'yes', 'mine'}:
+            return qs.filter(recorded_by=user)
         if user.is_superuser or user.has_any_role(User.Roles.FINANCE, User.Roles.ACCOUNTANT):
             return qs
         return qs.filter(recorded_by=user)

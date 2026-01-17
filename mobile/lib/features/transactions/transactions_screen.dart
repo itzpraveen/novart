@@ -18,7 +18,10 @@ final transactionsProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,
 ) async {
   final repo = ref.watch(apiRepositoryProvider);
-  return repo.fetchList('transactions', params: {'ordering': '-date'});
+  return repo.fetchList(
+    'transactions',
+    params: {'ordering': '-date', 'mine': '1'},
+  );
 });
 
 class TransactionsScreen extends ConsumerStatefulWidget {
