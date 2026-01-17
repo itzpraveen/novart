@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../clients/clients_list_screen.dart';
+import '../documents/documents_list_screen.dart';
 import '../leads/leads_list_screen.dart';
+import '../site_issues/site_issues_list_screen.dart';
+import '../site_visits/site_visits_list_screen.dart';
 import 'simple_list_screen.dart';
 
 class ModuleItem {
@@ -142,18 +145,21 @@ class ModulesScreen extends ConsumerWidget {
           endpoint: 'site-visits',
           icon: Icons.location_on_outlined,
           permissionKey: 'site_visits',
+          builder: (context) => const SiteVisitsListScreen(),
         ),
         ModuleItem(
           title: 'Site Issues',
           endpoint: 'site-issues',
           icon: Icons.report_problem_outlined,
           permissionKey: 'site_visits',
+          builder: (context) => const SiteIssuesListScreen(),
         ),
         ModuleItem(
           title: 'Documents',
           endpoint: 'documents',
           icon: Icons.folder_copy_outlined,
           permissionKey: 'docs',
+          builder: (context) => const DocumentsListScreen(),
         ),
         ModuleItem(
           title: 'Team',

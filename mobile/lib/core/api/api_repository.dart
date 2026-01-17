@@ -110,4 +110,23 @@ class ApiRepository {
     final response = await _client.post(_normalize(endpoint), data: formData);
     return (response.data as Map<String, dynamic>?) ?? {};
   }
+
+  Future<Map<String, dynamic>> updateWithFile({
+    required String endpoint,
+    required int id,
+    required Map<String, dynamic> fields,
+    File? file,
+    String fileField = 'file',
+    bool usePut = false,
+  }) async {
+    final formData = FormData.fromMap({
+      ...fields,
+      if (file != null) fileField: await MultipartFile.fromFile(file.path),
+    });
+    final url = '${_normalize(endpoint)}$id/';
+    final response = usePut
+        ? await _client.put(url, data: formData)
+        : await _client.patch(url, data: formData);
+    return (response.data as Map<String, dynamic>?) ?? {};
+  }
 }
