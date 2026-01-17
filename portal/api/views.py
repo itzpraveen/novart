@@ -1121,6 +1121,22 @@ class TransactionViewSet(BaseModelViewSet):
     ordering_fields = ('date', 'category')
     filterset_fields = ('category', 'account', 'related_project', 'related_client', 'related_vendor', 'related_person')
 
+    def get_queryset(self):
+        qs = Transaction.objects.select_related(
+            'account',
+            'related_project',
+            'related_client',
+            'related_vendor',
+            'related_person',
+            'recorded_by',
+        )
+        user = getattr(self.request, 'user', None)
+        if not user or not user.is_authenticated:
+            return qs.none()
+        if user.is_superuser or user.has_any_role(User.Roles.FINANCE, User.Roles.ACCOUNTANT):
+            return qs
+        return qs.filter(recorded_by=user)
+
     def perform_create(self, serializer):
         serializer.save(recorded_by=self.request.user)
 
