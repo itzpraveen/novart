@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/di/providers.dart';
 import '../expenses/expense_claim_form_screen.dart';
 import '../expenses/expense_claims_list_screen.dart';
+import 'transaction_entry_screen.dart';
 import '../modules/detail_screen.dart';
 
 enum TransactionFilter { all, income, expense }
@@ -40,6 +41,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   Widget build(BuildContext context) {
     final asyncTransactions = ref.watch(transactionsProvider);
     final userId = ref.watch(authControllerProvider).session?.user.id;
+    final role = ref.watch(authControllerProvider).session?.user.role ?? '';
+    final isAdmin = role == 'admin';
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
@@ -58,6 +61,24 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                 _SummaryStrip(totals: totals),
                 const SizedBox(height: 10),
                 _BalanceRow(balance: totals.balance),
+                if (isAdmin) ...[
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final created = await Navigator.of(context)
+                          .push<Map<String, dynamic>>(
+                            MaterialPageRoute(
+                              builder: (_) => const TransactionEntryScreen(),
+                            ),
+                          );
+                      if (created != null) {
+                        ref.invalidate(transactionsProvider);
+                      }
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('New entry'),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Text(
                   'Expense Claims',
