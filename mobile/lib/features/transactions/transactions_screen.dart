@@ -89,7 +89,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                       }
                     },
                     icon: const Icon(Icons.add),
-                    label: const Text('New entry'),
+                    label: const Text('Record income/expense'),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -129,7 +129,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                           );
                         },
                         icon: const Icon(Icons.add),
-                        label: const Text('New claim'),
+                        label: const Text('Submit expense claim'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onSecondary,
+                        ),
                       ),
                     ),
                   ],
