@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/theme/app_theme.dart';
+import '../common/app_list_tile.dart';
+import '../common/shimmer_loading.dart';
 import '../expenses/expense_claim_form_screen.dart';
 import '../expenses/expense_claims_list_screen.dart';
 import 'transaction_entry_screen.dart';
@@ -230,9 +234,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text('Failed to load cashbook: $error')),
+        loading: () => const _TransactionsSkeleton(),
+        error: (error, _) => ErrorStateWidget(
+          message: error.toString(),
+          onRetry: () => ref.invalidate(transactionsProvider),
+        ),
       ),
     );
   }
@@ -699,31 +705,88 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withAlpha(120),
+          color: Theme.of(context).colorScheme.outline.withAlpha(100),
         ),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.account_balance_wallet_outlined,
-            size: 36,
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withAlpha(12),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 28,
+              color: AppTheme.primary.withAlpha(160),
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 6),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
             subtitle,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.onSurface.withAlpha(120),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TransactionsSkeleton extends StatelessWidget {
+  const _TransactionsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        Row(
+          children: [
+            Expanded(child: SkeletonMetricCard()),
+            const SizedBox(width: 12),
+            Expanded(child: SkeletonMetricCard()),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ShimmerLoading(
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ShimmerLoading(
+          child: Container(
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const SkeletonList(itemCount: 6),
+      ],
     );
   }
 }
