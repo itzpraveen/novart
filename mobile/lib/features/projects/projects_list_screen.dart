@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import 'project_detail_screen.dart';
 import 'project_form_screen.dart';
 
@@ -137,11 +138,7 @@ class _ProjectsListScreenState extends ConsumerState<ProjectsListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final project = projects[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(
                           '${project['code'] ?? ''} ${project['name'] ?? ''}'
                               .trim(),

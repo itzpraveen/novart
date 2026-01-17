@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import 'lead_detail_screen.dart';
 import 'lead_form_screen.dart';
 
@@ -116,11 +117,7 @@ class _LeadsListScreenState extends ConsumerState<LeadsListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final lead = leads[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(lead['title']?.toString() ?? 'Lead'),
                         subtitle: Text(
                           '${lead['client_detail']?['name'] ?? 'Client'} • ${lead['status'] ?? ''}',

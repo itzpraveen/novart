@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import '../modules/detail_screen.dart';
 
 final dashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
@@ -16,10 +17,12 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncData = ref.watch(dashboardProvider);
+    final session = ref.watch(authControllerProvider).session;
+    final userName = session?.user.fullName ?? 'there';
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
       body: asyncData.when(
-        data: (data) => _DashboardBody(data: data),
+        data: (data) => _DashboardBody(data: data, userName: userName),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
             Center(child: Text('Failed to load dashboard: $error')),
@@ -29,9 +32,10 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody({required this.data});
+  const _DashboardBody({required this.data, required this.userName});
 
   final Map<String, dynamic> data;
+  final String userName;
 
   @override
   Widget build(BuildContext context) {
@@ -44,43 +48,71 @@ class _DashboardBody extends StatelessWidget {
     final invoicedMonth = data['total_invoiced_month'];
     final receivedMonth = data['total_received_month'];
 
+    final metrics = <_MetricItem>[
+      _MetricItem(
+        label: 'Total Projects',
+        value: formatter.format(totalProjects),
+        icon: Icons.apartment_outlined,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      _MetricItem(
+        label: 'Active Projects',
+        value: formatter.format(activeProjects),
+        icon: Icons.work_outline,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      _MetricItem(
+        label: 'Site Visits',
+        value: formatter.format(siteVisits),
+        icon: Icons.location_on_outlined,
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      _MetricItem(
+        label: 'My Open Tasks',
+        value: formatter.format(myOpenTasks),
+        icon: Icons.check_circle_outline,
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      if (invoicedMonth != null)
+        _MetricItem(
+          label: 'Invoiced (Month)',
+          value: formatter.format(invoicedMonth),
+          icon: Icons.receipt_long_outlined,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      if (receivedMonth != null)
+        _MetricItem(
+          label: 'Received (Month)',
+          value: formatter.format(receivedMonth),
+          icon: Icons.payments_outlined,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+    ];
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _MetricCard(
-              label: 'Total Projects',
-              value: formatter.format(totalProjects),
-            ),
-            _MetricCard(
-              label: 'Active Projects',
-              value: formatter.format(activeProjects),
-            ),
-            _MetricCard(
-              label: 'Site Visits (Month)',
-              value: formatter.format(siteVisits),
-            ),
-            _MetricCard(
-              label: 'My Open Tasks',
-              value: formatter.format(myOpenTasks),
-            ),
-            if (invoicedMonth != null)
-              _MetricCard(
-                label: 'Invoiced (Month)',
-                value: formatter.format(invoicedMonth),
-              ),
-            if (receivedMonth != null)
-              _MetricCard(
-                label: 'Received (Month)',
-                value: formatter.format(receivedMonth),
-              ),
-          ],
+        _DashboardHeader(userName: userName),
+        const SizedBox(height: 20),
+        _SectionHeader(
+          title: 'Highlights',
+          subtitle: DateFormat('EEE, dd MMM').format(DateTime.now()),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.12,
+          ),
+          itemCount: metrics.length,
+          itemBuilder: (context, index) => _MetricCard(item: metrics[index]),
         ),
         const SizedBox(height: 24),
-        Text('Upcoming Tasks', style: Theme.of(context).textTheme.titleMedium),
+        _SectionHeader(title: 'Upcoming Tasks'),
         const SizedBox(height: 12),
         _DataList(
           items:
@@ -89,10 +121,7 @@ class _DashboardBody extends StatelessWidget {
           onTap: (item) => _openDetail(context, 'tasks', item),
         ),
         const SizedBox(height: 24),
-        Text(
-          'Upcoming Handover',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        _SectionHeader(title: 'Upcoming Handover'),
         const SizedBox(height: 12),
         _DataList(
           items:
@@ -121,34 +150,112 @@ class _DashboardBody extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value});
+class _MetricItem {
+  const _MetricItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   final String label;
   final String value;
+  final IconData icon;
+  final Color color;
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.item});
+
+  final _MetricItem item;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: (MediaQuery.of(context).size.width - 44) / 2,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withAlpha(128),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(height: 10),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: item.color.withAlpha(31),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(item.icon, color: item.color, size: 20),
+          ),
+          const SizedBox(height: 12),
           Text(
-            value,
+            item.value,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
+          const SizedBox(height: 4),
+          Text(item.label, style: Theme.of(context).textTheme.labelMedium),
         ],
       ),
+    );
+  }
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({required this.userName});
+
+  final String userName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withAlpha(128),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Welcome back,', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          Text(userName, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(
+            'Here is a quick snapshot of the workspace.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.subtitle});
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ),
+        if (subtitle != null)
+          Text(subtitle!, style: Theme.of(context).textTheme.labelMedium),
+      ],
     );
   }
 }
@@ -168,15 +275,19 @@ class _DataList extends StatelessWidget {
     return Column(
       children: items
           .map(
-            (item) => Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AppListTile(
                 title: Text(
                   item['title']?.toString() ??
                       item['name']?.toString() ??
                       'Item',
                 ),
-                subtitle: Text(item['status']?.toString() ?? ''),
+                subtitle: Text(
+                  item['status']?.toString() ??
+                      item['current_stage']?.toString() ??
+                      '',
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => onTap(item),
               ),

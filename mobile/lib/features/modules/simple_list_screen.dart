@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import 'detail_screen.dart';
 
 final listProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((
@@ -44,11 +45,7 @@ class SimpleListScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(_itemTitle(item)),
                         subtitle: Text(_itemSubtitle(item)),
                         trailing: const Icon(Icons.chevron_right),

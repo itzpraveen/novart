@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import 'client_detail_screen.dart';
 import 'client_form_screen.dart';
 
@@ -92,11 +93,7 @@ class _ClientsListScreenState extends ConsumerState<ClientsListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final client = clients[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(client['name']?.toString() ?? 'Client'),
                         subtitle: Text(
                           client['phone']?.toString() ??

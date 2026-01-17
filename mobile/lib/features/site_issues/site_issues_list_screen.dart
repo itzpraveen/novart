@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import '../common/select_list_screen.dart';
 import 'site_issue_detail_screen.dart';
 import 'site_issue_form_screen.dart';
@@ -156,11 +157,7 @@ class _SiteIssuesListScreenState extends ConsumerState<SiteIssuesListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final issue = filtered[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(issue['title']?.toString() ?? 'Issue'),
                         subtitle: Text(_subtitleFor(issue)),
                         trailing: const Icon(Icons.chevron_right),

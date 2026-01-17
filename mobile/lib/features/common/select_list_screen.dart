@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import 'app_list_tile.dart';
 
 class SelectOption {
   SelectOption({required this.id, required this.label, required this.raw});
@@ -93,7 +94,7 @@ class _SelectListScreenState extends ConsumerState<SelectListScreen> {
                     final item = items[index];
                     final label = _labelFor(item);
                     final subtitle = _subtitleFor(item);
-                    return ListTile(
+                    return AppListTile(
                       title: Text(label),
                       subtitle: subtitle.isEmpty ? null : Text(subtitle),
                       onTap: () {
@@ -107,7 +108,7 @@ class _SelectListScreenState extends ConsumerState<SelectListScreen> {
                     );
                   },
                   separatorBuilder: (context, index) =>
-                      const Divider(height: 1),
+                      const SizedBox(height: 12),
                   itemCount: items.length,
                 );
               },

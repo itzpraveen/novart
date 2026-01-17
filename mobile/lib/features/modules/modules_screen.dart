@@ -232,20 +232,20 @@ class ModulesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ...visibleModules.map(
-            (module) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                tileColor: Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                leading: Icon(
-                  module.icon,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: Text(module.title),
-                trailing: const Icon(Icons.chevron_right),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: visibleModules.length,
+            itemBuilder: (context, index) {
+              final module = visibleModules[index];
+              return _ModuleCard(
+                module: module,
                 onTap: () {
                   final builder = module.builder;
                   Navigator.of(context).push(
@@ -259,24 +259,60 @@ class ModulesScreen extends ConsumerWidget {
                     ),
                   );
                 },
-              ),
-            ),
+              );
+            },
           ),
-          if (showSignOut)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: ListTile(
-                tileColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                leading: const Icon(Icons.logout),
-                title: const Text('Sign out'),
-                onTap: () =>
-                    ref.read(authControllerProvider.notifier).signOut(),
-              ),
+          if (showSignOut) ...[
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  ref.read(authControllerProvider.notifier).signOut(),
+              icon: const Icon(Icons.logout),
+              label: const Text('Sign out'),
             ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({required this.module, required this.onTap});
+
+  final ModuleItem module;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(31),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(module.icon, color: color, size: 22),
+              ),
+              const Spacer(),
+              Text(module.title, style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text('Open', style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
+        ),
       ),
     );
   }

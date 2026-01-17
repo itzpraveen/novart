@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import 'task_detail_screen.dart';
 import 'task_form_screen.dart';
 
@@ -114,11 +115,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final task = tasks[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(task['title']?.toString() ?? 'Task'),
                         subtitle: Text(
                           '${task['project_detail']?['name'] ?? 'Project'} • ${task['status'] ?? ''}',

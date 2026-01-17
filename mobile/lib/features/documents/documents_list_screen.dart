@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import '../common/select_list_screen.dart';
 import 'document_detail_screen.dart';
 import 'document_form_screen.dart';
@@ -155,11 +156,7 @@ class _DocumentsListScreenState extends ConsumerState<DocumentsListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final doc = filtered[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(doc['file_name']?.toString() ?? 'Document'),
                         subtitle: Text(_subtitleFor(doc)),
                         trailing: const Icon(Icons.chevron_right),

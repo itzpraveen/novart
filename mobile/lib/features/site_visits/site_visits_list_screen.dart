@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../common/app_list_tile.dart';
 import '../common/select_list_screen.dart';
 import 'site_visit_detail_screen.dart';
 import 'site_visit_form_screen.dart';
@@ -128,11 +129,7 @@ class _SiteVisitsListScreenState extends ConsumerState<SiteVisitsListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemBuilder: (context, index) {
                       final visit = filtered[index];
-                      return ListTile(
-                        tileColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      return AppListTile(
                         title: Text(_titleFor(visit)),
                         subtitle: Text(_subtitleFor(visit)),
                         trailing: const Icon(Icons.chevron_right),
