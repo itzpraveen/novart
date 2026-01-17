@@ -14,14 +14,22 @@ import '../modules/detail_screen.dart';
 
 enum TransactionFilter { all, income, expense }
 
+enum TransactionScope { mine, all }
+
+final transactionScopeProvider = StateProvider<TransactionScope>((ref) {
+  return TransactionScope.mine;
+});
+
 final transactionsProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,
 ) async {
   final repo = ref.watch(apiRepositoryProvider);
-  return repo.fetchList(
-    'transactions',
-    params: {'ordering': '-date', 'mine': '1'},
-  );
+  final scope = ref.watch(transactionScopeProvider);
+  final params = <String, dynamic>{'ordering': '-date'};
+  if (scope == TransactionScope.mine) {
+    params['mine'] = '1';
+  }
+  return repo.fetchList('transactions', params: params);
 });
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -49,9 +57,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final asyncTransactions = ref.watch(transactionsProvider);
     final userId = ref.watch(authControllerProvider).session?.user.id;
     final role = ref.watch(authControllerProvider).session?.user.role ?? '';
+    final scope = ref.watch(transactionScopeProvider);
     final permissions =
         ref.watch(authControllerProvider).session?.permissions ?? {};
     final isAdmin = role == 'admin';
+    final canViewAll =
+        role == 'admin' || role == 'finance' || role == 'accountant';
     final canManageCashbook =
         permissions['finance'] == true ||
         isAdmin ||
@@ -198,6 +209,29 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     onSelectionChanged: (value) =>
                         setState(() => _filter = value.first),
                   ),
+                  if (canViewAll) ...[
+                    const SizedBox(height: 12),
+                    SegmentedButton<TransactionScope>(
+                      segments: const [
+                        ButtonSegment(
+                          value: TransactionScope.mine,
+                          label: Text('Mine'),
+                          icon: Icon(Icons.person_outline),
+                        ),
+                        ButtonSegment(
+                          value: TransactionScope.all,
+                          label: Text('All'),
+                          icon: Icon(Icons.group_outlined),
+                        ),
+                      ],
+                      selected: {scope},
+                      onSelectionChanged: (value) {
+                        ref.read(transactionScopeProvider.notifier).state =
+                            value.first;
+                        ref.invalidate(transactionsProvider);
+                      },
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 16),
                 _SectionHeader(title: 'Transactions', count: filtered.length),

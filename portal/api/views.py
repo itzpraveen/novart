@@ -1136,7 +1136,11 @@ class TransactionViewSet(BaseModelViewSet):
         mine = self.request.query_params.get('mine')
         if mine in {'1', 'true', 'True', 'yes', 'mine'}:
             return qs.filter(recorded_by=user)
-        if user.is_superuser or user.has_any_role(User.Roles.FINANCE, User.Roles.ACCOUNTANT):
+        if user.is_superuser or user.has_any_role(
+            User.Roles.FINANCE,
+            User.Roles.ACCOUNTANT,
+            User.Roles.ADMIN,
+        ):
             return qs
         return qs.filter(recorded_by=user)
 
