@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.meta_title|default:"Novart Architects" }}</title>
+    <meta name="description" content="{{ site.meta_description|default:site.hero_supporting_text }}">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public-site.css' %}">
+</head>
+<body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="public-chrome" data-nav>
+        <div class="public-chrome__inner">
+            <a class="public-brandmark" href="#top" aria-label="{{ site.brand_name }} home">
+                <img src="{{ logo_url }}" alt="{{ site.brand_name }} {{ site.brand_suffix }}">
+            </a>
+            <button class="public-menu-toggle" type="button" aria-expanded="false" aria-controls="public-nav">
+                Menu
+            </button>
+            <nav id="public-nav" class="public-nav" aria-label="Primary">
+                {% for label, href in section_links %}
+                <a href="{{ href }}">{{ label }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+    </header>
+
+    <main id="content">
+        <section class="hero" id="top">
+            <div class="hero-media" data-parallax="0.12" style="background-image:url('{{ hero_image_url }}');"></div>
+            <canvas class="hero-structure" data-hero-structure aria-hidden="true"></canvas>
+            <div class="hero-scrim"></div>
+            <div class="hero-shell">
+                <div class="hero-copy-block">
+                    <p class="hero-brand reveal delay-1">{{ site.brand_name }}</p>
+                    <p class="hero-brand-suffix reveal delay-2">{{ site.brand_suffix }}</p>
+                    <h1 class="hero-title reveal delay-3">{{ site.hero_heading }}</h1>
+                    <p class="hero-summary reveal delay-4">{{ site.hero_supporting_text }}</p>
+                    <div class="hero-actions reveal delay-5">
+                        <a class="cta cta-primary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
+                        <a class="cta cta-secondary" href="{{ whatsapp_href }}" target="_blank" rel="noopener noreferrer">{{ site.hero_cta_whatsapp_label }}</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-services" id="services">
+            <div class="section-inner">
+                <div class="section-head reveal">
+                    <p class="section-kicker">Services</p>
+                    <div>
+                        <h2>{{ site.services_heading }}</h2>
+                        <p>{{ site.services_intro }}</p>
+                    </div>
+                </div>
+                <div class="services-grid">
+                    {% for service in services %}
+                    <article class="service-item reveal">
+                        <p class="service-index">{{ forloop.counter|stringformat:"02d" }}</p>
+                        <h3>{{ service.title }}</h3>
+                        <p>{{ service.description }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-process" id="process">
+            <div class="section-inner">
+                <div class="section-head reveal">
+                    <p class="section-kicker">Process</p>
+                    <div>
+                        <h2>{{ site.process_heading }}</h2>
+                        <p>{{ site.process_intro }}</p>
+                    </div>
+                </div>
+                <div class="process-layout">
+                    <p class="process-note reveal">Design intent stays visible through measurements, approvals, drawings, procurement, and site coordination.</p>
+                    <ol class="process-list">
+                        {% for step in process_steps %}
+                        <li class="process-item reveal">
+                            <p class="process-label">{{ step.step_label }}</p>
+                            <div>
+                                <h3>{{ step.title }}</h3>
+                                <p>{{ step.description }}</p>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-work" id="work">
+            <div class="section-inner">
+                <div class="section-head reveal">
+                    <p class="section-kicker">Selected Work</p>
+                    <div>
+                        <h2>{{ site.work_heading }}</h2>
+                        <p>{{ site.work_intro }}</p>
+                    </div>
+                </div>
+                <div class="work-list">
+                    {% for project in projects %}
+                    <article class="project-row {% if not forloop.counter0|divisibleby:2 %}is-flipped{% endif %}">
+                        <figure class="project-media project-gallery project-gallery--{{ project.images|length }} reveal">
+                            {% for image in project.images %}
+                            <img class="project-gallery__image project-gallery__image--{{ forloop.counter }}" src="{{ image.url }}" alt="{{ image.alt }}" loading="lazy">
+                            {% endfor %}
+                        </figure>
+                        <div class="project-copy reveal">
+                            <p class="project-meta">{{ forloop.counter|stringformat:"02d" }} / {{ project.project_type }}{% if project.location %} / {{ project.location }}{% endif %}</p>
+                            <h3>{{ project.title }}</h3>
+                            <p>{{ project.description }}</p>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-studio" id="studio">
+            <div class="section-inner studio-grid">
+                <div class="studio-copy reveal">
+                    <p class="section-kicker">Studio</p>
+                    <h2>{{ site.studio_heading }}</h2>
+                    <p>{{ site.studio_body }}</p>
+                </div>
+                <figure class="studio-visual reveal">
+                    <img src="{{ studio_image_url }}" alt="{{ site.studio_image_alt|default:site.studio_heading }}" loading="lazy" data-parallax="0.08">
+                </figure>
+            </div>
+        </section>
+
+        <section class="section section-contact" id="contact">
+            <div class="section-inner contact-band reveal">
+                <div class="contact-copy">
+                    <p class="section-kicker">Contact</p>
+                    <h2>{{ site.contact_heading }}</h2>
+                    <p>{{ site.contact_intro }}</p>
+                </div>
+                <div class="contact-actions">
+                    <a class="cta cta-primary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
+                    <a class="cta cta-secondary" href="{{ whatsapp_href }}" target="_blank" rel="noopener noreferrer">{{ site.hero_cta_whatsapp_label }}</a>
+                    {% if site.phone_display %}<p class="contact-detail">{{ site.phone_display }}</p>{% endif %}
+                    {% if site.email %}<p class="contact-detail"><a href="mailto:{{ site.email }}">{{ site.email }}</a></p>{% endif %}
+                    {% if site.address %}<p class="contact-detail">{{ site.address|linebreaksbr }}</p>{% endif %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{% static 'js/public-site.js' %}"></script>
+</body>
+</html>

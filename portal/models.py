@@ -1371,6 +1371,100 @@ class FirmProfile(TimeStampedModel):
         return self.name or "Firm Profile"
 
 
+PUBLIC_ARTWORK_CHOICES = (
+    ('courtyard-house', 'Courtyard House'),
+    ('atelier-interior', 'Atelier Interior'),
+    ('horizon-masterplan', 'Horizon Masterplan'),
+)
+
+
+class PublicSiteSettings(TimeStampedModel):
+    brand_name = models.CharField(max_length=120, default='Novart')
+    brand_suffix = models.CharField(max_length=120, default='Architects')
+    hero_heading = models.CharField(max_length=255)
+    hero_supporting_text = models.TextField()
+    hero_cta_phone_label = models.CharField(max_length=80, default='Call Us')
+    hero_cta_whatsapp_label = models.CharField(max_length=80, default='WhatsApp Us')
+    phone_display = models.CharField(max_length=50, blank=True)
+    whatsapp_number = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    services_heading = models.CharField(max_length=120, default='Services')
+    services_intro = models.TextField(blank=True)
+    process_heading = models.CharField(max_length=120, default='Process')
+    process_intro = models.TextField(blank=True)
+    work_heading = models.CharField(max_length=120, default='Selected Work')
+    work_intro = models.TextField(blank=True)
+    studio_heading = models.CharField(max_length=120, default='Studio')
+    studio_body = models.TextField(blank=True)
+    contact_heading = models.CharField(max_length=120, default='Contact')
+    contact_intro = models.TextField(blank=True)
+    hero_image = models.ImageField(upload_to='public_site/', blank=True, null=True)
+    hero_image_alt = models.CharField(max_length=255, blank=True)
+    hero_art_key = models.CharField(max_length=64, choices=PUBLIC_ARTWORK_CHOICES, default='courtyard-house')
+    studio_image = models.ImageField(upload_to='public_site/', blank=True, null=True)
+    studio_image_alt = models.CharField(max_length=255, blank=True)
+    studio_art_key = models.CharField(max_length=64, choices=PUBLIC_ARTWORK_CHOICES, default='atelier-interior')
+    meta_title = models.CharField(max_length=180, blank=True)
+    meta_description = models.CharField(max_length=320, blank=True)
+    singleton = models.BooleanField(default=True, unique=True)
+
+    class Meta:
+        verbose_name = 'Public Site Settings'
+
+    def __str__(self) -> str:
+        return f"{self.brand_name} Public Site"
+
+
+class PublicService(TimeStampedModel):
+    site = models.ForeignKey(PublicSiteSettings, on_delete=models.CASCADE, related_name='services')
+    title = models.CharField(max_length=120)
+    description = models.TextField()
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class PublicProcessStep(TimeStampedModel):
+    site = models.ForeignKey(PublicSiteSettings, on_delete=models.CASCADE, related_name='process_steps')
+    step_label = models.CharField(max_length=40)
+    title = models.CharField(max_length=120)
+    description = models.TextField()
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return f"{self.step_label} {self.title}"
+
+
+class PublicProjectHighlight(TimeStampedModel):
+    site = models.ForeignKey(PublicSiteSettings, on_delete=models.CASCADE, related_name='project_highlights')
+    title = models.CharField(max_length=150)
+    project_type = models.CharField(max_length=120, blank=True)
+    location = models.CharField(max_length=120, blank=True)
+    description = models.TextField()
+    image = models.ImageField(upload_to='public_site/', blank=True, null=True)
+    image_alt = models.CharField(max_length=255, blank=True)
+    image_secondary = models.ImageField(upload_to='public_site/', blank=True, null=True)
+    image_secondary_alt = models.CharField(max_length=255, blank=True)
+    image_tertiary = models.ImageField(upload_to='public_site/', blank=True, null=True)
+    image_tertiary_alt = models.CharField(max_length=255, blank=True)
+    art_key = models.CharField(max_length=64, choices=PUBLIC_ARTWORK_CHOICES, default='courtyard-house')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class RolePermission(TimeStampedModel):
     class Module(models.TextChoices):
         CLIENTS = 'clients', 'Clients'

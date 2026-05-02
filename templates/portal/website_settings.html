@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% load portal_extras %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Settings</div>
+        <h2 class="mb-1">Website Settings</h2>
+        <p class="text-muted mb-0">Edit the public Novart homepage without leaving the ERP.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="https://novartarchitects.com/" target="_blank" rel="noopener noreferrer">View Live Site</a>
+        <button class="btn btn-primary" type="submit" form="websiteSettingsForm">Save Website</button>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="websiteSettingsForm">
+    {% csrf_token %}
+    {% if profile_form.errors or site_form.errors or services_formset.errors or process_formset.errors or projects_formset.errors or services_formset.non_form_errors or process_formset.non_form_errors or projects_formset.non_form_errors %}
+    <div class="alert alert-danger">
+        <div class="fw-semibold mb-1">Please correct the highlighted website fields and try again.</div>
+        {{ profile_form.non_field_errors }}
+        {{ site_form.non_field_errors }}
+        {{ services_formset.non_form_errors }}
+        {{ process_formset.non_form_errors }}
+        {{ projects_formset.non_form_errors }}
+    </div>
+    {% endif %}
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="eyebrow">Section 1</div>
+                            <h4 class="mb-1">Brand & Contact</h4>
+                            <p class="text-muted mb-0">Shared brand details shown on the public site.</p>
+                        </div>
+                        <img src="{{ logo_url }}" alt="Current logo" style="height: 56px; width: auto;">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.brand_name.id_for_label }}">Brand name</label>
+                            {{ site_form.brand_name|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.brand_suffix.id_for_label }}">Brand suffix</label>
+                            {{ site_form.brand_suffix|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ profile_form.logo.id_for_label }}">Logo</label>
+                            {{ profile_form.logo|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.phone_display.id_for_label }}">Phone</label>
+                            {{ site_form.phone_display|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.whatsapp_number.id_for_label }}">WhatsApp number</label>
+                            {{ site_form.whatsapp_number|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.email.id_for_label }}">Email</label>
+                            {{ site_form.email|add_class:"form-control" }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ site_form.address.id_for_label }}">Address</label>
+                            {{ site_form.address|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="eyebrow">Section 2</div>
+                            <h4 class="mb-1">Hero</h4>
+                            <p class="text-muted mb-0">Control the first viewport of the public homepage.</p>
+                        </div>
+                        <img src="{{ hero_preview_url }}" alt="Current hero preview" style="height: 88px; width: 132px; object-fit: cover;" class="rounded">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="{{ site_form.hero_heading.id_for_label }}">Headline</label>
+                            {{ site_form.hero_heading|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ site_form.hero_cta_phone_label.id_for_label }}">Phone CTA label</label>
+                            {{ site_form.hero_cta_phone_label|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ site_form.hero_cta_whatsapp_label.id_for_label }}">WhatsApp CTA label</label>
+                            {{ site_form.hero_cta_whatsapp_label|add_class:"form-control" }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ site_form.hero_supporting_text.id_for_label }}">Supporting text</label>
+                            {{ site_form.hero_supporting_text|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.hero_art_key.id_for_label }}">Fallback artwork</label>
+                            {{ site_form.hero_art_key|add_class:"form-select" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.hero_image.id_for_label }}">Hero image upload</label>
+                            {{ site_form.hero_image|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.hero_image_alt.id_for_label }}">Hero image alt text</label>
+                            {{ site_form.hero_image_alt|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="eyebrow">Section 3</div>
+                    <h4 class="mb-1">Services</h4>
+                    <p class="text-muted mb-3">Edit the service list shown on the homepage.</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.services_heading.id_for_label }}">Section heading</label>
+                            {{ site_form.services_heading|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label" for="{{ site_form.services_intro.id_for_label }}">Intro text</label>
+                            {{ site_form.services_intro|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    {{ services_formset.management_form }}
+                    <div class="row g-3">
+                        {% for form in services_formset.forms %}
+                        <div class="col-12">
+                            <div class="border rounded p-3">
+                                {{ form.id }}
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+                                        {{ form.title|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="{{ form.sort_order.id_for_label }}">Order</label>
+                                        {{ form.sort_order|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                                        {{ form.description|add_class:"form-control" }}
+                                    </div>
+                                    {% if services_formset.can_delete %}
+                                    <div class="col-12">
+                                        <label class="form-check-label">{{ form.DELETE }} Remove this service</label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="eyebrow">Section 4</div>
+                    <h4 class="mb-1">Process</h4>
+                    <p class="text-muted mb-3">Define the working method shown on the homepage.</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.process_heading.id_for_label }}">Section heading</label>
+                            {{ site_form.process_heading|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label" for="{{ site_form.process_intro.id_for_label }}">Intro text</label>
+                            {{ site_form.process_intro|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    {{ process_formset.management_form }}
+                    <div class="row g-3">
+                        {% for form in process_formset.forms %}
+                        <div class="col-12">
+                            <div class="border rounded p-3">
+                                {{ form.id }}
+                                <div class="row g-3">
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="{{ form.step_label.id_for_label }}">Step label</label>
+                                        {{ form.step_label|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+                                        {{ form.title|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="{{ form.sort_order.id_for_label }}">Order</label>
+                                        {{ form.sort_order|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                                        {{ form.description|add_class:"form-control" }}
+                                    </div>
+                                    {% if process_formset.can_delete %}
+                                    <div class="col-12">
+                                        <label class="form-check-label">{{ form.DELETE }} Remove this step</label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="eyebrow">Section 5</div>
+                    <h4 class="mb-1">Selected Work</h4>
+                    <p class="text-muted mb-3">Replace placeholder visuals and project text here.</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.work_heading.id_for_label }}">Section heading</label>
+                            {{ site_form.work_heading|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label" for="{{ site_form.work_intro.id_for_label }}">Intro text</label>
+                            {{ site_form.work_intro|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    {{ projects_formset.management_form }}
+                    <div class="row g-3">
+                        {% for row in project_rows %}
+                        <div class="col-12">
+                            <div class="border rounded p-3">
+                                {{ row.form.id }}
+                                <div class="row g-3 align-items-start">
+                                    <div class="col-lg-3">
+                                        {% if row.preview_urls %}
+                                        <div class="d-flex flex-wrap gap-2 mb-2">
+                                            {% for preview_url in row.preview_urls %}
+                                            <img src="{{ preview_url }}" alt="Project preview" style="height: 78px; width: 104px; object-fit: cover;" class="rounded">
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        <label class="form-label" for="{{ row.form.image.id_for_label }}">Primary project image</label>
+                                        {{ row.form.image|add_class:"form-control" }}
+                                        <label class="form-label mt-3" for="{{ row.form.image_alt.id_for_label }}">Primary image alt text</label>
+                                        {{ row.form.image_alt|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-lg-9">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label" for="{{ row.form.title.id_for_label }}">Title</label>
+                                                {{ row.form.title|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label" for="{{ row.form.project_type.id_for_label }}">Project type</label>
+                                                {{ row.form.project_type|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label" for="{{ row.form.location.id_for_label }}">Location</label>
+                                                {{ row.form.location|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" for="{{ row.form.art_key.id_for_label }}">Fallback artwork</label>
+                                                {{ row.form.art_key|add_class:"form-select" }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" for="{{ row.form.sort_order.id_for_label }}">Order</label>
+                                                {{ row.form.sort_order|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ row.form.image_secondary.id_for_label }}">Second project image</label>
+                                                {{ row.form.image_secondary|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ row.form.image_secondary_alt.id_for_label }}">Second image alt text</label>
+                                                {{ row.form.image_secondary_alt|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ row.form.image_tertiary.id_for_label }}">Third project image</label>
+                                                {{ row.form.image_tertiary|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" for="{{ row.form.image_tertiary_alt.id_for_label }}">Third image alt text</label>
+                                                {{ row.form.image_tertiary_alt|add_class:"form-control" }}
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" for="{{ row.form.description.id_for_label }}">Description</label>
+                                                {{ row.form.description|add_class:"form-control" }}
+                                            </div>
+                                            {% if projects_formset.can_delete %}
+                                            <div class="col-12">
+                                                <label class="form-check-label">{{ row.form.DELETE }} Remove this project</label>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="eyebrow">Section 6</div>
+                            <h4 class="mb-1">Studio</h4>
+                            <p class="text-muted mb-0">Practice story and supporting image.</p>
+                        </div>
+                        <img src="{{ studio_preview_url }}" alt="Current studio preview" style="height: 88px; width: 132px; object-fit: cover;" class="rounded">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label" for="{{ site_form.studio_heading.id_for_label }}">Section heading</label>
+                            {{ site_form.studio_heading|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ site_form.studio_art_key.id_for_label }}">Fallback artwork</label>
+                            {{ site_form.studio_art_key|add_class:"form-select" }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="{{ site_form.studio_image.id_for_label }}">Studio image</label>
+                            {{ site_form.studio_image|add_class:"form-control" }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ site_form.studio_image_alt.id_for_label }}">Studio image alt text</label>
+                            {{ site_form.studio_image_alt|add_class:"form-control" }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ site_form.studio_body.id_for_label }}">Studio body</label>
+                            {{ site_form.studio_body|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="eyebrow">Section 7</div>
+                    <h4 class="mb-1">SEO</h4>
+                    <p class="text-muted mb-3">Page title and meta description for search previews.</p>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ site_form.meta_title.id_for_label }}">Meta title</label>
+                        {{ site_form.meta_title|add_class:"form-control" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ site_form.meta_description.id_for_label }}">Meta description</label>
+                        {{ site_form.meta_description|add_class:"form-control" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ site_form.contact_heading.id_for_label }}">Contact heading</label>
+                        {{ site_form.contact_heading|add_class:"form-control" }}
+                    </div>
+                    <div>
+                        <label class="form-label" for="{{ site_form.contact_intro.id_for_label }}">Contact intro</label>
+                        {{ site_form.contact_intro|add_class:"form-control" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary btn-lg">Save Website</button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -40,6 +40,7 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models.functions import Coalesce, Greatest, Cast, TruncMonth
@@ -160,6 +161,11 @@ from .forms import (
     PersonalExpenseForm,
     SalaryPaymentForm,
     ReminderSettingForm,
+    WebsiteProcessStepFormSet,
+    WebsiteProfileLogoForm,
+    WebsiteProjectHighlightFormSet,
+    WebsitePublicSiteForm,
+    WebsiteServiceFormSet,
     UserForm,
     VendorForm,
     RolePermissionForm,
@@ -186,6 +192,8 @@ from .models import (
     Project,
     ProjectFinancePlan,
     ProjectStageHistory,
+    PublicProjectHighlight,
+    PublicSiteSettings,
     ReminderSetting,
     StaffActivity,
     SiteIssue,
@@ -204,6 +212,7 @@ from .models import (
     RecurringTransactionRule,
 )
 from .permissions import MODULE_LABELS, ensure_role_permissions, get_permissions_for_user
+from .public_site import _artwork_url, _public_site_defaults, _safe_image_url
 from .notifications.tasks import notify_task_change
 from .notifications.whatsapp import send_text as send_whatsapp_text
 from .activity import log_staff_activity
@@ -3337,6 +3346,70 @@ def finance_dashboard(request):
             'chart_data': json.dumps(chart_data),
         },
     )
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+@module_required('settings')
+def website_settings(request):
+    profile, _ = FirmProfile.objects.get_or_create(singleton=True, defaults={'name': 'Novart Architects'})
+    site, _ = PublicSiteSettings.objects.get_or_create(singleton=True, defaults=_public_site_defaults())
+
+    if request.method == 'POST':
+        profile_form = WebsiteProfileLogoForm(request.POST, request.FILES, instance=profile, prefix='profile')
+        site_form = WebsitePublicSiteForm(request.POST, request.FILES, instance=site, prefix='site')
+        services_formset = WebsiteServiceFormSet(request.POST, request.FILES, instance=site, prefix='services')
+        process_formset = WebsiteProcessStepFormSet(request.POST, request.FILES, instance=site, prefix='process_steps')
+        projects_formset = WebsiteProjectHighlightFormSet(request.POST, request.FILES, instance=site, prefix='projects')
+
+        if all(
+            [
+                profile_form.is_valid(),
+                site_form.is_valid(),
+                services_formset.is_valid(),
+                process_formset.is_valid(),
+                projects_formset.is_valid(),
+            ]
+        ):
+            with db_transaction.atomic():
+                profile_form.save()
+                site_form.save()
+                services_formset.save()
+                process_formset.save()
+                projects_formset.save()
+            messages.success(request, 'Website settings updated.')
+            return redirect('website_settings')
+    else:
+        profile_form = WebsiteProfileLogoForm(instance=profile, prefix='profile')
+        site_form = WebsitePublicSiteForm(instance=site, prefix='site')
+        services_formset = WebsiteServiceFormSet(instance=site, prefix='services')
+        process_formset = WebsiteProcessStepFormSet(instance=site, prefix='process_steps')
+        projects_formset = WebsiteProjectHighlightFormSet(instance=site, prefix='projects')
+
+    project_rows = []
+    for form in projects_formset.forms:
+        instance = form.instance
+        preview_urls = []
+        if instance.pk:
+            preview_urls.append(_artwork_url(instance.image, instance.art_key))
+            for image_field_name in ('image_secondary', 'image_tertiary'):
+                image_url = _safe_image_url(getattr(instance, image_field_name, None))
+                if image_url:
+                    preview_urls.append(image_url)
+        project_rows.append({'form': form, 'preview_url': preview_urls[0] if preview_urls else '', 'preview_urls': preview_urls})
+
+    context = {
+        'profile_form': profile_form,
+        'site_form': site_form,
+        'services_formset': services_formset,
+        'process_formset': process_formset,
+        'projects_formset': projects_formset,
+        'project_rows': project_rows,
+        'logo_url': _safe_image_url(getattr(profile, 'logo', None)) or static('img/novart.png'),
+        'hero_preview_url': _artwork_url(getattr(site_form.instance, 'hero_image', None), site_form.instance.hero_art_key),
+        'studio_preview_url': _artwork_url(getattr(site_form.instance, 'studio_image', None), site_form.instance.studio_art_key),
+    }
+    return render(request, 'portal/website_settings.html', context)
 
 
 @login_required

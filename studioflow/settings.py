@@ -38,6 +38,11 @@ ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS',
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
 
 
+def env_list(name: str, default: str = '') -> list[str]:
+    """Read a comma-separated environment variable."""
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
+
 def env_bool(name: str, default: bool) -> bool:
     """Read a boolean-like environment variable."""
     return os.environ.get(name, str(default)).lower() in ('1', 'true', 'yes', 'on')
@@ -72,6 +77,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'portal.middleware.PublicSiteHostMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -150,7 +156,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = (
+    'django.contrib.staticfiles.storage.StaticFilesStorage'
+    if 'test' in sys.argv
+    else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
@@ -162,6 +172,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+ERP_HOSTS = env_list('DJANGO_ERP_HOSTS')
+if not ERP_HOSTS:
+    ERP_HOSTS = [host for host in ALLOWED_HOSTS if host.startswith('erp.')]
+
+PUBLIC_SITE_HOSTS = env_list('DJANGO_PUBLIC_SITE_HOSTS')
+if not PUBLIC_SITE_HOSTS:
+    PUBLIC_SITE_HOSTS = [host for host in ALLOWED_HOSTS if host not in ERP_HOSTS]
+
+ERP_BASE_URL = os.environ.get('DJANGO_ERP_BASE_URL', '').rstrip('/')
 
 AUTH_USER_MODEL = 'portal.User'
 

@@ -20,6 +20,10 @@ from .models import (
     Lead,
     Notification,
     Payment,
+    PublicProcessStep,
+    PublicProjectHighlight,
+    PublicService,
+    PublicSiteSettings,
     Project,
     ProjectFinancePlan,
     ProjectMilestone,
@@ -48,6 +52,31 @@ class UserAdmin(DjangoUserAdmin):
 
 class StageHistoryInline(admin.TabularInline):
     model = ProjectStageHistory
+    extra = 0
+
+
+class PublicServiceInline(admin.TabularInline):
+    model = PublicService
+    extra = 0
+
+
+class PublicProcessStepInline(admin.TabularInline):
+    model = PublicProcessStep
+    extra = 0
+
+
+class PublicProjectHighlightInline(admin.TabularInline):
+    model = PublicProjectHighlight
+    fields = (
+        'title',
+        'project_type',
+        'location',
+        'image',
+        'image_secondary',
+        'image_tertiary',
+        'art_key',
+        'sort_order',
+    )
     extra = 0
 
 
@@ -158,6 +187,50 @@ class StaffActivityAdmin(admin.ModelAdmin):
 @admin.register(FirmProfile)
 class FirmProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'email', 'tax_id')
+
+
+@admin.register(PublicSiteSettings)
+class PublicSiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ('brand_name', 'phone_display', 'email', 'updated_at')
+    inlines = [PublicServiceInline, PublicProcessStepInline, PublicProjectHighlightInline]
+    fieldsets = (
+        ('Brand', {'fields': ('brand_name', 'brand_suffix')}),
+        (
+            'Hero',
+            {
+                'fields': (
+                    'hero_heading',
+                    'hero_supporting_text',
+                    ('hero_cta_phone_label', 'hero_cta_whatsapp_label'),
+                    ('phone_display', 'whatsapp_number'),
+                    ('hero_art_key', 'hero_image', 'hero_image_alt'),
+                )
+            },
+        ),
+        (
+            'Sections',
+            {
+                'fields': (
+                    ('services_heading', 'process_heading'),
+                    ('work_heading', 'studio_heading'),
+                    ('contact_heading',),
+                    'services_intro',
+                    'process_intro',
+                    'work_intro',
+                    'studio_body',
+                    'contact_intro',
+                    ('studio_art_key', 'studio_image', 'studio_image_alt'),
+                )
+            },
+        ),
+        ('Contact', {'fields': ('email', 'address')}),
+        ('SEO', {'fields': ('meta_title', 'meta_description')}),
+    )
+
+    def has_add_permission(self, request):
+        if PublicSiteSettings.objects.exists():
+            return False
+        return super().has_add_permission(request)
 
 
 @admin.register(Account)

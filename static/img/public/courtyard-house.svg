@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Courtyard house concept artwork</title>
+  <desc id="desc">Warm-toned architectural scene of a low residence organized around a central courtyard and reflecting pool.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3ede4"/>
+      <stop offset="55%" stop-color="#d8c4aa"/>
+      <stop offset="100%" stop-color="#a67a60"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5b6a52"/>
+      <stop offset="100%" stop-color="#314034"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d7e6df" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#7ba093" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1100" fill="url(#sky)"/>
+  <circle cx="1150" cy="210" r="118" fill="#fff3e4" opacity="0.55"/>
+  <path d="M0 720C230 660 420 640 620 670C830 700 1060 760 1600 700V1100H0Z" fill="url(#ground)"/>
+  <rect x="235" y="425" width="1130" height="308" fill="#c8ab8d"/>
+  <rect x="275" y="468" width="1050" height="232" fill="#efe7db"/>
+  <rect x="335" y="510" width="430" height="178" fill="url(#glass)"/>
+  <rect x="835" y="510" width="430" height="178" fill="url(#glass)"/>
+  <rect x="758" y="468" width="84" height="232" fill="#a17a60"/>
+  <rect x="505" y="398" width="594" height="44" fill="#6a5649"/>
+  <rect x="618" y="558" width="364" height="118" fill="#d6c1aa"/>
+  <rect x="654" y="578" width="292" height="82" fill="#b79073"/>
+  <rect x="380" y="760" width="830" height="74" fill="#d6ccb8" opacity="0.78"/>
+  <rect x="428" y="778" width="734" height="34" rx="17" fill="#7a9382" opacity="0.86"/>
+  <path d="M210 790C325 720 377 650 402 544C435 648 474 716 582 788Z" fill="#425244"/>
+  <path d="M1280 790C1380 728 1436 660 1460 552C1496 662 1536 724 1600 792Z" fill="#425244"/>
+  <rect x="618" y="680" width="364" height="52" fill="#d2b396"/>
+  <rect x="430" y="845" width="740" height="180" fill="#2c3930"/>
+  <path d="M516 290C626 286 714 320 800 374C892 324 1002 290 1140 292C1080 348 1036 418 1012 500H604C580 418 544 352 516 290Z" fill="#eadfd0" opacity="0.52"/>
+</svg>

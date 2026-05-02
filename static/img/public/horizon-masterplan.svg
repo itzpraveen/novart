@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Horizon masterplan concept artwork</title>
+  <desc id="desc">Aerial planning illustration with site blocks, planted corridors, pathways, and water edges.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f0ebdf"/>
+      <stop offset="100%" stop-color="#d5c7b4"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#aec4bc"/>
+      <stop offset="100%" stop-color="#6a877d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1100" fill="url(#paper)"/>
+  <rect x="92" y="92" width="1416" height="916" fill="none" stroke="#6d5a4c" stroke-width="6" stroke-dasharray="10 14"/>
+  <path d="M0 766C210 700 416 738 584 678C750 618 880 460 1018 418C1188 366 1398 430 1600 322V1100H0Z" fill="#4a5d4d"/>
+  <path d="M0 250C210 320 330 402 470 430C652 466 800 360 972 392C1132 420 1288 580 1600 506V0H0Z" fill="#e8dfd2"/>
+  <path d="M204 244C336 162 476 130 650 118C620 274 682 404 854 498C652 578 500 714 410 948C292 808 176 704 86 640C226 502 286 390 204 244Z" fill="#f8f2e8" opacity="0.82"/>
+  <path d="M854 498C980 390 1128 308 1356 278C1288 510 1332 708 1512 890C1280 854 1090 882 874 976C904 760 860 624 708 540Z" fill="#f7efe3" opacity="0.76"/>
+  <rect x="416" y="280" width="188" height="126" rx="22" fill="#ba8968"/>
+  <rect x="650" y="214" width="166" height="184" rx="20" fill="#8f6a55"/>
+  <rect x="956" y="360" width="248" height="132" rx="22" fill="#c79b78"/>
+  <rect x="1114" y="560" width="208" height="154" rx="22" fill="#9c745b"/>
+  <rect x="570" y="604" width="208" height="144" rx="22" fill="#c39a7a"/>
+  <rect x="326" y="702" width="184" height="118" rx="22" fill="#8a715d"/>
+  <path d="M294 200C466 306 492 452 394 642" fill="none" stroke="#687d70" stroke-width="28" stroke-linecap="round"/>
+  <path d="M720 156C852 304 920 480 882 722" fill="none" stroke="#687d70" stroke-width="22" stroke-linecap="round"/>
+  <path d="M1212 246C1080 412 1030 620 1058 854" fill="none" stroke="#687d70" stroke-width="24" stroke-linecap="round"/>
+  <path d="M448 510C620 444 798 460 962 534" fill="none" stroke="#d9c5ae" stroke-width="18" stroke-linecap="round"/>
+  <path d="M792 840C930 784 1086 770 1260 822" fill="none" stroke="#d9c5ae" stroke-width="18" stroke-linecap="round"/>
+  <path d="M122 938C364 890 494 826 656 690C782 584 874 498 1020 466C1128 444 1268 476 1496 430" fill="none" stroke="url(#water)" stroke-width="46" stroke-linecap="round" opacity="0.94"/>
+</svg>

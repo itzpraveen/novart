@@ -25,6 +25,10 @@ from .models import (
     Payment,
     ProjectFinancePlan,
     ProjectMilestone,
+    PublicProcessStep,
+    PublicProjectHighlight,
+    PublicService,
+    PublicSiteSettings,
     Receipt,
     RecurringTransactionRule,
     Project,
@@ -962,3 +966,121 @@ class FirmProfileForm(forms.ModelForm):
             return int(match.group(1))
         except (TypeError, ValueError):
             raise forms.ValidationError('Enter a valid invoice number suffix (e.g. 584).')
+
+
+class WebsiteProfileLogoForm(forms.ModelForm):
+    class Meta:
+        model = FirmProfile
+        fields = ['logo']
+
+
+class WebsitePublicSiteForm(forms.ModelForm):
+    class Meta:
+        model = PublicSiteSettings
+        fields = [
+            'brand_name',
+            'brand_suffix',
+            'phone_display',
+            'whatsapp_number',
+            'email',
+            'address',
+            'hero_heading',
+            'hero_supporting_text',
+            'hero_cta_phone_label',
+            'hero_cta_whatsapp_label',
+            'hero_art_key',
+            'hero_image',
+            'hero_image_alt',
+            'services_heading',
+            'services_intro',
+            'process_heading',
+            'process_intro',
+            'work_heading',
+            'work_intro',
+            'studio_heading',
+            'studio_body',
+            'studio_art_key',
+            'studio_image',
+            'studio_image_alt',
+            'contact_heading',
+            'contact_intro',
+            'meta_title',
+            'meta_description',
+        ]
+        widgets = {
+            'address': forms.Textarea(attrs={'rows': 2}),
+            'hero_supporting_text': forms.Textarea(attrs={'rows': 3}),
+            'services_intro': forms.Textarea(attrs={'rows': 2}),
+            'process_intro': forms.Textarea(attrs={'rows': 2}),
+            'work_intro': forms.Textarea(attrs={'rows': 2}),
+            'studio_body': forms.Textarea(attrs={'rows': 4}),
+            'contact_intro': forms.Textarea(attrs={'rows': 2}),
+            'meta_description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class PublicServiceForm(forms.ModelForm):
+    class Meta:
+        model = PublicService
+        fields = ['title', 'description', 'sort_order']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+        }
+
+
+class PublicProcessStepForm(forms.ModelForm):
+    class Meta:
+        model = PublicProcessStep
+        fields = ['step_label', 'title', 'description', 'sort_order']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+        }
+
+
+class PublicProjectHighlightForm(forms.ModelForm):
+    class Meta:
+        model = PublicProjectHighlight
+        fields = [
+            'title',
+            'project_type',
+            'location',
+            'description',
+            'image',
+            'image_alt',
+            'image_secondary',
+            'image_secondary_alt',
+            'image_tertiary',
+            'image_tertiary_alt',
+            'art_key',
+            'sort_order',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+WebsiteServiceFormSet = inlineformset_factory(
+    PublicSiteSettings,
+    PublicService,
+    form=PublicServiceForm,
+    extra=2,
+    can_delete=True,
+)
+
+
+WebsiteProcessStepFormSet = inlineformset_factory(
+    PublicSiteSettings,
+    PublicProcessStep,
+    form=PublicProcessStepForm,
+    extra=2,
+    can_delete=True,
+)
+
+
+WebsiteProjectHighlightFormSet = inlineformset_factory(
+    PublicSiteSettings,
+    PublicProjectHighlight,
+    form=PublicProjectHighlightForm,
+    extra=2,
+    can_delete=True,
+)

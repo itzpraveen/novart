@@ -9,6 +9,8 @@ from django.template.loader import render_to_string
 from django.urls import include, path
 from django.views.decorators.http import require_GET
 
+from portal.public_site import site_root
+
 
 def favicon(request):
     try:
@@ -44,6 +46,7 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='portal/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('api/v1/', include('portal.api.urls')),
+    path('', site_root, name='dashboard'),
     path('', include('portal.urls')),
 ]
 
