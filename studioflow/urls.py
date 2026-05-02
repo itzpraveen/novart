@@ -12,6 +12,11 @@ from django.views.decorators.http import require_GET
 from portal.public_site import site_root
 
 
+def _public_canonical_url(path: str = '/') -> str:
+    base_url = getattr(settings, 'PUBLIC_SITE_CANONICAL_URL', 'https://novartarchitects.com').rstrip('/')
+    return f"{base_url}{path}"
+
+
 def favicon(request):
     try:
         return redirect(staticfiles_storage.url("favicon.ico"), permanent=True)
@@ -38,8 +43,49 @@ def service_worker(request):
     response["Cache-Control"] = "no-cache"
     return response
 
+
+@require_GET
+def robots_txt(request):
+    response = HttpResponse(
+        "\n".join(
+            [
+                "User-agent: *",
+                "Allow: /",
+                f"Sitemap: {_public_canonical_url('/sitemap.xml')}",
+                "",
+            ]
+        ),
+        content_type="text/plain",
+    )
+    response["Cache-Control"] = "max-age=3600"
+    return response
+
+
+@require_GET
+def sitemap_xml(request):
+    response = HttpResponse(
+        "\n".join(
+            [
+                '<?xml version="1.0" encoding="UTF-8"?>',
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+                "  <url>",
+                f"    <loc>{_public_canonical_url()}</loc>",
+                "    <changefreq>weekly</changefreq>",
+                "    <priority>1.0</priority>",
+                "  </url>",
+                "</urlset>",
+                "",
+            ]
+        ),
+        content_type="application/xml",
+    )
+    response["Cache-Control"] = "max-age=3600"
+    return response
+
 urlpatterns = [
     path("favicon.ico", favicon),
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     path("manifest.json", manifest, name="manifest"),
     path("service-worker.js", service_worker, name="service_worker"),
     path('admin/', admin.site.urls),

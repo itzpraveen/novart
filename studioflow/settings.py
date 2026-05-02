@@ -182,6 +182,7 @@ if not PUBLIC_SITE_HOSTS:
     PUBLIC_SITE_HOSTS = [host for host in ALLOWED_HOSTS if host not in ERP_HOSTS]
 
 ERP_BASE_URL = os.environ.get('DJANGO_ERP_BASE_URL', '').rstrip('/')
+PUBLIC_SITE_CANONICAL_URL = os.environ.get('DJANGO_PUBLIC_SITE_CANONICAL_URL', 'https://novartarchitects.com').rstrip('/')
 
 AUTH_USER_MODEL = 'portal.User'
 

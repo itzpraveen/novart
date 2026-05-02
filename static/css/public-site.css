@@ -449,6 +449,66 @@ a {
     color: var(--moss);
 }
 
+.section-local {
+    padding-top: 5.5rem;
+    padding-bottom: 5.5rem;
+    background: var(--paper);
+}
+
+.local-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+    gap: 3rem;
+    align-items: start;
+}
+
+.local-copy h2 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 3rem;
+    line-height: 0.98;
+    font-weight: 600;
+}
+
+.local-copy p:last-child {
+    max-width: 48rem;
+    color: rgba(36, 39, 37, 0.72);
+    line-height: 1.78;
+}
+
+.local-panel {
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--line-strong);
+}
+
+.local-panel__label {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.local-areas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.local-areas span {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--line);
+    color: var(--moss);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.local-address {
+    margin: 1.35rem 0 0;
+    color: rgba(36, 39, 37, 0.72);
+    line-height: 1.7;
+}
+
 .section-work {
     background: var(--graphite);
     color: var(--paper);
@@ -651,6 +711,7 @@ body.is-ready .hero .reveal {
 
     .section-head,
     .process-layout,
+    .local-grid,
     .project-row,
     .project-row.is-flipped,
     .studio-grid,
@@ -927,6 +988,7 @@ body.is-ready .hero .reveal {
     }
 
     .section-head h2,
+    .local-copy h2,
     .studio-copy h2,
     .contact-copy h2 {
         font-size: 2.2rem;

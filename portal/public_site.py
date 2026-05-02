@@ -1,3 +1,4 @@
+import json
 import re
 
 from django.conf import settings
@@ -12,6 +13,31 @@ ARTWORK_ASSET_PATHS = {
     'atelier-interior': 'img/public/atelier-interior.svg',
     'horizon-masterplan': 'img/public/horizon-masterplan.svg',
 }
+
+PUBLIC_EXACT_PATHS = {
+    '/',
+    '/favicon.ico',
+    '/manifest.json',
+    '/robots.txt',
+    '/service-worker.js',
+    '/sitemap.xml',
+}
+
+LOCAL_SERVICE_AREAS = [
+    'Edavannapara',
+    'Malappuram',
+    'Kondotty',
+    'Areekode',
+    'Kozhikode',
+    'Kerala',
+]
+
+LOCAL_SEO_HEADING = 'Architects near Edavannapara and Malappuram'
+LOCAL_SEO_BODY = (
+    'Novart Architects works with homeowners and site owners across Edavannapara, Malappuram, '
+    'Kondotty, Areekode, Kozhikode, and nearby Kerala towns for architecture, interiors, '
+    'renovation, planning, and project management.'
+)
 
 
 def _normalized_host(raw_host: str) -> str:
@@ -34,7 +60,7 @@ def is_public_host(request) -> bool:
 def is_public_path(path: str) -> bool:
     static_url = getattr(settings, 'STATIC_URL', '/static/')
     media_url = getattr(settings, 'MEDIA_URL', '/media/')
-    return path == '/' or path == '/favicon.ico' or path.startswith(static_url) or path.startswith(media_url)
+    return path in PUBLIC_EXACT_PATHS or path.startswith(static_url) or path.startswith(media_url)
 
 
 def erp_redirect_url(request) -> str | None:
@@ -72,6 +98,63 @@ def _whatsapp_href(phone_number: str) -> str:
     return f"https://wa.me/{digits}" if digits else ''
 
 
+def _canonical_public_url(path: str = '/') -> str:
+    configured = getattr(settings, 'PUBLIC_SITE_CANONICAL_URL', '').rstrip('/')
+    if configured:
+        return f"{configured}{path}"
+    public_hosts = [host for host in getattr(settings, 'PUBLIC_SITE_HOSTS', []) if host]
+    host = public_hosts[0] if public_hosts else 'novartarchitects.com'
+    return f"https://{_normalized_host(host)}{path}"
+
+
+def _absolute_public_url(url: str) -> str:
+    if not url:
+        return ''
+    if url.startswith(('http://', 'https://')):
+        return url
+    if not url.startswith('/'):
+        url = f"/{url}"
+    return _canonical_public_url(url)
+
+
+def _local_business_schema(site, logo_url: str, hero_image_url: str, project_cards: list[dict]) -> str:
+    phone = getattr(site, 'phone_display', '') or getattr(site, 'whatsapp_number', '')
+    address = getattr(site, 'address', '') or 'Edavannapara, Malappuram, Kerala'
+    images = [hero_image_url, *[project['image_url'] for project in project_cards[:3]]]
+    schema = {
+        '@context': 'https://schema.org',
+        '@type': ['LocalBusiness', 'ArchitecturalService'],
+        '@id': f"{_canonical_public_url()}#localbusiness",
+        'name': f"{site.brand_name} {site.brand_suffix}".strip(),
+        'url': _canonical_public_url(),
+        'logo': _absolute_public_url(logo_url),
+        'image': [_absolute_public_url(image) for image in images if image],
+        'description': getattr(site, 'meta_description', '') or getattr(site, 'hero_supporting_text', ''),
+        'telephone': phone,
+        'email': getattr(site, 'email', ''),
+        'priceRange': 'Contact for quote',
+        'address': {
+            '@type': 'PostalAddress',
+            'streetAddress': address,
+            'addressLocality': 'Edavannapara',
+            'addressRegion': 'Kerala',
+            'postalCode': '673645',
+            'addressCountry': 'IN',
+        },
+        'areaServed': [{'@type': 'Place', 'name': area} for area in LOCAL_SERVICE_AREAS],
+        'knowsAbout': [
+            'Architectural design',
+            'Interior design',
+            'Residential architecture',
+            'Home renovation',
+            'Planning',
+            'Project management',
+        ],
+        'sameAs': [_canonical_public_url()],
+    }
+    return json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
+
+
 def _public_site_defaults() -> dict:
     return {
         'brand_name': 'Novart',
@@ -96,8 +179,8 @@ def _public_site_defaults() -> dict:
         'contact_intro': 'Share the plot, renovation, or interior brief and speak directly with the studio.',
         'hero_art_key': 'courtyard-house',
         'studio_art_key': 'atelier-interior',
-        'meta_title': 'Novart Architects | Architecture, Interiors, Planning',
-        'meta_description': 'Novart Architects designs residential architecture, interiors, planning, and project delivery for homes and renovations in Kerala.',
+        'meta_title': 'Novart Architects Edavannapara | Architects in Malappuram, Kerala',
+        'meta_description': 'Novart Architects designs residential architecture, interiors, renovation, planning, and project delivery in Edavannapara, Malappuram, Kondotty, Areekode, Kozhikode, and nearby Kerala towns.',
     }
 
 
@@ -232,6 +315,12 @@ def public_home(request):
         'logo_url': logo_url,
         'hero_image_url': hero_image_url,
         'studio_image_url': studio_image_url,
+        'canonical_url': _canonical_public_url(),
+        'og_image_url': _absolute_public_url(hero_image_url),
+        'local_business_schema': _local_business_schema(site, logo_url, hero_image_url, project_cards),
+        'local_seo_heading': LOCAL_SEO_HEADING,
+        'local_seo_body': LOCAL_SEO_BODY,
+        'local_service_areas': LOCAL_SERVICE_AREAS,
         'services': services,
         'process_steps': process_steps,
         'projects': project_cards,

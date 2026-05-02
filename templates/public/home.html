@@ -6,11 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ site.meta_title|default:"Novart Architects" }}</title>
     <meta name="description" content="{{ site.meta_description|default:site.hero_supporting_text }}">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta name="geo.region" content="IN-KL">
+    <meta name="geo.placename" content="Edavannapara, Malappuram, Kerala">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ site.meta_title|default:'Novart Architects' }}">
+    <meta property="og:description" content="{{ site.meta_description|default:site.hero_supporting_text }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:locale" content="en_IN">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ site.meta_title|default:'Novart Architects' }}">
+    <meta name="twitter:description" content="{{ site.meta_description|default:site.hero_supporting_text }}">
+    <meta name="twitter:image" content="{{ og_image_url }}">
     <link rel="icon" href="/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/public-site.css' %}">
+    <script type="application/ld+json">{{ local_business_schema|safe }}</script>
 </head>
 <body>
     <a class="skip-link" href="#content">Skip to content</a>
@@ -107,6 +122,25 @@
                         </li>
                         {% endfor %}
                     </ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-local" id="nearby-architects">
+            <div class="section-inner local-grid">
+                <div class="local-copy reveal">
+                    <p class="section-kicker">Nearby</p>
+                    <h2>{{ local_seo_heading }}</h2>
+                    <p>{{ local_seo_body }}</p>
+                </div>
+                <div class="local-panel reveal">
+                    <p class="local-panel__label">Service areas</p>
+                    <div class="local-areas">
+                        {% for area in local_service_areas %}
+                        <span>{{ area }}</span>
+                        {% endfor %}
+                    </div>
+                    {% if site.address %}<p class="local-address">{{ site.address|linebreaksbr }}</p>{% endif %}
                 </div>
             </div>
         </section>

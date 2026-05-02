@@ -500,6 +500,7 @@ class PublicSiteContentModelTests(TestCase):
     PUBLIC_SITE_HOSTS=['novartarchitects.com', 'www.novartarchitects.com', 'localhost', '127.0.0.1'],
     ERP_HOSTS=['erp.novartarchitects.com'],
     ERP_BASE_URL='https://erp.novartarchitects.com',
+    PUBLIC_SITE_CANONICAL_URL='https://novartarchitects.com',
 )
 class PublicHomepageRenderTests(TestCase):
     def test_public_homepage_renders_all_sections(self):
@@ -512,6 +513,17 @@ class PublicHomepageRenderTests(TestCase):
         self.assertContains(response, 'Selected Work')
         self.assertContains(response, 'Studio')
         self.assertContains(response, 'Contact')
+
+    def test_public_homepage_has_local_seo_signals(self):
+        response = self.client.get('/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<link rel="canonical" href="https://novartarchitects.com/">')
+        self.assertContains(response, 'Architects near Edavannapara and Malappuram')
+        self.assertContains(response, 'application/ld+json')
+        self.assertContains(response, 'ArchitecturalService')
+        self.assertContains(response, 'Edavannapara')
+        self.assertContains(response, 'Malappuram')
 
     def test_public_homepage_uses_fallback_artwork_when_uploads_are_missing(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
@@ -527,6 +539,21 @@ class PublicHomepageRenderTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '/static/img/novart.png')
         self.assertNotContains(response, '/media/firm/novart_logo.png')
+
+    def test_public_robots_references_sitemap(self):
+        response = self.client.get('/robots.txt', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/plain')
+        self.assertContains(response, 'User-agent: *')
+        self.assertContains(response, 'Sitemap: https://novartarchitects.com/sitemap.xml')
+
+    def test_public_sitemap_lists_canonical_homepage(self):
+        response = self.client.get('/sitemap.xml', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/xml')
+        self.assertContains(response, '<loc>https://novartarchitects.com/</loc>')
 
 
 class WebsiteSettingsAccessTests(TestCase):
