@@ -37,6 +37,14 @@
             <canvas class="hero-structure" data-hero-structure aria-hidden="true"></canvas>
             <div class="hero-scrim"></div>
             <div class="hero-shell">
+                <div class="mobile-folio reveal delay-3" aria-label="Project snapshots">
+                    {% for project in projects|slice:":3" %}
+                    <a class="mobile-folio__item mobile-folio__item--{{ forloop.counter }}" href="#work">
+                        <img src="{{ project.image_url }}" alt="{{ project.image_alt }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                        <span>{{ forloop.counter|stringformat:"02d" }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
                 <div class="hero-copy-block">
                     <p class="hero-brand reveal delay-1">{{ site.brand_name }}</p>
                     <p class="hero-brand-suffix reveal delay-2">{{ site.brand_suffix }}</p>
@@ -52,6 +60,12 @@
 
         <section class="section section-services" id="services">
             <div class="section-inner">
+                <div class="mobile-section-ledger reveal" aria-hidden="true">
+                    <span>01</span>
+                    <span>Light</span>
+                    <span>Climate</span>
+                    <span>Craft</span>
+                </div>
                 <div class="section-head reveal">
                     <p class="section-kicker">Services</p>
                     <div>

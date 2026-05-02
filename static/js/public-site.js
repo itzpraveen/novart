@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
     setupReveals();
     setupParallax();
+    setupMobileFolio();
     setupHeroStructure();
 });
 
@@ -100,6 +101,37 @@ function setupParallax() {
     renderParallax();
     window.addEventListener('scroll', requestParallax, { passive: true });
     window.addEventListener('resize', requestParallax);
+}
+
+function setupMobileFolio() {
+    const folio = document.querySelector('.mobile-folio');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!folio || reducedMotion) {
+        return;
+    }
+
+    let ticking = false;
+
+    const render = () => {
+        const rect = folio.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || 1;
+        const progress = clamp((viewportHeight - rect.top) / (viewportHeight + rect.height), 0, 1);
+        const shift = (progress - 0.5) * -26;
+        document.documentElement.style.setProperty('--mobile-folio-shift', `${shift}px`);
+        ticking = false;
+    };
+
+    const requestRender = () => {
+        if (!ticking) {
+            window.requestAnimationFrame(render);
+            ticking = true;
+        }
+    };
+
+    render();
+    window.addEventListener('scroll', requestRender, { passive: true });
+    window.addEventListener('resize', requestRender);
 }
 
 async function setupHeroStructure() {
