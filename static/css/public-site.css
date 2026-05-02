@@ -16,6 +16,7 @@
     --content-width: min(1180px, calc(100% - 2rem));
     --header-height: 78px;
     --hero-shift: 0px;
+    --page-progress: 0;
 }
 
 *,
@@ -97,6 +98,20 @@ a {
     transition: opacity 0.28s ease;
 }
 
+.public-chrome::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--clay);
+    transform: scaleX(var(--page-progress));
+    transform-origin: left;
+    opacity: 0;
+    transition: opacity 0.28s ease;
+}
+
 .public-chrome.is-scrolled,
 .public-chrome:focus-within {
     color: var(--graphite);
@@ -104,6 +119,10 @@ a {
 
 .public-chrome.is-scrolled::before,
 .public-chrome:focus-within::before {
+    opacity: 1;
+}
+
+.public-chrome.is-scrolled::after {
     opacity: 1;
 }
 
@@ -663,27 +682,84 @@ body.is-ready .hero .reveal {
     .public-menu-toggle {
         display: inline-flex;
         position: relative;
-        z-index: 1;
+        z-index: 32;
     }
 
     .public-nav {
-        position: absolute;
-        top: calc(100% + 0.75rem);
-        right: 0;
+        position: fixed;
+        inset: 0;
+        z-index: 30;
         display: none;
-        min-width: 13rem;
-        padding: 1rem;
-        gap: 0.85rem;
+        min-width: 0;
+        padding: calc(var(--header-height) + 3.4rem) 1rem 2rem;
+        gap: 0;
         flex-direction: column;
-        align-items: start;
-        color: var(--graphite);
-        background: rgba(246, 246, 242, 0.96);
-        border: 1px solid rgba(21, 23, 22, 0.08);
-        box-shadow: var(--shadow);
+        align-items: stretch;
+        justify-content: center;
+        counter-reset: menu;
+        color: var(--paper);
+        background:
+            linear-gradient(rgba(246, 246, 242, 0.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(246, 246, 242, 0.055) 1px, transparent 1px),
+            linear-gradient(150deg, rgba(21, 23, 22, 0.98), rgba(32, 44, 38, 0.98) 66%, rgba(21, 23, 22, 0.98));
+        background-size: 54px 54px, 54px 54px, auto;
+        border: 0;
+        box-shadow: none;
     }
 
     .public-nav.is-open {
         display: flex;
+    }
+
+    .public-nav::before {
+        content: "Novart Architects";
+        margin-bottom: 1.5rem;
+        color: rgba(246, 246, 242, 0.58);
+        font-family: var(--font-serif);
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .public-nav a {
+        counter-increment: menu;
+        display: grid;
+        grid-template-columns: 2rem 1fr;
+        gap: 0.9rem;
+        padding: 1.1rem 0;
+        border-top: 1px solid rgba(246, 246, 242, 0.16);
+        color: var(--paper);
+        font-size: 1.45rem;
+        font-weight: 700;
+        text-transform: none;
+        opacity: 1;
+    }
+
+    .public-nav a::before {
+        content: counter(menu, decimal-leading-zero);
+        color: var(--clay);
+        font-size: 0.76rem;
+        line-height: 1.8rem;
+    }
+
+    .public-nav a:last-child {
+        border-bottom: 1px solid rgba(246, 246, 242, 0.16);
+    }
+
+    body.nav-open {
+        overflow: hidden;
+    }
+
+    body.nav-open .public-chrome,
+    body.nav-open .public-chrome:focus-within {
+        color: var(--paper);
+    }
+
+    body.nav-open .public-chrome::before {
+        opacity: 0;
+    }
+
+    body.nav-open .public-brandmark img {
+        filter: brightness(0) invert(1);
     }
 
     .hero {
@@ -917,6 +993,80 @@ body.is-ready .hero .reveal {
     .project-gallery--2 .project-gallery__image,
     .project-gallery--3 .project-gallery__image {
         aspect-ratio: 4 / 3;
+    }
+
+    .section-work {
+        padding: 4.2rem 0 0;
+    }
+
+    .section-work .section-inner {
+        width: 100%;
+    }
+
+    .section-work .section-head {
+        width: var(--content-width);
+        margin: 0 auto 2.5rem;
+    }
+
+    .work-list {
+        gap: 0;
+    }
+
+    .project-row,
+    .project-row.is-flipped {
+        position: relative;
+        min-height: 92svh;
+        padding: 0 0 4.4rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+        gap: 0;
+        border-top: 1px solid rgba(246, 246, 242, 0.14);
+    }
+
+    .project-media {
+        width: 100%;
+        min-height: 62svh;
+        aspect-ratio: auto;
+        box-shadow: none;
+    }
+
+    .project-gallery--2,
+    .project-gallery--3 {
+        display: grid;
+        grid-template-columns: 1fr 0.78fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 0.28rem;
+        min-height: 62svh;
+        aspect-ratio: auto;
+    }
+
+    .project-gallery--2 .project-gallery__image--1,
+    .project-gallery--3 .project-gallery__image--1 {
+        grid-row: 1 / 3;
+    }
+
+    .project-gallery--2 .project-gallery__image--2 {
+        grid-row: 1 / 3;
+    }
+
+    .project-gallery--2 .project-gallery__image,
+    .project-gallery--3 .project-gallery__image {
+        aspect-ratio: auto;
+    }
+
+    .project-copy {
+        width: calc(100% - 2rem);
+        margin: -4rem auto 0;
+        padding: 1.25rem 0 0;
+        background: linear-gradient(180deg, rgba(21, 23, 22, 0.86), rgba(21, 23, 22, 0));
+        border-top-color: rgba(246, 246, 242, 0.42);
+        z-index: 1;
+    }
+
+    .project-copy h3 {
+        font-size: 2.4rem;
+        line-height: 0.96;
     }
 
     .contact-band {

@@ -18,6 +18,8 @@ function setupNavigation() {
             return;
         }
         chrome.classList.toggle('is-scrolled', window.scrollY > 18);
+        const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+        document.documentElement.style.setProperty('--page-progress', `${clamp(window.scrollY / scrollable, 0, 1)}`);
     };
 
     updateChrome();
@@ -31,12 +33,16 @@ function setupNavigation() {
         const expanded = navToggle.getAttribute('aria-expanded') === 'true';
         navToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         nav.classList.toggle('is-open', !expanded);
+        document.body.classList.toggle('nav-open', !expanded);
+        navToggle.textContent = expanded ? 'Menu' : 'Close';
     });
 
     nav.querySelectorAll('a').forEach((link) => {
         link.addEventListener('click', () => {
             navToggle.setAttribute('aria-expanded', 'false');
             nav.classList.remove('is-open');
+            document.body.classList.remove('nav-open');
+            navToggle.textContent = 'Menu';
         });
     });
 }
