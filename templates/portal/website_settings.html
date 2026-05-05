@@ -302,6 +302,12 @@
                                     <div class="small text-muted">
                                         {{ row.project.project_type|default:"Project" }}{% if row.project.location %} / {{ row.project.location }}{% endif %}
                                     </div>
+                                    {% if row.project.youtube_url or row.project.instagram_url %}
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        {% if row.project.youtube_url %}<span class="badge text-bg-light">YouTube</span>{% endif %}
+                                        {% if row.project.instagram_url %}<span class="badge text-bg-light">Instagram</span>{% endif %}
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <span class="badge text-bg-light">{{ row.image_count }} image{{ row.image_count|pluralize }}</span>
                                 {% if row.project.show_on_homepage %}

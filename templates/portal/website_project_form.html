@@ -76,6 +76,16 @@
                             <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
                             {{ form.description|add_class:"form-control" }}
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ form.youtube_url.id_for_label }}">YouTube link</label>
+                            {{ form.youtube_url|add_class:"form-control" }}
+                            <div class="form-text">Optional direct video, Shorts, or channel post link for this work.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ form.instagram_url.id_for_label }}">Instagram link</label>
+                            {{ form.instagram_url|add_class:"form-control" }}
+                            <div class="form-text">Optional post or Reel link for this work.</div>
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label" for="{{ form.sort_order.id_for_label }}">Display order</label>
                             {{ form.sort_order|add_class:"form-control" }}

@@ -573,6 +573,31 @@ class PublicHomepageRenderTests(TestCase):
         self.assertContains(response, '+2')
         self.assertContains(response, 'Gallery image 3')
 
+    def test_public_work_renders_project_social_links(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        PublicProjectHighlight.objects.create(
+            site=site,
+            title='Social Residence',
+            project_type='Residential',
+            location='Kerala',
+            description='A project with external media proof.',
+            youtube_url='https://www.youtube.com/watch?v=abc123',
+            instagram_url='https://www.instagram.com/reel/abc123/',
+            art_key='courtyard-house',
+            sort_order=100,
+            show_on_homepage=True,
+        )
+
+        home_response = self.client.get('/', HTTP_HOST='novartarchitects.com')
+        archive_response = self.client.get('/work/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(home_response.status_code, 200)
+        self.assertEqual(archive_response.status_code, 200)
+        self.assertContains(home_response, 'https://www.youtube.com/watch?v=abc123')
+        self.assertContains(home_response, 'https://www.instagram.com/reel/abc123/')
+        self.assertContains(home_response, 'Watch Social Residence on YouTube')
+        self.assertContains(archive_response, 'View Social Residence on Instagram')
+
     def test_public_homepage_has_local_seo_signals(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
 
@@ -785,6 +810,8 @@ class WebsiteSettingsSaveTests(TestCase):
                 'project_type': 'Residential',
                 'location': 'Kerala',
                 'description': 'A shaded residence built around a planted court.',
+                'youtube_url': 'https://www.youtube.com/watch?v=courtyard123',
+                'instagram_url': 'https://www.instagram.com/p/courtyard123/',
                 'show_on_homepage': 'on',
                 'image': _tiny_gif('cover.gif'),
                 'image_alt': 'Courtyard residence cover',
@@ -798,6 +825,8 @@ class WebsiteSettingsSaveTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('website_project_edit', args=[project.pk]))
         self.assertTrue(project.image.name.startswith('public_site/'))
+        self.assertEqual(project.youtube_url, 'https://www.youtube.com/watch?v=courtyard123')
+        self.assertEqual(project.instagram_url, 'https://www.instagram.com/p/courtyard123/')
         self.assertEqual(project.gallery_images.count(), 2)
 
     def test_work_library_edits_project_and_gallery_metadata(self):
@@ -815,6 +844,8 @@ class WebsiteSettingsSaveTests(TestCase):
                 'project_type': 'Residential',
                 'location': 'Calicut',
                 'description': 'Updated project description.',
+                'youtube_url': 'https://youtu.be/updated-project',
+                'instagram_url': 'https://www.instagram.com/reel/updated-project/',
                 'image_alt': 'Updated cover',
                 'art_key': 'atelier-interior',
                 'sort_order': '5',
@@ -840,6 +871,8 @@ class WebsiteSettingsSaveTests(TestCase):
         gallery_image.refresh_from_db()
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.project.title, 'Updated Project')
+        self.assertEqual(self.project.youtube_url, 'https://youtu.be/updated-project')
+        self.assertEqual(self.project.instagram_url, 'https://www.instagram.com/reel/updated-project/')
         self.assertFalse(self.project.show_on_homepage)
         self.assertEqual(gallery_image.alt_text, 'Updated detail')
         self.assertEqual(self.project.gallery_images.count(), 2)
@@ -890,6 +923,8 @@ class WebsiteSettingsRenderTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Project Images')
+        self.assertContains(response, 'YouTube link')
+        self.assertContains(response, 'Instagram link')
         self.assertContains(response, 'Add many gallery images')
         self.assertContains(response, 'Large JPG/PNG images are resized')
 

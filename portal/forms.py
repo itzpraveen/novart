@@ -1051,6 +1051,8 @@ class PublicProjectHighlightForm(forms.ModelForm):
             'project_type',
             'location',
             'description',
+            'youtube_url',
+            'instagram_url',
             'show_on_homepage',
             'image',
             'image_alt',
@@ -1068,6 +1070,8 @@ class PublicProjectHighlightForm(forms.ModelForm):
             'image_tertiary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
         labels = {
+            'youtube_url': 'YouTube link',
+            'instagram_url': 'Instagram link',
             'show_on_homepage': 'Show on homepage',
         }
 
@@ -1080,6 +1084,8 @@ class WebsiteProjectForm(forms.ModelForm):
             'project_type',
             'location',
             'description',
+            'youtube_url',
+            'instagram_url',
             'show_on_homepage',
             'image',
             'image_alt',
@@ -1093,6 +1099,8 @@ class WebsiteProjectForm(forms.ModelForm):
         labels = {
             'image': 'Cover image',
             'image_alt': 'Cover image alt text',
+            'youtube_url': 'YouTube link',
+            'instagram_url': 'Instagram link',
             'show_on_homepage': 'Show on homepage',
         }
 

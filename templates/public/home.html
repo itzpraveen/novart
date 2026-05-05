@@ -178,6 +178,7 @@
                             <p class="project-meta">{{ forloop.counter|stringformat:"02d" }} / {{ project.project_type }}{% if project.location %} / {{ project.location }}{% endif %}</p>
                             <h3>{{ project.title }}</h3>
                             <p>{{ project.description }}</p>
+                            {% include "public/includes/project_links.html" %}
                         </div>
                     </article>
                     {% endfor %}

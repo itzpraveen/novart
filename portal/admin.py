@@ -72,6 +72,8 @@ class PublicProjectHighlightInline(admin.TabularInline):
         'title',
         'project_type',
         'location',
+        'youtube_url',
+        'instagram_url',
         'show_on_homepage',
         'image',
         'art_key',
@@ -87,10 +89,18 @@ class PublicProjectImageInline(admin.TabularInline):
 
 @admin.register(PublicProjectHighlight)
 class PublicProjectHighlightAdmin(admin.ModelAdmin):
-    list_display = ('title', 'project_type', 'location', 'show_on_homepage', 'sort_order')
+    list_display = ('title', 'project_type', 'location', 'has_youtube', 'has_instagram', 'show_on_homepage', 'sort_order')
     list_filter = ('show_on_homepage', 'project_type')
-    search_fields = ('title', 'project_type', 'location', 'description')
+    search_fields = ('title', 'project_type', 'location', 'description', 'youtube_url', 'instagram_url')
     inlines = [PublicProjectImageInline]
+
+    @admin.display(boolean=True, description='YouTube')
+    def has_youtube(self, obj):
+        return bool(obj.youtube_url)
+
+    @admin.display(boolean=True, description='Instagram')
+    def has_instagram(self, obj):
+        return bool(obj.instagram_url)
 
 
 @admin.register(Project)
