@@ -250,11 +250,21 @@ def _project_image_items(project) -> list[dict]:
                     'alt': getattr(project, alt_field_name, '') or project.title,
                 }
             )
+    for gallery_image in project.gallery_images.all():
+        image_url = _safe_image_url(gallery_image.image)
+        if image_url:
+            images.append(
+                {
+                    'url': image_url,
+                    'alt': gallery_image.alt_text or project.title,
+                }
+            )
     return images
 
 
 def _project_card_from_model(project) -> dict:
     images = _project_image_items(project)
+    visible_images = images[:3]
     return {
         'title': project.title,
         'project_type': project.project_type,
@@ -262,6 +272,9 @@ def _project_card_from_model(project) -> dict:
         'description': project.description,
         'show_on_homepage': project.show_on_homepage,
         'images': images,
+        'visible_images': visible_images,
+        'hidden_images': images[3:],
+        'hidden_image_count': max(len(images) - len(visible_images), 0),
         'image_url': images[0]['url'],
         'image_alt': images[0]['alt'],
     }
@@ -279,13 +292,21 @@ def _project_card_from_defaults(project: dict) -> dict:
         'description': project['description'],
         'show_on_homepage': True,
         'images': [image],
+        'visible_images': [image],
+        'hidden_images': [],
+        'hidden_image_count': 0,
         'image_url': image['url'],
         'image_alt': image['alt'],
     }
 
 
 def _public_site_content() -> dict:
-    site = PublicSiteSettings.objects.prefetch_related('services', 'process_steps', 'project_highlights').filter(singleton=True).first()
+    site = (
+        PublicSiteSettings.objects
+        .prefetch_related('services', 'process_steps', 'project_highlights__gallery_images')
+        .filter(singleton=True)
+        .first()
+    )
     defaults = _public_site_defaults()
 
     if site is None:

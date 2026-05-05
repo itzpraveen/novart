@@ -15,14 +15,13 @@
 
 <form method="post" enctype="multipart/form-data" id="websiteSettingsForm">
     {% csrf_token %}
-    {% if profile_form.errors or site_form.errors or services_formset.errors or process_formset.errors or projects_formset.errors or services_formset.non_form_errors or process_formset.non_form_errors or projects_formset.non_form_errors %}
+    {% if profile_form.errors or site_form.errors or services_formset.errors or process_formset.errors or services_formset.non_form_errors or process_formset.non_form_errors %}
     <div class="alert alert-danger">
         <div class="fw-semibold mb-1">Please correct the highlighted website fields and try again.</div>
         {{ profile_form.non_field_errors }}
         {{ site_form.non_field_errors }}
         {{ services_formset.non_form_errors }}
         {{ process_formset.non_form_errors }}
-        {{ projects_formset.non_form_errors }}
         <div class="small">
             {% for field in profile_form.visible_fields %}
                 {% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}
@@ -44,15 +43,6 @@
                     {% with step_number=forloop.counter %}
                         {% for field in form.visible_fields %}
                             {% for error in field.errors %}<div>Process step {{ step_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
-                        {% endfor %}
-                    {% endwith %}
-                {% endif %}
-            {% endfor %}
-            {% for form in projects_formset.forms %}
-                {% if form.errors %}
-                    {% with project_number=forloop.counter %}
-                        {% for field in form.visible_fields %}
-                            {% for error in field.errors %}<div>Project {{ project_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
                         {% endfor %}
                     {% endwith %}
                 {% endif %}
@@ -257,9 +247,14 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="eyebrow">Section 5</div>
-                    <h4 class="mb-1">Selected Work</h4>
-                    <p class="text-muted mb-3">Replace placeholder visuals and project text here. Large images are resized in this browser before saving.</p>
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <div class="eyebrow">Section 5</div>
+                            <h4 class="mb-1">Selected Work</h4>
+                            <p class="text-muted mb-0">Control the homepage section copy here. Add and edit portfolio projects in the Work Library.</p>
+                        </div>
+                        <a class="btn btn-outline-primary" href="{% url 'website_project_list' %}">Manage Work Library</a>
+                    </div>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label" for="{{ site_form.work_heading.id_for_label }}">Section heading</label>
@@ -270,82 +265,58 @@
                             {{ site_form.work_intro|add_class:"form-control" }}
                         </div>
                     </div>
-                    {{ projects_formset.management_form }}
                     <div class="row g-3">
-                        {% for row in project_rows %}
-                        <div class="col-12">
-                            <div class="border rounded p-3">
-                                {{ row.form.id }}
-                                <div class="row g-3 align-items-start">
-                                    <div class="col-lg-3">
-                                        {% if row.preview_urls %}
-                                        <div class="d-flex flex-wrap gap-2 mb-2">
-                                            {% for preview_url in row.preview_urls %}
-                                            <img src="{{ preview_url }}" alt="Project preview" style="height: 78px; width: 104px; object-fit: cover;" class="rounded">
-                                            {% endfor %}
-                                        </div>
-                                        {% endif %}
-                                        <label class="form-label" for="{{ row.form.image.id_for_label }}">Primary project image</label>
-                                        {{ row.form.image|add_class:"form-control" }}
-                                        <label class="form-label mt-3" for="{{ row.form.image_alt.id_for_label }}">Primary image alt text</label>
-                                        {{ row.form.image_alt|add_class:"form-control" }}
-                                    </div>
-                                    <div class="col-lg-9">
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label class="form-label" for="{{ row.form.title.id_for_label }}">Title</label>
-                                                {{ row.form.title|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label" for="{{ row.form.project_type.id_for_label }}">Project type</label>
-                                                {{ row.form.project_type|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label" for="{{ row.form.location.id_for_label }}">Location</label>
-                                                {{ row.form.location|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label" for="{{ row.form.art_key.id_for_label }}">Fallback artwork</label>
-                                                {{ row.form.art_key|add_class:"form-select" }}
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label" for="{{ row.form.sort_order.id_for_label }}">Order</label>
-                                                {{ row.form.sort_order|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-3 d-flex align-items-end">
-                                                <label class="form-check-label">{{ row.form.show_on_homepage }} Show on homepage</label>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label" for="{{ row.form.image_secondary.id_for_label }}">Second project image</label>
-                                                {{ row.form.image_secondary|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label" for="{{ row.form.image_secondary_alt.id_for_label }}">Second image alt text</label>
-                                                {{ row.form.image_secondary_alt|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label" for="{{ row.form.image_tertiary.id_for_label }}">Third project image</label>
-                                                {{ row.form.image_tertiary|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label" for="{{ row.form.image_tertiary_alt.id_for_label }}">Third image alt text</label>
-                                                {{ row.form.image_tertiary_alt|add_class:"form-control" }}
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label" for="{{ row.form.description.id_for_label }}">Description</label>
-                                                {{ row.form.description|add_class:"form-control" }}
-                                            </div>
-                                            {% if projects_formset.can_delete %}
-                                            <div class="col-12">
-                                                <label class="form-check-label">{{ row.form.DELETE }} Remove this project</label>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Public projects</div>
+                                <div class="display-6 fw-semibold">{{ project_count }}</div>
+                                <div class="small text-muted">Shown on <a href="https://novartarchitects.com/work/" target="_blank" rel="noopener noreferrer">All Work</a>.</div>
                             </div>
                         </div>
-                        {% endfor %}
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Homepage selected</div>
+                                <div class="display-6 fw-semibold">{{ homepage_project_count }}</div>
+                                <div class="small text-muted">Controlled per project in the library.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Gallery support</div>
+                                <div class="h5 mb-1">Multiple images</div>
+                                <div class="small text-muted">Upload cover and gallery images per work.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Recent public work</h5>
+                            <a class="small fw-semibold" href="{% url 'website_project_create' %}">Add work</a>
+                        </div>
+                        <div class="list-group">
+                            {% for row in project_rows %}
+                            <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="{{ row.edit_url }}">
+                                <img src="{{ row.preview_url }}" alt="{{ row.project.title }}" class="rounded" style="width: 78px; height: 58px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">{{ row.project.title }}</div>
+                                    <div class="small text-muted">
+                                        {{ row.project.project_type|default:"Project" }}{% if row.project.location %} / {{ row.project.location }}{% endif %}
+                                    </div>
+                                </div>
+                                <span class="badge text-bg-light">{{ row.image_count }} image{{ row.image_count|pluralize }}</span>
+                                {% if row.project.show_on_homepage %}
+                                <span class="badge text-bg-success">Homepage</span>
+                                {% else %}
+                                <span class="badge text-bg-secondary">Archive only</span>
+                                {% endif %}
+                            </a>
+                            {% empty %}
+                            <div class="list-group-item text-muted">No work projects yet. Use the Work Library to add the first one.</div>
+                            {% endfor %}
+                        </div>
+                        {% if project_count > project_rows|length %}
+                        <div class="small text-muted mt-2">Showing {{ project_rows|length }} of {{ project_count }} projects. Open Work Library to search and manage the full list.</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

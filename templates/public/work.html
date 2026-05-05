@@ -58,10 +58,17 @@
                 <div class="work-list">
                     {% for project in projects %}
                     <article class="project-row {% if not forloop.counter0|divisibleby:2 %}is-flipped{% endif %}">
-                        <figure class="project-media project-gallery project-gallery--{{ project.images|length }} reveal">
-                            {% for image in project.images %}
-                            <button class="project-gallery__button project-gallery__button--{{ forloop.counter }}" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
+                        <figure class="project-media project-gallery project-gallery--{{ project.visible_images|length }} reveal">
+                            {% for image in project.visible_images %}
+                            <button class="project-gallery__button project-gallery__button--{{ forloop.counter }}{% if forloop.counter == 3 and project.hidden_image_count %} project-gallery__button--more{% endif %}" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
                                 <img class="project-gallery__image" src="{{ image.url }}" alt="{{ image.alt }}" loading="{% if forloop.parentloop.first and forloop.first %}eager{% else %}lazy{% endif %}">
+                                {% if forloop.counter == 3 and project.hidden_image_count %}
+                                <span class="project-gallery__more-count">+{{ project.hidden_image_count }}</span>
+                                {% endif %}
+                            </button>
+                            {% endfor %}
+                            {% for image in project.hidden_images %}
+                            <button class="project-gallery__hidden-button" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
                             </button>
                             {% endfor %}
                         </figure>

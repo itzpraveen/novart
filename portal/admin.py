@@ -22,6 +22,7 @@ from .models import (
     Payment,
     PublicProcessStep,
     PublicProjectHighlight,
+    PublicProjectImage,
     PublicService,
     PublicSiteSettings,
     Project,
@@ -71,13 +72,25 @@ class PublicProjectHighlightInline(admin.TabularInline):
         'title',
         'project_type',
         'location',
+        'show_on_homepage',
         'image',
-        'image_secondary',
-        'image_tertiary',
         'art_key',
         'sort_order',
     )
     extra = 0
+
+
+class PublicProjectImageInline(admin.TabularInline):
+    model = PublicProjectImage
+    extra = 0
+
+
+@admin.register(PublicProjectHighlight)
+class PublicProjectHighlightAdmin(admin.ModelAdmin):
+    list_display = ('title', 'project_type', 'location', 'show_on_homepage', 'sort_order')
+    list_filter = ('show_on_homepage', 'project_type')
+    search_fields = ('title', 'project_type', 'location', 'description')
+    inlines = [PublicProjectImageInline]
 
 
 @admin.register(Project)

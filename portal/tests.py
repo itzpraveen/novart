@@ -33,6 +33,7 @@ from .models import (
     Lead,
     PublicProcessStep,
     PublicProjectHighlight,
+    PublicProjectImage,
     PublicService,
     PublicSiteSettings,
     Vendor,
@@ -545,6 +546,33 @@ class PublicHomepageRenderTests(TestCase):
         self.assertEqual(archive_response.status_code, 200)
         self.assertContains(archive_response, 'Archive Residence')
 
+    def test_public_work_renders_extra_gallery_images_in_lightbox(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        project = PublicProjectHighlight.objects.create(
+            site=site,
+            title='Gallery Residence',
+            project_type='Residential',
+            location='Kerala',
+            description='A project with a deeper gallery.',
+            art_key='courtyard-house',
+            sort_order=100,
+            show_on_homepage=True,
+        )
+        for index in range(4):
+            PublicProjectImage.objects.create(
+                project=project,
+                image=_tiny_gif(f'gallery-{index}.gif'),
+                alt_text=f'Gallery image {index}',
+                sort_order=index,
+            )
+
+        response = self.client.get('/work/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Gallery Residence')
+        self.assertContains(response, '+2')
+        self.assertContains(response, 'Gallery image 3')
+
     def test_public_homepage_has_local_seo_signals(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
 
@@ -729,32 +757,6 @@ class WebsiteSettingsSaveTests(TestCase):
                 'process_steps-1-title': 'Develop',
                 'process_steps-1-description': 'We refine design and delivery.',
                 'process_steps-1-sort_order': '1',
-                'projects-TOTAL_FORMS': '2',
-                'projects-INITIAL_FORMS': '1',
-                'projects-MIN_NUM_FORMS': '0',
-                'projects-MAX_NUM_FORMS': '1000',
-                'projects-0-id': str(self.project.id),
-                'projects-0-title': 'Courtyard Residence',
-                'projects-0-project_type': 'Architecture',
-                'projects-0-location': 'Kerala',
-                'projects-0-description': 'A shaded residence built around a planted court.',
-                'projects-0-show_on_homepage': 'on',
-                'projects-0-image': _tiny_gif('project.gif'),
-                'projects-0-image_alt': 'Courtyard residence',
-                'projects-0-image_secondary': _tiny_gif('project-detail.gif'),
-                'projects-0-image_secondary_alt': 'Courtyard residence detail',
-                'projects-0-image_tertiary_alt': 'Courtyard residence interior',
-                'projects-0-art_key': 'courtyard-house',
-                'projects-0-sort_order': '0',
-                'projects-1-id': '',
-                'projects-1-title': 'Atelier Apartment',
-                'projects-1-project_type': 'Interiors',
-                'projects-1-location': 'Kozhikode',
-                'projects-1-description': 'Calm interiors with warm natural materials.',
-                'projects-1-show_on_homepage': 'on',
-                'projects-1-image_alt': 'Atelier apartment',
-                'projects-1-art_key': 'atelier-interior',
-                'projects-1-sort_order': '1',
             },
         )
 
@@ -772,11 +774,75 @@ class WebsiteSettingsSaveTests(TestCase):
         self.assertTrue(self.site.hero_image.name.startswith('public_site/'))
         self.assertEqual(self.site.services.count(), 2)
         self.assertEqual(self.site.process_steps.count(), 2)
-        self.assertEqual(self.site.project_highlights.count(), 2)
-        self.assertEqual(self.project.title, 'Courtyard Residence')
-        self.assertTrue(self.project.image.name.startswith('public_site/'))
-        self.assertTrue(self.project.image_secondary.name.startswith('public_site/'))
-        self.assertEqual(self.project.image_secondary_alt, 'Courtyard residence detail')
+        self.assertEqual(self.site.project_highlights.count(), 1)
+        self.assertEqual(self.project.title, 'Old Project')
+
+    def test_work_library_creates_project_with_many_gallery_images(self):
+        response = self.client.post(
+            reverse('website_project_create'),
+            data={
+                'title': 'Courtyard Residence',
+                'project_type': 'Residential',
+                'location': 'Kerala',
+                'description': 'A shaded residence built around a planted court.',
+                'show_on_homepage': 'on',
+                'image': _tiny_gif('cover.gif'),
+                'image_alt': 'Courtyard residence cover',
+                'art_key': 'courtyard-house',
+                'sort_order': '2',
+                'gallery_uploads': [_tiny_gif('detail-one.gif'), _tiny_gif('detail-two.gif')],
+            },
+        )
+
+        project = PublicProjectHighlight.objects.get(title='Courtyard Residence')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('website_project_edit', args=[project.pk]))
+        self.assertTrue(project.image.name.startswith('public_site/'))
+        self.assertEqual(project.gallery_images.count(), 2)
+
+    def test_work_library_edits_project_and_gallery_metadata(self):
+        gallery_image = PublicProjectImage.objects.create(
+            project=self.project,
+            image=_tiny_gif('old-detail.gif'),
+            alt_text='Old detail',
+            sort_order=1,
+        )
+
+        response = self.client.post(
+            reverse('website_project_edit', args=[self.project.pk]),
+            data={
+                'title': 'Updated Project',
+                'project_type': 'Residential',
+                'location': 'Calicut',
+                'description': 'Updated project description.',
+                'image_alt': 'Updated cover',
+                'art_key': 'atelier-interior',
+                'sort_order': '5',
+                'gallery-TOTAL_FORMS': '3',
+                'gallery-INITIAL_FORMS': '1',
+                'gallery-MIN_NUM_FORMS': '0',
+                'gallery-MAX_NUM_FORMS': '1000',
+                'gallery-0-id': str(gallery_image.id),
+                'gallery-0-image': '',
+                'gallery-0-alt_text': 'Updated detail',
+                'gallery-0-sort_order': '3',
+                'gallery-1-id': '',
+                'gallery-1-image': _tiny_gif('new-detail.gif'),
+                'gallery-1-alt_text': 'New detail',
+                'gallery-1-sort_order': '4',
+                'gallery-2-id': '',
+                'gallery-2-alt_text': '',
+                'gallery-2-sort_order': '0',
+            },
+        )
+
+        self.project.refresh_from_db()
+        gallery_image.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.project.title, 'Updated Project')
+        self.assertFalse(self.project.show_on_homepage)
+        self.assertEqual(gallery_image.alt_text, 'Updated detail')
+        self.assertEqual(self.project.gallery_images.count(), 2)
 
 
 class WebsiteSettingsRenderTests(TestCase):
@@ -802,11 +868,30 @@ class WebsiteSettingsRenderTests(TestCase):
         self.assertContains(response, 'Brand & Contact')
         self.assertContains(response, 'Hero')
         self.assertContains(response, 'Selected Work')
-        self.assertContains(response, 'Second project image')
-        self.assertContains(response, 'Show on homepage')
+        self.assertContains(response, 'Manage Work Library')
+        self.assertContains(response, 'Multiple images')
         self.assertContains(response, 'SEO')
-        self.assertContains(response, 'Large images are resized in this browser before saving.')
         self.assertContains(response, 'js/website-settings.js')
+
+    def test_work_library_page_renders_project_management(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('website_project_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Public Work Library')
+        self.assertContains(response, 'Add Work')
+        self.assertContains(response, 'Search projects')
+
+    def test_work_project_form_renders_gallery_controls(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('website_project_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Project Images')
+        self.assertContains(response, 'Add many gallery images')
+        self.assertContains(response, 'Large JPG/PNG images are resized')
 
     def test_admin_navigation_contains_website_settings_link(self):
         self.client.force_login(self.admin)
@@ -815,6 +900,7 @@ class WebsiteSettingsRenderTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse('website_settings'))
+        self.assertContains(response, reverse('website_project_list'))
 
     def test_non_admin_navigation_does_not_show_website_settings_link(self):
         self.client.force_login(self.architect)

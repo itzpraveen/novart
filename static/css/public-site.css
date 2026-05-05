@@ -675,12 +675,37 @@ a {
     outline-offset: -4px;
 }
 
+.project-gallery__hidden-button {
+    display: none;
+}
+
 .project-gallery__image {
     width: 100%;
     height: 100%;
     min-width: 0;
     object-fit: cover;
     transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
+}
+
+.project-gallery__button--more::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgba(18, 20, 19, 0.48);
+}
+
+.project-gallery__more-count {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    color: var(--paper);
+    font-family: var(--font-sans);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.05em;
 }
 
 .project-gallery--2 .project-gallery__button--1,

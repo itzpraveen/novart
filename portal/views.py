@@ -163,7 +163,8 @@ from .forms import (
     ReminderSettingForm,
     WebsiteProcessStepFormSet,
     WebsiteProfileLogoForm,
-    WebsiteProjectHighlightFormSet,
+    WebsiteProjectForm,
+    WebsiteProjectImageFormSet,
     WebsitePublicSiteForm,
     WebsiteServiceFormSet,
     UserForm,
@@ -192,6 +193,7 @@ from .models import (
     Project,
     ProjectFinancePlan,
     ProjectStageHistory,
+    PublicProjectImage,
     PublicProjectHighlight,
     PublicSiteSettings,
     ReminderSetting,
@@ -3348,6 +3350,43 @@ def finance_dashboard(request):
     )
 
 
+def _website_project_image_count(project):
+    uploaded_count = 0
+    for image_field_name in ('image', 'image_secondary', 'image_tertiary'):
+        if _safe_image_url(getattr(project, image_field_name, None)):
+            uploaded_count += 1
+    gallery_count = getattr(project, 'gallery_image_count', None)
+    if gallery_count is None:
+        gallery_count = project.gallery_images.count()
+    return uploaded_count + gallery_count
+
+
+def _website_project_row(project):
+    preview_url = _artwork_url(project.image, project.art_key)
+    image_count = _website_project_image_count(project)
+    return {
+        'project': project,
+        'preview_url': preview_url,
+        'image_count': image_count,
+        'edit_url': reverse('website_project_edit', args=[project.pk]),
+    }
+
+
+def _save_project_gallery_uploads(project, files):
+    files = [file for file in files if file]
+    if not files:
+        return 0
+    next_sort_order = (project.gallery_images.aggregate(max_order=Max('sort_order'))['max_order'] or 0) + 1
+    for offset, file in enumerate(files):
+        PublicProjectImage.objects.create(
+            project=project,
+            image=file,
+            alt_text=project.title,
+            sort_order=next_sort_order + offset,
+        )
+    return len(files)
+
+
 @login_required
 @role_required(User.Roles.ADMIN)
 @module_required('settings')
@@ -3360,7 +3399,6 @@ def website_settings(request):
         site_form = WebsitePublicSiteForm(request.POST, request.FILES, instance=site, prefix='site')
         services_formset = WebsiteServiceFormSet(request.POST, request.FILES, instance=site, prefix='services')
         process_formset = WebsiteProcessStepFormSet(request.POST, request.FILES, instance=site, prefix='process_steps')
-        projects_formset = WebsiteProjectHighlightFormSet(request.POST, request.FILES, instance=site, prefix='projects')
 
         if all(
             [
@@ -3368,7 +3406,6 @@ def website_settings(request):
                 site_form.is_valid(),
                 services_formset.is_valid(),
                 process_formset.is_valid(),
-                projects_formset.is_valid(),
             ]
         ):
             with db_transaction.atomic():
@@ -3376,7 +3413,6 @@ def website_settings(request):
                 site_form.save()
                 services_formset.save()
                 process_formset.save()
-                projects_formset.save()
             messages.success(request, 'Website settings updated.')
             return redirect('website_settings')
     else:
@@ -3384,32 +3420,147 @@ def website_settings(request):
         site_form = WebsitePublicSiteForm(instance=site, prefix='site')
         services_formset = WebsiteServiceFormSet(instance=site, prefix='services')
         process_formset = WebsiteProcessStepFormSet(instance=site, prefix='process_steps')
-        projects_formset = WebsiteProjectHighlightFormSet(instance=site, prefix='projects')
 
-    project_rows = []
-    for form in projects_formset.forms:
-        instance = form.instance
-        preview_urls = []
-        if instance.pk:
-            preview_urls.append(_artwork_url(instance.image, instance.art_key))
-            for image_field_name in ('image_secondary', 'image_tertiary'):
-                image_url = _safe_image_url(getattr(instance, image_field_name, None))
-                if image_url:
-                    preview_urls.append(image_url)
-        project_rows.append({'form': form, 'preview_url': preview_urls[0] if preview_urls else '', 'preview_urls': preview_urls})
+    projects_queryset = (
+        site.project_highlights
+        .prefetch_related('gallery_images')
+        .annotate(gallery_image_count=Count('gallery_images'))
+        .order_by('sort_order', 'id')
+    )
+    project_count = projects_queryset.count()
+    homepage_project_count = projects_queryset.filter(show_on_homepage=True).count()
+    project_rows = [_website_project_row(project) for project in projects_queryset[:6]]
 
     context = {
         'profile_form': profile_form,
         'site_form': site_form,
         'services_formset': services_formset,
         'process_formset': process_formset,
-        'projects_formset': projects_formset,
         'project_rows': project_rows,
+        'project_count': project_count,
+        'homepage_project_count': homepage_project_count,
         'logo_url': _safe_image_url(getattr(profile, 'logo', None)) or static('img/novart.png'),
         'hero_preview_url': _artwork_url(getattr(site_form.instance, 'hero_image', None), site_form.instance.hero_art_key),
         'studio_preview_url': _artwork_url(getattr(site_form.instance, 'studio_image', None), site_form.instance.studio_art_key),
     }
     return render(request, 'portal/website_settings.html', context)
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+@module_required('settings')
+def website_project_list(request):
+    site, _ = PublicSiteSettings.objects.get_or_create(singleton=True, defaults=_public_site_defaults())
+    query = request.GET.get('q', '').strip()
+    placement = request.GET.get('placement', '').strip()
+    projects_queryset = (
+        site.project_highlights
+        .prefetch_related('gallery_images')
+        .annotate(gallery_image_count=Count('gallery_images'))
+        .order_by('sort_order', 'id')
+    )
+
+    if query:
+        projects_queryset = projects_queryset.filter(
+            Q(title__icontains=query)
+            | Q(project_type__icontains=query)
+            | Q(location__icontains=query)
+            | Q(description__icontains=query)
+        )
+    if placement == 'homepage':
+        projects_queryset = projects_queryset.filter(show_on_homepage=True)
+    elif placement == 'archive':
+        projects_queryset = projects_queryset.filter(show_on_homepage=False)
+
+    paginator = Paginator(projects_queryset, 24)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    project_rows = [_website_project_row(project) for project in page_obj.object_list]
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+
+    context = {
+        'project_rows': project_rows,
+        'page_obj': page_obj,
+        'query': query,
+        'placement': placement,
+        'querystring': query_params.urlencode(),
+        'project_count': site.project_highlights.count(),
+        'homepage_project_count': site.project_highlights.filter(show_on_homepage=True).count(),
+    }
+    return render(request, 'portal/website_project_list.html', context)
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+@module_required('settings')
+def website_project_create(request):
+    site, _ = PublicSiteSettings.objects.get_or_create(singleton=True, defaults=_public_site_defaults())
+    if request.method == 'POST':
+        form = WebsiteProjectForm(request.POST, request.FILES)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.site = site
+            project.save()
+            uploaded_count = _save_project_gallery_uploads(project, request.FILES.getlist('gallery_uploads'))
+            messages.success(
+                request,
+                f"Project added{f' with {uploaded_count} gallery image(s)' if uploaded_count else ''}.",
+            )
+            return redirect('website_project_edit', pk=project.pk)
+    else:
+        next_sort_order = (site.project_highlights.aggregate(max_order=Max('sort_order'))['max_order'] or 0) + 1
+        form = WebsiteProjectForm(initial={'sort_order': next_sort_order, 'show_on_homepage': True})
+
+    context = {
+        'form': form,
+        'project': None,
+        'gallery_formset': None,
+        'title': 'Add Work',
+        'submit_label': 'Add Project',
+        'preview_url': '',
+    }
+    return render(request, 'portal/website_project_form.html', context)
+
+
+@login_required
+@role_required(User.Roles.ADMIN)
+@module_required('settings')
+def website_project_edit(request, pk):
+    site, _ = PublicSiteSettings.objects.get_or_create(singleton=True, defaults=_public_site_defaults())
+    project = get_object_or_404(site.project_highlights.prefetch_related('gallery_images'), pk=pk)
+
+    if request.method == 'POST' and request.POST.get('intent') == 'delete':
+        title = project.title
+        project.delete()
+        messages.success(request, f"{title} removed from public work.")
+        return redirect('website_project_list')
+
+    if request.method == 'POST':
+        form = WebsiteProjectForm(request.POST, request.FILES, instance=project)
+        gallery_formset = WebsiteProjectImageFormSet(request.POST, request.FILES, instance=project, prefix='gallery')
+        if form.is_valid() and gallery_formset.is_valid():
+            with db_transaction.atomic():
+                project = form.save()
+                gallery_formset.save()
+                uploaded_count = _save_project_gallery_uploads(project, request.FILES.getlist('gallery_uploads'))
+            messages.success(
+                request,
+                f"Project updated{f' with {uploaded_count} new gallery image(s)' if uploaded_count else ''}.",
+            )
+            return redirect('website_project_edit', pk=project.pk)
+    else:
+        form = WebsiteProjectForm(instance=project)
+        gallery_formset = WebsiteProjectImageFormSet(instance=project, prefix='gallery')
+
+    context = {
+        'form': form,
+        'project': project,
+        'gallery_formset': gallery_formset,
+        'title': 'Edit Work',
+        'submit_label': 'Save Project',
+        'preview_url': _artwork_url(project.image, project.art_key),
+    }
+    return render(request, 'portal/website_project_form.html', context)
 
 
 @login_required

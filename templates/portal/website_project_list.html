@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Website</div>
+        <h2 class="mb-1">Public Work Library</h2>
+        <p class="text-muted mb-0">Manage portfolio projects separately from homepage copy, so long project lists stay organized.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'website_settings' %}">Website Settings</a>
+        <a class="btn btn-outline-secondary" href="https://novartarchitects.com/work/" target="_blank" rel="noopener noreferrer">View All Work</a>
+        <a class="btn btn-primary" href="{% url 'website_project_create' %}">Add Work</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total public projects</div>
+                <div class="display-6 fw-semibold">{{ project_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Selected for homepage</div>
+                <div class="display-6 fw-semibold">{{ homepage_project_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Public archive</div>
+                <div class="h5 mb-1">All projects stay visible</div>
+                <div class="small text-muted">Turn off homepage selection without removing the project from All Work.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end mb-3">
+            <div class="col-lg-7">
+                <label class="form-label" for="work-search">Search projects</label>
+                <input class="form-control" id="work-search" type="search" name="q" value="{{ query }}" placeholder="Search by title, type, location, or description">
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="work-placement">Placement</label>
+                <select class="form-select" id="work-placement" name="placement">
+                    <option value="" {% if not placement %}selected{% endif %}>All projects</option>
+                    <option value="homepage" {% if placement == "homepage" %}selected{% endif %}>Homepage selected</option>
+                    <option value="archive" {% if placement == "archive" %}selected{% endif %}>Archive only</option>
+                </select>
+            </div>
+            <div class="col-lg-2 d-grid">
+                <button class="btn btn-outline-primary" type="submit">Filter</button>
+            </div>
+        </form>
+
+        <div class="list-group list-group-flush">
+            {% for row in project_rows %}
+            <a class="list-group-item list-group-item-action px-0 py-3" href="{{ row.edit_url }}">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="{{ row.preview_url }}" alt="{{ row.project.title }}" class="rounded" style="width: 112px; height: 78px; object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <h5 class="mb-0">{{ row.project.title }}</h5>
+                            {% if row.project.show_on_homepage %}
+                            <span class="badge text-bg-success">Homepage</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">Archive only</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted small">
+                            {{ row.project.project_type|default:"Project" }}{% if row.project.location %} / {{ row.project.location }}{% endif %} / Order {{ row.project.sort_order }}
+                        </div>
+                        <div class="small text-muted mt-1">{{ row.image_count }} image{{ row.image_count|pluralize }} attached</div>
+                    </div>
+                    <span class="btn btn-sm btn-outline-secondary">Edit</span>
+                </div>
+            </a>
+            {% empty %}
+            <div class="text-center py-5">
+                <h5>No work projects found</h5>
+                <p class="text-muted mb-3">Add the first public work project or clear the current filters.</p>
+                <a class="btn btn-primary" href="{% url 'website_project_create' %}">Add Work</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-3">
+            <div class="small text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+            <div class="btn-group">
+                {% if page_obj.has_previous %}
+                <a class="btn btn-outline-secondary" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a class="btn btn-outline-secondary" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

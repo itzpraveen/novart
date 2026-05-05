@@ -116,6 +116,7 @@
                                 {% if module_perms.settings %}
                                 {% if request.user.role == 'admin' or request.user.is_superuser %}
                                 <li><a class="dropdown-item" href="{% url 'website_settings' %}">Website Settings</a></li>
+                                <li><a class="dropdown-item" href="{% url 'website_project_list' %}">Work Library</a></li>
                                 <li><a class="dropdown-item" href="{% url 'firm_profile' %}">Firm Profile</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'reminder_settings' %}">Reminder Settings</a></li>
@@ -258,6 +259,7 @@
                                 {% if module_perms.settings %}
                                 {% if request.user.role == 'admin' or request.user.is_superuser %}
                                 <li><a class="dropdown-item" href="{% url 'website_settings' %}">Website Settings</a></li>
+                                <li><a class="dropdown-item" href="{% url 'website_project_list' %}">Work Library</a></li>
                                 <li><a class="dropdown-item" href="{% url 'firm_profile' %}">Firm Profile</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'reminder_settings' %}">Reminder Settings</a></li>
@@ -279,6 +281,7 @@
                             {% if module_perms.settings %}
                             {% if request.user.role == 'admin' or request.user.is_superuser %}
                             <a class="nav-link" href="{% url 'website_settings' %}">Website Settings</a>
+                            <a class="nav-link" href="{% url 'website_project_list' %}">Work Library</a>
                             {% endif %}
                             <a class="nav-link" href="{% url 'reminder_settings' %}">Reminder Settings</a>
                             {% endif %}

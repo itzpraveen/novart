@@ -3,12 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupWebsiteImageUploads() {
-    const form = document.getElementById('websiteSettingsForm');
-    if (!form || !window.DataTransfer || !HTMLCanvasElement.prototype.toBlob) {
+    if (!window.DataTransfer || !HTMLCanvasElement.prototype.toBlob) {
         return;
     }
 
-    const status = document.querySelector('[data-image-upload-status]');
+    const forms = [...new Set([
+        ...document.querySelectorAll('[data-website-image-form]'),
+        document.getElementById('websiteSettingsForm'),
+    ].filter(Boolean))];
+
+    forms.forEach(setupWebsiteImageForm);
+}
+
+function setupWebsiteImageForm(form) {
+    const status = form.querySelector('[data-image-upload-status]') || document.querySelector('[data-image-upload-status]');
     const imageInputs = [...form.querySelectorAll('input[type="file"]')];
     const maxTotalBytes = 900 * 1024;
     const maxSingleBytes = 850 * 1024;
@@ -25,16 +33,20 @@ function setupWebsiteImageUploads() {
             return;
         }
 
-        const selectedInputs = imageInputs.filter((input) => input.files && input.files[0]);
-        const compressibleInputs = selectedInputs.filter((input) => isCompressibleImage(input.files[0], input.name));
+        const selectedFiles = imageInputs.flatMap((input) => [...(input.files || [])].map((file) => ({ input, file })));
+        const compressibleFiles = selectedFiles.filter((item) => isCompressibleImage(item.file, item.input.name));
 
-        if (!compressibleInputs.length) {
+        if (!compressibleFiles.length) {
             return;
         }
 
         event.preventDefault();
-        const targetBytes = clamp(Math.floor(maxTotalBytes / compressibleInputs.length), minSingleBytes, maxSingleBytes);
-        const submitButtons = [...document.querySelectorAll('button[form="websiteSettingsForm"], #websiteSettingsForm button')]
+        const targetBytes = clamp(Math.floor(maxTotalBytes / compressibleFiles.length), minSingleBytes, maxSingleBytes);
+        const formId = form.getAttribute('id');
+        const submitButtons = [
+            ...(formId ? [...document.querySelectorAll(`button[form="${formId}"]`)] : []),
+            ...form.querySelectorAll('button'),
+        ]
             .filter((button) => button.type === 'submit');
 
         submitButtons.forEach((button) => {
@@ -42,14 +54,30 @@ function setupWebsiteImageUploads() {
             button.dataset.originalText = button.textContent;
             button.textContent = 'Preparing images...';
         });
-        showStatus(status, `Preparing ${compressibleInputs.length} image upload${compressibleInputs.length === 1 ? '' : 's'}...`);
+        showStatus(status, `Preparing ${compressibleFiles.length} image upload${compressibleFiles.length === 1 ? '' : 's'}...`);
 
         try {
-            for (const input of compressibleInputs) {
-                const original = input.files[0];
+            const preparedByInput = new Map();
+            for (const { input, file } of compressibleFiles) {
+                const original = file;
                 const prepared = await resizeImageFile(original, targetBytes, maxImageEdge);
-                if (prepared && prepared.size < original.size) {
-                    replaceInputFile(input, prepared);
+                const preparedFile = prepared && prepared.size < original.size ? prepared : original;
+                if (!preparedByInput.has(input)) {
+                    preparedByInput.set(input, []);
+                }
+                preparedByInput.get(input).push({ original, prepared: preparedFile });
+            }
+
+            preparedByInput.forEach((preparedItems, input) => {
+                replaceInputFiles(input, preparedItems);
+            });
+
+            for (const input of imageInputs) {
+                if (!preparedByInput.has(input) && input.files && input.files.length) {
+                    replaceInputFiles(
+                        input,
+                        [...input.files].map((file) => ({ original: file, prepared: file }))
+                    );
                 }
             }
 
@@ -178,9 +206,18 @@ function renderJpeg(source, width, height, quality) {
     });
 }
 
-function replaceInputFile(input, file) {
+function replaceInputFiles(input, preparedItems) {
     const transfer = new DataTransfer();
-    transfer.items.add(file);
+    const preparedQueue = [...preparedItems];
+    [...input.files].forEach((file) => {
+        const preparedItemIndex = preparedQueue.findIndex((item) => item.original === file);
+        if (preparedItemIndex >= 0) {
+            transfer.items.add(preparedQueue[preparedItemIndex].prepared);
+            preparedQueue.splice(preparedItemIndex, 1);
+        } else {
+            transfer.items.add(file);
+        }
+    });
     input.files = transfer.files;
 }
 

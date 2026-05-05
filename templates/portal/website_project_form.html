@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load portal_extras static %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Website Work</div>
+        <h2 class="mb-1">{{ title }}</h2>
+        <p class="text-muted mb-0">A project can have a cover image and as many gallery images as needed.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'website_project_list' %}">Work Library</a>
+        <a class="btn btn-outline-secondary" href="https://novartarchitects.com/work/" target="_blank" rel="noopener noreferrer">View All Work</a>
+        <button class="btn btn-primary" type="submit" form="websiteProjectForm">{{ submit_label }}</button>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="websiteProjectForm" data-website-image-form>
+    {% csrf_token %}
+    {% if form.errors or gallery_formset.errors or gallery_formset.non_form_errors %}
+    <div class="alert alert-danger">
+        <div class="fw-semibold mb-1">Please correct the highlighted work fields and try again.</div>
+        {{ form.non_field_errors }}
+        {% if gallery_formset %}{{ gallery_formset.non_form_errors }}{% endif %}
+        <div class="small">
+            {% for field in form.visible_fields %}
+                {% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}
+            {% endfor %}
+            {% if gallery_formset %}
+                {% for gallery_form in gallery_formset.forms %}
+                    {% if gallery_form.errors %}
+                        {% with image_number=forloop.counter %}
+                            {% for field in gallery_form.visible_fields %}
+                                {% for error in field.errors %}<div>Gallery image {{ image_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="alert alert-info d-none" data-image-upload-status role="status"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <div class="eyebrow">Project Details</div>
+                            <h4 class="mb-1">Public Work Content</h4>
+                            <p class="text-muted mb-0">This content is shown on the homepage if selected and always on All Work.</p>
+                        </div>
+                        {% if project %}
+                        {% if project.show_on_homepage %}
+                        <span class="badge text-bg-success">Homepage</span>
+                        {% else %}
+                        <span class="badge text-bg-secondary">Archive only</span>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+                            {{ form.title|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="{{ form.project_type.id_for_label }}">Project type</label>
+                            {{ form.project_type|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="{{ form.location.id_for_label }}">Location</label>
+                            {{ form.location|add_class:"form-control" }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                            {{ form.description|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ form.sort_order.id_for_label }}">Display order</label>
+                            {{ form.sort_order|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ form.art_key.id_for_label }}">Fallback artwork</label>
+                            {{ form.art_key|add_class:"form-select" }}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <label class="form-check-label">{{ form.show_on_homepage }} Show on homepage</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="eyebrow">Gallery</div>
+                    <h4 class="mb-1">Project Images</h4>
+                    <p class="text-muted mb-3">Use the cover as the main image. Add gallery images for facade, interior, detail, and site views.</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            {% if preview_url %}
+                            <img src="{{ preview_url }}" alt="{{ project.title }}" class="rounded w-100 mb-3" style="aspect-ratio: 4 / 3; object-fit: cover;">
+                            {% endif %}
+                            <label class="form-label" for="{{ form.image.id_for_label }}">Cover image</label>
+                            {{ form.image|add_class:"form-control" }}
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label" for="{{ form.image_alt.id_for_label }}">Cover image alt text</label>
+                            {{ form.image_alt|add_class:"form-control" }}
+                            <label class="form-label mt-3" for="gallery_uploads">Add many gallery images</label>
+                            <input class="form-control" id="gallery_uploads" type="file" name="gallery_uploads" accept="image/*" multiple>
+                            <div class="form-text">You can select multiple files at once. Large JPG/PNG images are resized in this browser before saving.</div>
+                        </div>
+                    </div>
+
+                    {% if gallery_formset %}
+                    {{ gallery_formset.management_form }}
+                    <div class="row g-3">
+                        {% for gallery_form in gallery_formset.forms %}
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                {% for hidden in gallery_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                {% if gallery_form.instance.pk and gallery_form.instance.image %}
+                                <img src="{{ gallery_form.instance.image.url }}" alt="{{ gallery_form.instance.alt_text|default:project.title }}" class="rounded w-100 mb-3" style="aspect-ratio: 4 / 3; object-fit: cover;">
+                                {% endif %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="{{ gallery_form.image.id_for_label }}">Gallery image</label>
+                                    {{ gallery_form.image|add_class:"form-control" }}
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label" for="{{ gallery_form.alt_text.id_for_label }}">Alt text</label>
+                                        {{ gallery_form.alt_text|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="{{ gallery_form.sort_order.id_for_label }}">Order</label>
+                                        {{ gallery_form.sort_order|add_class:"form-control" }}
+                                    </div>
+                                </div>
+                                {% if gallery_formset.can_delete and gallery_form.instance.pk %}
+                                <div class="mt-3">
+                                    <label class="form-check-label">{{ gallery_form.DELETE }} Remove this image</label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="eyebrow">Publishing</div>
+                    <h4 class="mb-2">Where This Appears</h4>
+                    <p class="text-muted">Every project appears on All Work. Use "Show on homepage" only for the few projects that should be featured on the homepage.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" type="submit">{{ submit_label }}</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'website_project_list' %}">Cancel</a>
+                    </div>
+                </div>
+            </div>
+            {% if project %}
+            <div class="card border-danger shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-danger">Remove Project</h5>
+                    <p class="text-muted small">This removes the project from the public homepage and All Work archive.</p>
+                    <button class="btn btn-outline-danger" type="submit" name="intent" value="delete" formnovalidate onclick="return confirm('Remove this public work project?');">Delete Project</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+<script src="{% static 'js/website-settings.js' %}"></script>
+{% endblock %}

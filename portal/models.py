@@ -1466,6 +1466,19 @@ class PublicProjectHighlight(TimeStampedModel):
         return self.title
 
 
+class PublicProjectImage(TimeStampedModel):
+    project = models.ForeignKey(PublicProjectHighlight, on_delete=models.CASCADE, related_name='gallery_images')
+    image = models.ImageField(upload_to='public_site/')
+    alt_text = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self) -> str:
+        return self.alt_text or f"{self.project.title} image"
+
+
 class RolePermission(TimeStampedModel):
     class Module(models.TextChoices):
         CLIENTS = 'clients', 'Clients'

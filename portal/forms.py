@@ -27,6 +27,7 @@ from .models import (
     ProjectMilestone,
     PublicProcessStep,
     PublicProjectHighlight,
+    PublicProjectImage,
     PublicService,
     PublicSiteSettings,
     Receipt,
@@ -1071,6 +1072,44 @@ class PublicProjectHighlightForm(forms.ModelForm):
         }
 
 
+class WebsiteProjectForm(forms.ModelForm):
+    class Meta:
+        model = PublicProjectHighlight
+        fields = [
+            'title',
+            'project_type',
+            'location',
+            'description',
+            'show_on_homepage',
+            'image',
+            'image_alt',
+            'art_key',
+            'sort_order',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
+        labels = {
+            'image': 'Cover image',
+            'image_alt': 'Cover image alt text',
+            'show_on_homepage': 'Show on homepage',
+        }
+
+
+class PublicProjectImageForm(forms.ModelForm):
+    class Meta:
+        model = PublicProjectImage
+        fields = ['image', 'alt_text', 'sort_order']
+        widgets = {
+            'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
+        labels = {
+            'alt_text': 'Alt text',
+            'sort_order': 'Order',
+        }
+
+
 WebsiteServiceFormSet = inlineformset_factory(
     PublicSiteSettings,
     PublicService,
@@ -1093,6 +1132,15 @@ WebsiteProjectHighlightFormSet = inlineformset_factory(
     PublicSiteSettings,
     PublicProjectHighlight,
     form=PublicProjectHighlightForm,
+    extra=2,
+    can_delete=True,
+)
+
+
+WebsiteProjectImageFormSet = inlineformset_factory(
+    PublicProjectHighlight,
+    PublicProjectImage,
+    form=PublicProjectImageForm,
     extra=2,
     can_delete=True,
 )
