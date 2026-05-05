@@ -775,9 +775,11 @@ a {
 .project-link__icon {
     display: inline-grid;
     place-items: center;
-    width: 1.15rem;
-    height: 1.15rem;
-    color: var(--clay);
+    flex: 0 0 auto;
+    width: 1.34rem;
+    height: 1.34rem;
+    color: #fff;
+    overflow: hidden;
 }
 
 .project-link__icon svg {
@@ -785,13 +787,29 @@ a {
     height: 100%;
 }
 
-.project-link--youtube svg {
-    fill: currentColor;
+.project-link__icon--youtube {
+    width: 1.55rem;
+    border-radius: 0.32rem;
+    background: #ff0000;
 }
 
-.project-link--instagram svg {
+.project-link__icon--youtube svg {
+    width: 0.92rem;
+    height: 0.92rem;
+    fill: #fff;
+}
+
+.project-link__icon--instagram {
+    border-radius: 0.38rem;
+    background:
+        radial-gradient(circle at 30% 107%, #fdf497 0 8%, #fdf497 8% 14%, #fd5949 44%, #d6249f 62%, #285aeb 100%);
+}
+
+.project-link__icon--instagram svg {
+    width: 0.95rem;
+    height: 0.95rem;
     fill: none;
-    stroke: currentColor;
+    stroke: #fff;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
