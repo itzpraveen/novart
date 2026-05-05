@@ -1,18 +1,15 @@
+{% load static %}
 {% if project.youtube_url or project.instagram_url %}
 <div class="project-links" aria-label="{{ project.title }} media links">
     {% if project.youtube_url %}
     <a class="project-link project-link--youtube" href="{{ project.youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="Watch {{ project.title }} on YouTube">
-        <span class="project-link__icon project-link__icon--youtube" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><path d="M9 7.6v8.8l7.2-4.4L9 7.6Z"></path></svg>
-        </span>
+        <img class="project-link__icon project-link__icon--youtube" src="{% static 'img/social/youtube_icon.svg' %}" alt="" aria-hidden="true">
         <span>YouTube</span>
     </a>
     {% endif %}
     {% if project.instagram_url %}
     <a class="project-link project-link--instagram" href="{{ project.instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="View {{ project.title }} on Instagram">
-        <span class="project-link__icon project-link__icon--instagram" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false"><rect x="5" y="5" width="14" height="14" rx="4"></rect><circle cx="12" cy="12" r="3.2"></circle><circle cx="16.3" cy="7.7" r="1"></circle></svg>
-        </span>
+        <img class="project-link__icon project-link__icon--instagram" src="{% static 'img/social/instagram_icon.svg' %}" alt="" aria-hidden="true">
         <span>Instagram</span>
     </a>
     {% endif %}
