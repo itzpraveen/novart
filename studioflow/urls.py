@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.urls import include, path
 from django.views.decorators.http import require_GET
 
-from portal.public_site import site_root
+from portal.public_site import public_work, site_root
 
 
 def _public_canonical_url(path: str = '/') -> str:
@@ -73,6 +73,11 @@ def sitemap_xml(request):
                 "    <changefreq>weekly</changefreq>",
                 "    <priority>1.0</priority>",
                 "  </url>",
+                "  <url>",
+                f"    <loc>{_public_canonical_url('/work/')}</loc>",
+                "    <changefreq>weekly</changefreq>",
+                "    <priority>0.8</priority>",
+                "  </url>",
                 "</urlset>",
                 "",
             ]
@@ -88,6 +93,7 @@ urlpatterns = [
     path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     path("manifest.json", manifest, name="manifest"),
     path("service-worker.js", service_worker, name="service_worker"),
+    path("work/", public_work, name="public_work"),
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='portal/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),

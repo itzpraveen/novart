@@ -2,7 +2,7 @@ import json
 import re
 
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.templatetags.static import static
 
 from .models import FirmProfile, PublicSiteSettings
@@ -21,6 +21,8 @@ PUBLIC_EXACT_PATHS = {
     '/robots.txt',
     '/service-worker.js',
     '/sitemap.xml',
+    '/work',
+    '/work/',
 }
 
 LOCAL_SERVICE_AREAS = [
@@ -251,7 +253,38 @@ def _project_image_items(project) -> list[dict]:
     return images
 
 
-def public_home(request):
+def _project_card_from_model(project) -> dict:
+    images = _project_image_items(project)
+    return {
+        'title': project.title,
+        'project_type': project.project_type,
+        'location': project.location,
+        'description': project.description,
+        'show_on_homepage': project.show_on_homepage,
+        'images': images,
+        'image_url': images[0]['url'],
+        'image_alt': images[0]['alt'],
+    }
+
+
+def _project_card_from_defaults(project: dict) -> dict:
+    image = {
+        'url': static(ARTWORK_ASSET_PATHS[project['art_key']]),
+        'alt': project.get('image_alt') or project['title'],
+    }
+    return {
+        'title': project['title'],
+        'project_type': project['project_type'],
+        'location': project['location'],
+        'description': project['description'],
+        'show_on_homepage': True,
+        'images': [image],
+        'image_url': image['url'],
+        'image_alt': image['alt'],
+    }
+
+
+def _public_site_content() -> dict:
     site = PublicSiteSettings.objects.prefetch_related('services', 'process_steps', 'project_highlights').filter(singleton=True).first()
     defaults = _public_site_defaults()
 
@@ -259,82 +292,116 @@ def public_home(request):
         site = PublicSiteSettings(**defaults)
         services = _default_services()
         process_steps = _default_process_steps()
-        projects = _default_projects()
+        project_cards = [_project_card_from_defaults(project) for project in _default_projects()]
     else:
         services = list(site.services.values('title', 'description'))
         process_steps = list(site.process_steps.values('step_label', 'title', 'description'))
-        projects = list(site.project_highlights.values('title', 'project_type', 'location', 'description', 'art_key', 'image_alt'))
         if not services:
             services = _default_services()
         if not process_steps:
             process_steps = _default_process_steps()
-        if not projects:
-            projects = _default_projects()
+        source_items = list(site.project_highlights.all())
+        if source_items:
+            project_cards = [_project_card_from_model(project) for project in source_items]
+        else:
+            project_cards = [_project_card_from_defaults(project) for project in _default_projects()]
 
     firm_profile = FirmProfile.objects.filter(singleton=True).first()
     logo_url = _safe_image_url(getattr(firm_profile, 'logo', None)) or static('img/novart.png')
     hero_image_url = _artwork_url(getattr(site, 'hero_image', None), getattr(site, 'hero_art_key', defaults['hero_art_key']))
     studio_image_url = _artwork_url(getattr(site, 'studio_image', None), getattr(site, 'studio_art_key', defaults['studio_art_key']))
+    phone_href = _phone_href(getattr(site, 'phone_display', defaults['phone_display']))
+    whatsapp_href = _whatsapp_href(getattr(site, 'whatsapp_number', defaults['whatsapp_number']))
 
-    project_cards = []
-    source_items = site.project_highlights.all() if getattr(site, 'pk', None) else []
-    if source_items:
-        for project in source_items:
-            images = _project_image_items(project)
-            project_cards.append(
-                {
-                    'title': project.title,
-                    'project_type': project.project_type,
-                    'location': project.location,
-                    'description': project.description,
-                    'images': images,
-                    'image_url': images[0]['url'],
-                    'image_alt': images[0]['alt'],
-                }
-            )
-    else:
-        for project in projects:
-            image = {
-                'url': static(ARTWORK_ASSET_PATHS[project['art_key']]),
-                'alt': project.get('image_alt') or project['title'],
-            }
-            project_cards.append(
-                {
-                    'title': project['title'],
-                    'project_type': project['project_type'],
-                    'location': project['location'],
-                    'description': project['description'],
-                    'images': [image],
-                    'image_url': image['url'],
-                    'image_alt': image['alt'],
-                }
-            )
-
-    context = {
+    return {
         'site': site,
+        'defaults': defaults,
+        'services': services,
+        'process_steps': process_steps,
+        'project_cards': project_cards,
         'logo_url': logo_url,
         'hero_image_url': hero_image_url,
         'studio_image_url': studio_image_url,
+        'phone_href': phone_href,
+        'whatsapp_href': whatsapp_href,
+    }
+
+
+def _featured_project_cards(project_cards: list[dict]) -> list[dict]:
+    featured_projects = [project for project in project_cards if project.get('show_on_homepage')]
+    if featured_projects:
+        return featured_projects
+    return project_cards[:3]
+
+
+def _public_nav_links(*, archive: bool = False) -> list[tuple[str, str]]:
+    if archive:
+        return [
+            ('Home', '/'),
+            ('Services', '/#services'),
+            ('Process', '/#process'),
+            ('Selected Work', '/#work'),
+            ('Contact', '/#contact'),
+        ]
+    return [
+        ('Services', '#services'),
+        ('Process', '#process'),
+        ('Selected Work', '#work'),
+        ('All Work', '/work/'),
+        ('Studio', '#studio'),
+        ('Contact', '#contact'),
+    ]
+
+
+def public_home(request):
+    content = _public_site_content()
+    site = content['site']
+    project_cards = content['project_cards']
+    homepage_projects = _featured_project_cards(project_cards)
+
+    context = {
+        'site': site,
+        'logo_url': content['logo_url'],
+        'hero_image_url': content['hero_image_url'],
+        'studio_image_url': content['studio_image_url'],
         'canonical_url': _canonical_public_url(),
-        'og_image_url': _absolute_public_url(hero_image_url),
-        'local_business_schema': _local_business_schema(site, logo_url, hero_image_url, project_cards),
+        'og_image_url': _absolute_public_url(content['hero_image_url']),
+        'local_business_schema': _local_business_schema(site, content['logo_url'], content['hero_image_url'], project_cards),
         'local_seo_heading': LOCAL_SEO_HEADING,
         'local_seo_body': LOCAL_SEO_BODY,
         'local_service_areas': LOCAL_SERVICE_AREAS,
-        'services': services,
-        'process_steps': process_steps,
-        'projects': project_cards,
-        'phone_href': _phone_href(getattr(site, 'phone_display', defaults['phone_display'])),
-        'whatsapp_href': _whatsapp_href(getattr(site, 'whatsapp_number', defaults['whatsapp_number'])),
-        'section_links': [
-            ('Services', '#services'),
-            ('Process', '#process'),
-            ('Selected Work', '#work'),
-            ('Studio', '#studio'),
-            ('Contact', '#contact'),
-        ],
+        'services': content['services'],
+        'process_steps': content['process_steps'],
+        'projects': homepage_projects,
+        'all_project_count': len(project_cards),
+        'homepage_project_count': len(homepage_projects),
+        'work_archive_url': '/work/',
+        'phone_href': content['phone_href'],
+        'whatsapp_href': content['whatsapp_href'],
+        'section_links': _public_nav_links(),
     }
     return render(request, 'public/home.html', context)
+
+
+def public_work(request):
+    if not is_public_host(request):
+        return redirect(_canonical_public_url('/work/'))
+
+    content = _public_site_content()
+    site = content['site']
+    project_cards = content['project_cards']
+    context = {
+        'site': site,
+        'logo_url': content['logo_url'],
+        'canonical_url': _canonical_public_url('/work/'),
+        'og_image_url': _absolute_public_url(project_cards[0]['image_url'] if project_cards else content['hero_image_url']),
+        'local_business_schema': _local_business_schema(site, content['logo_url'], content['hero_image_url'], project_cards),
+        'projects': project_cards,
+        'phone_href': content['phone_href'],
+        'whatsapp_href': content['whatsapp_href'],
+        'section_links': _public_nav_links(archive=True),
+    }
+    return render(request, 'public/work.html', context)
 
 
 def site_root(request):

@@ -436,6 +436,13 @@ class PublicSiteRoutingTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], 'https://erp.novartarchitects.com/accounts/login/')
 
+    def test_public_host_work_archive_renders_public_page(self):
+        response = self.client.get('/work/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'public/work.html')
+        self.assertContains(response, 'All Work')
+
 
 @override_settings(
     ALLOWED_HOSTS=[
@@ -515,6 +522,28 @@ class PublicHomepageRenderTests(TestCase):
         self.assertContains(response, 'Contact')
         self.assertContains(response, 'data-lightbox-image')
         self.assertContains(response, 'data-lightbox')
+        self.assertContains(response, '/work/')
+
+    def test_public_homepage_can_keep_non_featured_work_in_archive(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        PublicProjectHighlight.objects.create(
+            site=site,
+            title='Archive Residence',
+            project_type='Residential',
+            location='Kerala',
+            description='A public archive project hidden from the homepage.',
+            art_key='courtyard-house',
+            sort_order=99,
+            show_on_homepage=False,
+        )
+
+        home_response = self.client.get('/', HTTP_HOST='novartarchitects.com')
+        archive_response = self.client.get('/work/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(home_response.status_code, 200)
+        self.assertNotContains(home_response, 'Archive Residence')
+        self.assertEqual(archive_response.status_code, 200)
+        self.assertContains(archive_response, 'Archive Residence')
 
     def test_public_homepage_has_local_seo_signals(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
@@ -556,6 +585,7 @@ class PublicHomepageRenderTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/xml')
         self.assertContains(response, '<loc>https://novartarchitects.com/</loc>')
+        self.assertContains(response, '<loc>https://novartarchitects.com/work/</loc>')
 
 
 class WebsiteSettingsAccessTests(TestCase):
@@ -708,6 +738,7 @@ class WebsiteSettingsSaveTests(TestCase):
                 'projects-0-project_type': 'Architecture',
                 'projects-0-location': 'Kerala',
                 'projects-0-description': 'A shaded residence built around a planted court.',
+                'projects-0-show_on_homepage': 'on',
                 'projects-0-image': _tiny_gif('project.gif'),
                 'projects-0-image_alt': 'Courtyard residence',
                 'projects-0-image_secondary': _tiny_gif('project-detail.gif'),
@@ -720,6 +751,7 @@ class WebsiteSettingsSaveTests(TestCase):
                 'projects-1-project_type': 'Interiors',
                 'projects-1-location': 'Kozhikode',
                 'projects-1-description': 'Calm interiors with warm natural materials.',
+                'projects-1-show_on_homepage': 'on',
                 'projects-1-image_alt': 'Atelier apartment',
                 'projects-1-art_key': 'atelier-interior',
                 'projects-1-sort_order': '1',
@@ -771,6 +803,7 @@ class WebsiteSettingsRenderTests(TestCase):
         self.assertContains(response, 'Hero')
         self.assertContains(response, 'Selected Work')
         self.assertContains(response, 'Second project image')
+        self.assertContains(response, 'Show on homepage')
         self.assertContains(response, 'SEO')
         self.assertContains(response, 'Large images are resized in this browser before saving.')
         self.assertContains(response, 'js/website-settings.js')

@@ -524,9 +524,72 @@ a {
     color: rgba(246, 246, 242, 0.72);
 }
 
+.section-actions {
+    margin-top: 1.4rem;
+}
+
+.text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--paper);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.text-link::after {
+    content: "";
+    width: 2.2rem;
+    height: 1px;
+    background: var(--clay);
+    transition: transform 0.22s ease;
+}
+
+.text-link:hover::after,
+.text-link:focus-visible::after {
+    transform: translateX(0.35rem);
+}
+
 .work-list {
     display: grid;
     gap: 5.5rem;
+}
+
+.work-archive {
+    min-height: 100svh;
+    padding-top: calc(var(--header-height) + 5.5rem);
+}
+
+.work-archive__head {
+    display: grid;
+    grid-template-columns: 0.55fr minmax(0, 1.15fr) auto;
+    gap: 2rem;
+    align-items: end;
+    margin-bottom: 5rem;
+}
+
+.work-archive__head h1 {
+    margin: 0;
+    color: var(--paper);
+    font-family: var(--font-serif);
+    font-size: clamp(3.1rem, 6vw, 6.8rem);
+    font-weight: 600;
+    line-height: 0.95;
+}
+
+.work-archive__head p:not(.section-kicker),
+.work-archive__count {
+    color: rgba(246, 246, 242, 0.72);
+}
+
+.work-archive__count {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
 }
 
 .project-row {
@@ -645,6 +708,7 @@ a {
     margin: 0 0 1rem;
 }
 
+.project-copy h2,
 .project-copy h3 {
     color: var(--paper);
     font-family: var(--font-serif);
@@ -878,6 +942,7 @@ body.lightbox-open {
     .section-head,
     .process-layout,
     .local-grid,
+    .work-archive__head,
     .project-row,
     .project-row.is-flipped,
     .studio-grid,
@@ -1236,6 +1301,28 @@ body.lightbox-open {
         margin: 0 auto 2.5rem;
     }
 
+    .work-archive {
+        padding-top: calc(var(--header-height) + 3.2rem);
+    }
+
+    .work-archive .section-inner {
+        width: 100%;
+    }
+
+    .work-archive__head {
+        width: var(--content-width);
+        margin: 0 auto 2.5rem;
+        gap: 1rem;
+    }
+
+    .work-archive__head h1 {
+        font-size: 3.6rem;
+    }
+
+    .work-archive__count {
+        white-space: normal;
+    }
+
     .work-list {
         gap: 0;
     }
@@ -1299,6 +1386,7 @@ body.lightbox-open {
         z-index: 1;
     }
 
+    .project-copy h2,
     .project-copy h3 {
         font-size: 2.4rem;
         line-height: 0.96;

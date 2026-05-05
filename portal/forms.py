@@ -1050,6 +1050,7 @@ class PublicProjectHighlightForm(forms.ModelForm):
             'project_type',
             'location',
             'description',
+            'show_on_homepage',
             'image',
             'image_alt',
             'image_secondary',
@@ -1064,6 +1065,9 @@ class PublicProjectHighlightForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
             'image_secondary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
             'image_tertiary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
+        labels = {
+            'show_on_homepage': 'Show on homepage',
         }
 
 

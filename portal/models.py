@@ -1449,6 +1449,7 @@ class PublicProjectHighlight(TimeStampedModel):
     project_type = models.CharField(max_length=120, blank=True)
     location = models.CharField(max_length=120, blank=True)
     description = models.TextField()
+    show_on_homepage = models.BooleanField(default=True)
     image = models.ImageField(upload_to='public_site/', blank=True, null=True)
     image_alt = models.CharField(max_length=255, blank=True)
     image_secondary = models.ImageField(upload_to='public_site/', blank=True, null=True)

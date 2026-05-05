@@ -152,6 +152,9 @@
                     <div>
                         <h2>{{ site.work_heading }}</h2>
                         <p>{{ site.work_intro }}</p>
+                        <div class="section-actions">
+                            <a class="text-link" href="{{ work_archive_url }}">View all work{% if all_project_count %} ({{ all_project_count }}){% endif %}</a>
+                        </div>
                     </div>
                 </div>
                 <div class="work-list">
@@ -206,23 +209,7 @@
         </section>
     </main>
 
-    <div class="public-lightbox" data-lightbox hidden role="dialog" aria-modal="true" aria-label="Project image viewer">
-        <div class="public-lightbox__bar">
-            <p class="public-lightbox__count" data-lightbox-count></p>
-            <button class="public-lightbox__button" type="button" data-lightbox-zoom-out aria-label="Zoom out">-</button>
-            <button class="public-lightbox__button" type="button" data-lightbox-zoom-reset aria-label="Reset zoom">1x</button>
-            <button class="public-lightbox__button" type="button" data-lightbox-zoom-in aria-label="Zoom in">+</button>
-            <button class="public-lightbox__button public-lightbox__button--wide" type="button" data-lightbox-close>Close</button>
-        </div>
-        <div class="public-lightbox__viewer">
-            <button class="public-lightbox__button public-lightbox__nav public-lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous image">&lt;</button>
-            <figure class="public-lightbox__stage">
-                <img class="public-lightbox__image" data-lightbox-img alt="">
-                <figcaption class="public-lightbox__caption" data-lightbox-caption></figcaption>
-            </figure>
-            <button class="public-lightbox__button public-lightbox__nav public-lightbox__nav--next" type="button" data-lightbox-next aria-label="Next image">&gt;</button>
-        </div>
-    </div>
+    {% include "public/includes/lightbox.html" %}
 
     <script src="{% static 'js/public-site.js' %}"></script>
 </body>

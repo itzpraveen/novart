@@ -312,6 +312,9 @@
                                                 <label class="form-label" for="{{ row.form.sort_order.id_for_label }}">Order</label>
                                                 {{ row.form.sort_order|add_class:"form-control" }}
                                             </div>
+                                            <div class="col-md-3 d-flex align-items-end">
+                                                <label class="form-check-label">{{ row.form.show_on_homepage }} Show on homepage</label>
+                                            </div>
                                             <div class="col-md-6">
                                                 <label class="form-label" for="{{ row.form.image_secondary.id_for_label }}">Second project image</label>
                                                 {{ row.form.image_secondary|add_class:"form-control" }}
