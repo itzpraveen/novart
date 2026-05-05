@@ -9,7 +9,6 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.templatetags.static import static
 from django.utils.text import slugify
-from PIL import Image, ImageOps
 
 from .models import FirmProfile, PublicSiteSettings
 
@@ -170,13 +169,7 @@ def _optimized_image_url(image_field, fallback_url: str, max_edge: int = 1280) -
         thumb_path = Path(settings.MEDIA_ROOT) / thumb_relative
 
         if not thumb_path.exists():
-            thumb_path.parent.mkdir(parents=True, exist_ok=True)
-            with Image.open(source_path) as source_image:
-                image = ImageOps.exif_transpose(source_image)
-                image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
-                if image.mode not in {'RGB', 'L'}:
-                    image = image.convert('RGB')
-                image.save(thumb_path, 'WEBP', quality=78, method=4)
+            return fallback_url
 
         media_url = getattr(settings, 'MEDIA_URL', '/media/')
         return f"{media_url.rstrip('/')}/{thumb_relative.as_posix()}"
