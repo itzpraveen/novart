@@ -513,6 +513,8 @@ class PublicHomepageRenderTests(TestCase):
         self.assertContains(response, 'Selected Work')
         self.assertContains(response, 'Studio')
         self.assertContains(response, 'Contact')
+        self.assertContains(response, 'data-lightbox-image')
+        self.assertContains(response, 'data-lightbox')
 
     def test_public_homepage_has_local_seo_signals(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
@@ -770,6 +772,8 @@ class WebsiteSettingsRenderTests(TestCase):
         self.assertContains(response, 'Selected Work')
         self.assertContains(response, 'Second project image')
         self.assertContains(response, 'SEO')
+        self.assertContains(response, 'Large images are resized in this browser before saving.')
+        self.assertContains(response, 'js/website-settings.js')
 
     def test_admin_navigation_contains_website_settings_link(self):
         self.client.force_login(self.admin)

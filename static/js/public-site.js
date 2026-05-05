@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupReveals();
     setupParallax();
     setupMobileFolio();
+    setupImageLightbox();
     setupHeroStructure();
 });
 
@@ -138,6 +139,186 @@ function setupMobileFolio() {
     render();
     window.addEventListener('scroll', requestRender, { passive: true });
     window.addEventListener('resize', requestRender);
+}
+
+function setupImageLightbox() {
+    const triggers = [...document.querySelectorAll('[data-lightbox-image]')];
+    const lightbox = document.querySelector('[data-lightbox]');
+
+    if (!triggers.length || !lightbox) {
+        return;
+    }
+
+    const image = lightbox.querySelector('[data-lightbox-img]');
+    const caption = lightbox.querySelector('[data-lightbox-caption]');
+    const count = lightbox.querySelector('[data-lightbox-count]');
+    const closeButton = lightbox.querySelector('[data-lightbox-close]');
+    const prevButton = lightbox.querySelector('[data-lightbox-prev]');
+    const nextButton = lightbox.querySelector('[data-lightbox-next]');
+    const zoomInButton = lightbox.querySelector('[data-lightbox-zoom-in]');
+    const zoomOutButton = lightbox.querySelector('[data-lightbox-zoom-out]');
+    const zoomResetButton = lightbox.querySelector('[data-lightbox-zoom-reset]');
+    const items = triggers.map((trigger) => ({
+        src: trigger.dataset.lightboxSrc,
+        alt: trigger.dataset.lightboxAlt || trigger.querySelector('img')?.alt || 'Project image',
+    }));
+
+    let activeIndex = 0;
+    let lastFocusedElement = null;
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragStart = null;
+
+    const updateTransform = () => {
+        image.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0) scale(${scale})`;
+        lightbox.classList.toggle('is-zoomed', scale > 1);
+    };
+
+    const resetZoom = () => {
+        scale = 1;
+        offsetX = 0;
+        offsetY = 0;
+        updateTransform();
+    };
+
+    const setZoom = (nextScale) => {
+        scale = clamp(nextScale, 1, 4);
+        if (scale === 1) {
+            offsetX = 0;
+            offsetY = 0;
+        }
+        updateTransform();
+    };
+
+    const showImage = (nextIndex) => {
+        activeIndex = (nextIndex + items.length) % items.length;
+        const item = items[activeIndex];
+        image.src = item.src;
+        image.alt = item.alt;
+        caption.textContent = item.alt;
+        count.textContent = `${activeIndex + 1} / ${items.length}`;
+        resetZoom();
+    };
+
+    const openLightbox = (index) => {
+        lastFocusedElement = document.activeElement;
+        lightbox.hidden = false;
+        document.body.classList.add('lightbox-open');
+        showImage(index);
+        closeButton?.focus({ preventScroll: true });
+    };
+
+    const closeLightbox = () => {
+        lightbox.hidden = true;
+        image.removeAttribute('src');
+        document.body.classList.remove('lightbox-open');
+        resetZoom();
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus({ preventScroll: true });
+        }
+    };
+
+    const showPrevious = () => showImage(activeIndex - 1);
+    const showNext = () => showImage(activeIndex + 1);
+
+    triggers.forEach((trigger, index) => {
+        trigger.addEventListener('click', () => openLightbox(index));
+    });
+
+    closeButton?.addEventListener('click', closeLightbox);
+    prevButton?.addEventListener('click', showPrevious);
+    nextButton?.addEventListener('click', showNext);
+    zoomInButton?.addEventListener('click', () => setZoom(scale + 0.35));
+    zoomOutButton?.addEventListener('click', () => setZoom(scale - 0.35));
+    zoomResetButton?.addEventListener('click', resetZoom);
+
+    image.addEventListener('dblclick', () => {
+        setZoom(scale > 1 ? 1 : 2);
+    });
+
+    image.addEventListener(
+        'wheel',
+        (event) => {
+            if (lightbox.hidden) {
+                return;
+            }
+            event.preventDefault();
+            setZoom(scale + (event.deltaY < 0 ? 0.2 : -0.2));
+        },
+        { passive: false }
+    );
+
+    image.addEventListener('pointerdown', (event) => {
+        if (scale <= 1) {
+            return;
+        }
+        dragStart = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            offsetX,
+            offsetY,
+        };
+        image.setPointerCapture(event.pointerId);
+        lightbox.classList.add('is-dragging');
+    });
+
+    image.addEventListener('pointermove', (event) => {
+        if (!dragStart || event.pointerId !== dragStart.pointerId) {
+            return;
+        }
+        offsetX = dragStart.offsetX + event.clientX - dragStart.x;
+        offsetY = dragStart.offsetY + event.clientY - dragStart.y;
+        updateTransform();
+    });
+
+    const stopDragging = (event) => {
+        if (!dragStart || event.pointerId !== dragStart.pointerId) {
+            return;
+        }
+        dragStart = null;
+        lightbox.classList.remove('is-dragging');
+    };
+
+    image.addEventListener('pointerup', stopDragging);
+    image.addEventListener('pointercancel', stopDragging);
+
+    lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (lightbox.hidden) {
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            closeLightbox();
+            return;
+        }
+        if (event.key === 'ArrowLeft') {
+            showPrevious();
+            return;
+        }
+        if (event.key === 'ArrowRight') {
+            showNext();
+            return;
+        }
+        if (event.key === '+' || event.key === '=') {
+            setZoom(scale + 0.35);
+            return;
+        }
+        if (event.key === '-' || event.key === '_') {
+            setZoom(scale - 0.35);
+            return;
+        }
+        if (event.key === '0') {
+            resetZoom();
+        }
+    });
 }
 
 async function setupHeroStructure() {

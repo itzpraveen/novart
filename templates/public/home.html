@@ -159,7 +159,9 @@
                     <article class="project-row {% if not forloop.counter0|divisibleby:2 %}is-flipped{% endif %}">
                         <figure class="project-media project-gallery project-gallery--{{ project.images|length }} reveal">
                             {% for image in project.images %}
-                            <img class="project-gallery__image project-gallery__image--{{ forloop.counter }}" src="{{ image.url }}" alt="{{ image.alt }}" loading="lazy">
+                            <button class="project-gallery__button project-gallery__button--{{ forloop.counter }}" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
+                                <img class="project-gallery__image" src="{{ image.url }}" alt="{{ image.alt }}" loading="lazy">
+                            </button>
                             {% endfor %}
                         </figure>
                         <div class="project-copy reveal">
@@ -203,6 +205,24 @@
             </div>
         </section>
     </main>
+
+    <div class="public-lightbox" data-lightbox hidden role="dialog" aria-modal="true" aria-label="Project image viewer">
+        <div class="public-lightbox__bar">
+            <p class="public-lightbox__count" data-lightbox-count></p>
+            <button class="public-lightbox__button" type="button" data-lightbox-zoom-out aria-label="Zoom out">-</button>
+            <button class="public-lightbox__button" type="button" data-lightbox-zoom-reset aria-label="Reset zoom">1x</button>
+            <button class="public-lightbox__button" type="button" data-lightbox-zoom-in aria-label="Zoom in">+</button>
+            <button class="public-lightbox__button public-lightbox__button--wide" type="button" data-lightbox-close>Close</button>
+        </div>
+        <div class="public-lightbox__viewer">
+            <button class="public-lightbox__button public-lightbox__nav public-lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous image">&lt;</button>
+            <figure class="public-lightbox__stage">
+                <img class="public-lightbox__image" data-lightbox-img alt="">
+                <figcaption class="public-lightbox__caption" data-lightbox-caption></figcaption>
+            </figure>
+            <button class="public-lightbox__button public-lightbox__nav public-lightbox__nav--next" type="button" data-lightbox-next aria-label="Next image">&gt;</button>
+        </div>
+    </div>
 
     <script src="{% static 'js/public-site.js' %}"></script>
 </body>

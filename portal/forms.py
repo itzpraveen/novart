@@ -972,6 +972,9 @@ class WebsiteProfileLogoForm(forms.ModelForm):
     class Meta:
         model = FirmProfile
         fields = ['logo']
+        widgets = {
+            'logo': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
 
 
 class WebsitePublicSiteForm(forms.ModelForm):
@@ -1016,6 +1019,8 @@ class WebsitePublicSiteForm(forms.ModelForm):
             'studio_body': forms.Textarea(attrs={'rows': 4}),
             'contact_intro': forms.Textarea(attrs={'rows': 2}),
             'meta_description': forms.Textarea(attrs={'rows': 3}),
+            'hero_image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'studio_image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
 
 
@@ -1056,6 +1061,9 @@ class PublicProjectHighlightForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+            'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'image_secondary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'image_tertiary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
 
 

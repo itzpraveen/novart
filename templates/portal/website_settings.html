@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load portal_extras %}
+{% load static portal_extras %}
 {% block content %}
 <div class="page-header">
     <div>
@@ -23,8 +23,44 @@
         {{ services_formset.non_form_errors }}
         {{ process_formset.non_form_errors }}
         {{ projects_formset.non_form_errors }}
+        <div class="small">
+            {% for field in profile_form.visible_fields %}
+                {% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}
+            {% endfor %}
+            {% for field in site_form.visible_fields %}
+                {% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}
+            {% endfor %}
+            {% for form in services_formset.forms %}
+                {% if form.errors %}
+                    {% with service_number=forloop.counter %}
+                        {% for field in form.visible_fields %}
+                            {% for error in field.errors %}<div>Service {{ service_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
+                        {% endfor %}
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            {% for form in process_formset.forms %}
+                {% if form.errors %}
+                    {% with step_number=forloop.counter %}
+                        {% for field in form.visible_fields %}
+                            {% for error in field.errors %}<div>Process step {{ step_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
+                        {% endfor %}
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+            {% for form in projects_formset.forms %}
+                {% if form.errors %}
+                    {% with project_number=forloop.counter %}
+                        {% for field in form.visible_fields %}
+                            {% for error in field.errors %}<div>Project {{ project_number }} - {{ field.label }}: {{ error }}</div>{% endfor %}
+                        {% endfor %}
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
+    <div class="alert alert-info d-none" data-image-upload-status role="status"></div>
     <div class="row g-4">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -223,7 +259,7 @@
                 <div class="card-body">
                     <div class="eyebrow">Section 5</div>
                     <h4 class="mb-1">Selected Work</h4>
-                    <p class="text-muted mb-3">Replace placeholder visuals and project text here.</p>
+                    <p class="text-muted mb-3">Replace placeholder visuals and project text here. Large images are resized in this browser before saving.</p>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label" for="{{ site_form.work_heading.id_for_label }}">Section heading</label>
@@ -382,4 +418,5 @@
         </div>
     </div>
 </form>
+<script src="{% static 'js/website-settings.js' %}"></script>
 {% endblock %}
