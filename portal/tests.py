@@ -12,6 +12,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from .forms import WebsiteProjectForm
 from .models import (
     Account,
     Bill,
@@ -598,6 +599,72 @@ class PublicHomepageRenderTests(TestCase):
         self.assertContains(home_response, 'Watch Social Residence on YouTube')
         self.assertContains(archive_response, 'View Social Residence on Instagram')
 
+    def test_public_work_archive_supports_filters_and_short_summaries(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        site.project_highlights.all().delete()
+        PublicProjectHighlight.objects.create(
+            site=site,
+            title='Residential Villa',
+            project_type='Residential',
+            location='Kerala',
+            description=(
+                'A carefully edited family home shaped around shade, cross ventilation, and everyday privacy. '
+                'This second sentence should stay on the detail page instead of crowding the archive card.'
+            ),
+            art_key='courtyard-house',
+            sort_order=1,
+        )
+        PublicProjectHighlight.objects.create(
+            site=site,
+            title='Interior Apartment',
+            project_type='Interiors',
+            location='Calicut',
+            description='A compact apartment interior with calmer storage and daylight.',
+            art_key='atelier-interior',
+            sort_order=2,
+        )
+
+        response = self.client.get('/work/?type=residential', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Residential <span>1</span>', html=True)
+        self.assertContains(response, 'Residential Villa')
+        self.assertNotContains(response, 'Interior Apartment')
+        self.assertContains(response, 'A carefully edited family home shaped around shade')
+        self.assertNotContains(response, 'This second sentence should stay')
+
+    def test_public_work_detail_page_renders_project_story_gallery_and_cta(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        project = PublicProjectHighlight.objects.create(
+            site=site,
+            title='Detail Residence',
+            project_type='Residential',
+            location='Kerala',
+            description='A detailed project story with facade, interior, and material decisions.',
+            youtube_url='https://youtu.be/detail-residence',
+            instagram_url='https://www.instagram.com/p/detail-residence/',
+            art_key='courtyard-house',
+            sort_order=100,
+        )
+        PublicProjectImage.objects.create(
+            project=project,
+            image=_tiny_gif('detail-gallery.gif'),
+            alt_text='Detail gallery image',
+            sort_order=1,
+        )
+
+        response = self.client.get('/work/detail-residence/', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'public/work_detail.html')
+        self.assertContains(response, '<link rel="canonical" href="https://novartarchitects.com/work/detail-residence/">')
+        self.assertContains(response, 'Detail Residence')
+        self.assertContains(response, 'A detailed project story')
+        self.assertContains(response, 'Detail gallery image')
+        self.assertContains(response, 'Discuss This Project')
+        self.assertContains(response, 'similar%20to%20Detail%20Residence')
+        self.assertContains(response, 'https://youtu.be/detail-residence')
+
     def test_public_homepage_has_local_seo_signals(self):
         response = self.client.get('/', HTTP_HOST='novartarchitects.com')
 
@@ -639,6 +706,23 @@ class PublicHomepageRenderTests(TestCase):
         self.assertEqual(response['Content-Type'], 'application/xml')
         self.assertContains(response, '<loc>https://novartarchitects.com/</loc>')
         self.assertContains(response, '<loc>https://novartarchitects.com/work/</loc>')
+
+    def test_public_sitemap_lists_project_detail_pages(self):
+        site = PublicSiteSettings.objects.get(singleton=True)
+        PublicProjectHighlight.objects.create(
+            site=site,
+            title='Sitemap Residence',
+            project_type='Residential',
+            location='Kerala',
+            description='A public work detail page that should be indexed.',
+            art_key='courtyard-house',
+            sort_order=100,
+        )
+
+        response = self.client.get('/sitemap.xml', HTTP_HOST='novartarchitects.com')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<loc>https://novartarchitects.com/work/sitemap-residence/</loc>')
 
 
 class WebsiteSettingsAccessTests(TestCase):
@@ -825,9 +909,28 @@ class WebsiteSettingsSaveTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('website_project_edit', args=[project.pk]))
         self.assertTrue(project.image.name.startswith('public_site/'))
+        self.assertEqual(project.slug, 'courtyard-residence')
         self.assertEqual(project.youtube_url, 'https://www.youtube.com/watch?v=courtyard123')
         self.assertEqual(project.instagram_url, 'https://www.instagram.com/p/courtyard123/')
         self.assertEqual(project.gallery_images.count(), 2)
+
+    def test_work_library_rejects_wrong_platform_links(self):
+        form = WebsiteProjectForm(
+            data={
+                'title': 'Invalid Media Residence',
+                'project_type': 'Residential',
+                'location': 'Kerala',
+                'description': 'A project with a mismatched media URL.',
+                'youtube_url': 'https://vimeo.com/123',
+                'instagram_url': 'https://www.youtube.com/shorts/123',
+                'art_key': 'courtyard-house',
+                'sort_order': '1',
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('youtube_url', form.errors)
+        self.assertIn('instagram_url', form.errors)
 
     def test_work_library_edits_project_and_gallery_metadata(self):
         gallery_image = PublicProjectImage.objects.create(
@@ -925,6 +1028,7 @@ class WebsiteSettingsRenderTests(TestCase):
         self.assertContains(response, 'Project Images')
         self.assertContains(response, 'YouTube link')
         self.assertContains(response, 'Instagram link')
+        self.assertContains(response, 'data-media-link-preview')
         self.assertContains(response, 'Add many gallery images')
         self.assertContains(response, 'Large JPG/PNG images are resized')
 

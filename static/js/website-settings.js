@@ -1,6 +1,84 @@
 document.addEventListener('DOMContentLoaded', () => {
     setupWebsiteImageUploads();
+    setupMediaLinkPreviews();
 });
+
+function setupMediaLinkPreviews() {
+    const inputs = [...document.querySelectorAll('[data-media-link-input]')];
+    inputs.forEach((input) => {
+        const preview = document.querySelector(`[data-media-link-preview="${input.id}"]`);
+        if (!preview) {
+            return;
+        }
+
+        const render = () => {
+            renderMediaLinkPreview(input, preview);
+        };
+        input.addEventListener('input', render);
+        input.addEventListener('blur', render);
+        render();
+    });
+}
+
+function renderMediaLinkPreview(input, preview) {
+    const platform = input.dataset.mediaLinkInput;
+    const result = getMediaLinkStatus(input.value, platform);
+    preview.classList.remove('is-empty', 'is-valid', 'is-invalid');
+    preview.classList.add(result.state);
+    preview.textContent = '';
+
+    const message = document.createElement('span');
+    message.textContent = result.message;
+    preview.appendChild(message);
+
+    if (result.href) {
+        const link = document.createElement('a');
+        link.href = result.href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open link';
+        preview.appendChild(link);
+    }
+}
+
+function getMediaLinkStatus(rawValue, platform) {
+    const value = (rawValue || '').trim();
+    const platformLabel = platform === 'instagram' ? 'Instagram' : 'YouTube';
+    const allowedHosts = platform === 'instagram'
+        ? ['instagram.com', 'www.instagram.com', 'm.instagram.com']
+        : ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be'];
+
+    if (!value) {
+        return {
+            state: 'is-empty',
+            message: `Optional ${platformLabel} link.`,
+            href: '',
+        };
+    }
+
+    try {
+        const url = new URL(value);
+        const host = url.hostname.toLowerCase();
+        if (!['http:', 'https:'].includes(url.protocol) || !allowedHosts.includes(host)) {
+            return {
+                state: 'is-invalid',
+                message: `Use a valid ${platformLabel} URL.`,
+                href: '',
+            };
+        }
+        return {
+            state: 'is-valid',
+            message: `Ready to publish from ${host}.`,
+            href: url.href,
+        };
+    } catch (error) {
+        return {
+            state: 'is-invalid',
+            message: `Use a valid ${platformLabel} URL.`,
+            href: '',
+        };
+    }
+}
 
 function setupWebsiteImageUploads() {
     if (!window.DataTransfer || !HTMLCanvasElement.prototype.toBlob) {

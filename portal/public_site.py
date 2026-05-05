@@ -1,9 +1,15 @@
+import hashlib
 import json
+from pathlib import Path
 import re
+from urllib.parse import quote
 
 from django.conf import settings
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.templatetags.static import static
+from django.utils.text import slugify
+from PIL import Image, ImageOps
 
 from .models import FirmProfile, PublicSiteSettings
 
@@ -62,7 +68,12 @@ def is_public_host(request) -> bool:
 def is_public_path(path: str) -> bool:
     static_url = getattr(settings, 'STATIC_URL', '/static/')
     media_url = getattr(settings, 'MEDIA_URL', '/media/')
-    return path in PUBLIC_EXACT_PATHS or path.startswith(static_url) or path.startswith(media_url)
+    return (
+        path in PUBLIC_EXACT_PATHS
+        or path.startswith('/work/')
+        or path.startswith(static_url)
+        or path.startswith(media_url)
+    )
 
 
 def erp_redirect_url(request) -> str | None:
@@ -117,6 +128,60 @@ def _absolute_public_url(url: str) -> str:
     if not url.startswith('/'):
         url = f"/{url}"
     return _canonical_public_url(url)
+
+
+def _public_work_detail_url(slug: str) -> str:
+    return f"/work/{slug}/" if slug else '/work/'
+
+
+def _project_filter_key(project_type: str) -> str:
+    return slugify(project_type or 'Project') or 'project'
+
+
+def _short_project_summary(text: str, max_chars: int = 176) -> str:
+    normalized = re.sub(r'\s+', ' ', text or '').strip()
+    if len(normalized) <= max_chars:
+        return normalized
+
+    sentence_match = re.match(r'(.{72,}?[.!?])\s+', normalized)
+    if sentence_match and len(sentence_match.group(1)) <= max_chars:
+        return sentence_match.group(1)
+
+    shortened = normalized[:max_chars].rsplit(' ', 1)[0].rstrip(' ,;:')
+    return f"{shortened}."
+
+
+def _optimized_image_url(image_field, fallback_url: str, max_edge: int = 1280) -> str:
+    if not image_field or not fallback_url:
+        return fallback_url
+
+    try:
+        source_name = image_field.name
+        source_path = Path(image_field.path)
+        if source_path.suffix.lower() not in {'.jpg', '.jpeg', '.png', '.webp'}:
+            return fallback_url
+        if not source_path.exists():
+            return fallback_url
+
+        source_stat = source_path.stat()
+        digest = hashlib.sha1(f"{source_name}:{source_stat.st_mtime_ns}:{max_edge}".encode('utf-8')).hexdigest()[:12]
+        thumb_name = f"{slugify(source_path.stem) or 'image'}-{digest}.webp"
+        thumb_relative = Path('public_site') / 'thumbs' / str(max_edge) / thumb_name
+        thumb_path = Path(settings.MEDIA_ROOT) / thumb_relative
+
+        if not thumb_path.exists():
+            thumb_path.parent.mkdir(parents=True, exist_ok=True)
+            with Image.open(source_path) as source_image:
+                image = ImageOps.exif_transpose(source_image)
+                image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
+                if image.mode not in {'RGB', 'L'}:
+                    image = image.convert('RGB')
+                image.save(thumb_path, 'WEBP', quality=78, method=4)
+
+        media_url = getattr(settings, 'MEDIA_URL', '/media/')
+        return f"{media_url.rstrip('/')}/{thumb_relative.as_posix()}"
+    except Exception:
+        return fallback_url
 
 
 def _local_business_schema(site, logo_url: str, hero_image_url: str, project_cards: list[dict]) -> str:
@@ -231,9 +296,11 @@ def _default_projects():
 
 
 def _project_image_items(project) -> list[dict]:
+    image_url = _artwork_url(project.image, project.art_key)
     images = [
         {
-            'url': _artwork_url(project.image, project.art_key),
+            'url': image_url,
+            'display_url': _optimized_image_url(project.image, image_url),
             'alt': project.image_alt or project.title,
         }
     ]
@@ -244,9 +311,11 @@ def _project_image_items(project) -> list[dict]:
     for image_field_name, alt_field_name in extra_image_fields:
         image_url = _safe_image_url(getattr(project, image_field_name, None))
         if image_url:
+            image_field = getattr(project, image_field_name, None)
             images.append(
                 {
                     'url': image_url,
+                    'display_url': _optimized_image_url(image_field, image_url),
                     'alt': getattr(project, alt_field_name, '') or project.title,
                 }
             )
@@ -256,6 +325,7 @@ def _project_image_items(project) -> list[dict]:
             images.append(
                 {
                     'url': image_url,
+                    'display_url': _optimized_image_url(gallery_image.image, image_url),
                     'alt': gallery_image.alt_text or project.title,
                 }
             )
@@ -267,39 +337,51 @@ def _project_card_from_model(project) -> dict:
     visible_images = images[:3]
     return {
         'title': project.title,
+        'slug': project.slug,
         'project_type': project.project_type,
+        'filter_key': _project_filter_key(project.project_type),
         'location': project.location,
         'description': project.description,
+        'summary': _short_project_summary(project.description),
         'youtube_url': project.youtube_url,
         'instagram_url': project.instagram_url,
         'show_on_homepage': project.show_on_homepage,
+        'detail_url': _public_work_detail_url(project.slug),
         'images': images,
         'visible_images': visible_images,
         'hidden_images': images[3:],
         'hidden_image_count': max(len(images) - len(visible_images), 0),
         'image_url': images[0]['url'],
+        'display_image_url': images[0].get('display_url') or images[0]['url'],
         'image_alt': images[0]['alt'],
     }
 
 
 def _project_card_from_defaults(project: dict) -> dict:
+    slug = slugify(project['title']) or 'work'
     image = {
         'url': static(ARTWORK_ASSET_PATHS[project['art_key']]),
+        'display_url': static(ARTWORK_ASSET_PATHS[project['art_key']]),
         'alt': project.get('image_alt') or project['title'],
     }
     return {
         'title': project['title'],
+        'slug': slug,
         'project_type': project['project_type'],
+        'filter_key': _project_filter_key(project['project_type']),
         'location': project['location'],
         'description': project['description'],
+        'summary': _short_project_summary(project['description']),
         'youtube_url': project.get('youtube_url', ''),
         'instagram_url': project.get('instagram_url', ''),
         'show_on_homepage': True,
+        'detail_url': _public_work_detail_url(slug),
         'images': [image],
         'visible_images': [image],
         'hidden_images': [],
         'hidden_image_count': 0,
         'image_url': image['url'],
+        'display_image_url': image['display_url'],
         'image_alt': image['alt'],
     }
 
@@ -337,6 +419,12 @@ def _public_site_content() -> dict:
     studio_image_url = _artwork_url(getattr(site, 'studio_image', None), getattr(site, 'studio_art_key', defaults['studio_art_key']))
     phone_href = _phone_href(getattr(site, 'phone_display', defaults['phone_display']))
     whatsapp_href = _whatsapp_href(getattr(site, 'whatsapp_number', defaults['whatsapp_number']))
+    for project in project_cards:
+        if whatsapp_href:
+            message = f"Hi Novart Architects, I would like to discuss a project similar to {project['title']}."
+            project['cta_url'] = f"{whatsapp_href}?text={quote(message)}"
+        else:
+            project['cta_url'] = ''
 
     return {
         'site': site,
@@ -357,6 +445,26 @@ def _featured_project_cards(project_cards: list[dict]) -> list[dict]:
     if featured_projects:
         return featured_projects
     return project_cards[:3]
+
+
+def _project_type_filters(project_cards: list[dict]) -> list[dict]:
+    filters = []
+    seen = {}
+    for project in project_cards:
+        label = project.get('project_type') or 'Project'
+        key = project.get('filter_key') or _project_filter_key(label)
+        if key not in seen:
+            seen[key] = {'key': key, 'label': label, 'count': 0}
+            filters.append(seen[key])
+        seen[key]['count'] += 1
+    return filters
+
+
+def public_work_sitemap_paths() -> list[str]:
+    try:
+        return [project['detail_url'] for project in _public_site_content()['project_cards'] if project.get('detail_url')]
+    except Exception:
+        return []
 
 
 def _public_nav_links(*, archive: bool = False) -> list[tuple[str, str]]:
@@ -415,18 +523,58 @@ def public_work(request):
     content = _public_site_content()
     site = content['site']
     project_cards = content['project_cards']
+    project_type_filters = _project_type_filters(project_cards)
+    active_filter = request.GET.get('type', '').strip()
+    filter_keys = {project_filter['key'] for project_filter in project_type_filters}
+    if active_filter and active_filter not in filter_keys:
+        active_filter = ''
+    filtered_project_cards = project_cards
+    if active_filter:
+        filtered_project_cards = [project for project in project_cards if project.get('filter_key') == active_filter]
     context = {
         'site': site,
         'logo_url': content['logo_url'],
         'canonical_url': _canonical_public_url('/work/'),
         'og_image_url': _absolute_public_url(project_cards[0]['image_url'] if project_cards else content['hero_image_url']),
         'local_business_schema': _local_business_schema(site, content['logo_url'], content['hero_image_url'], project_cards),
-        'projects': project_cards,
+        'projects': filtered_project_cards,
+        'all_project_count': len(project_cards),
+        'featured_project': filtered_project_cards[0] if filtered_project_cards else None,
+        'project_type_filters': project_type_filters,
+        'active_filter': active_filter,
         'phone_href': content['phone_href'],
         'whatsapp_href': content['whatsapp_href'],
         'section_links': _public_nav_links(archive=True),
     }
     return render(request, 'public/work.html', context)
+
+
+def public_work_detail(request, slug):
+    if not is_public_host(request):
+        return redirect(_canonical_public_url(_public_work_detail_url(slug)))
+
+    content = _public_site_content()
+    site = content['site']
+    project_cards = content['project_cards']
+    project = next((item for item in project_cards if item.get('slug') == slug), None)
+    if not project:
+        raise Http404("Public work project not found")
+
+    related_projects = [item for item in project_cards if item.get('slug') != slug][:3]
+    context = {
+        'site': site,
+        'logo_url': content['logo_url'],
+        'canonical_url': _canonical_public_url(project['detail_url']),
+        'og_image_url': _absolute_public_url(project['image_url']),
+        'local_business_schema': _local_business_schema(site, content['logo_url'], content['hero_image_url'], project_cards),
+        'project': project,
+        'related_projects': related_projects,
+        'phone_href': content['phone_href'],
+        'whatsapp_href': content['whatsapp_href'],
+        'project_whatsapp_href': project.get('cta_url') or content['whatsapp_href'],
+        'section_links': _public_nav_links(archive=True),
+    }
+    return render(request, 'public/work_detail.html', context)
 
 
 def site_root(request):

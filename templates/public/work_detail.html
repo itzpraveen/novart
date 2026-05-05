@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.title }} | {{ site.meta_title|default:"Novart Architects" }}</title>
+    <meta name="description" content="{{ project.summary|default:site.meta_description|default:site.hero_supporting_text }}">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ project.title }} | {{ site.meta_title|default:'Novart Architects' }}">
+    <meta property="og:description" content="{{ project.summary|default:site.meta_description|default:site.hero_supporting_text }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ og_image_url }}">
+    <meta property="og:locale" content="en_IN">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ project.title }} | {{ site.meta_title|default:'Novart Architects' }}">
+    <meta name="twitter:description" content="{{ project.summary|default:site.meta_description|default:site.hero_supporting_text }}">
+    <meta name="twitter:image" content="{{ og_image_url }}">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/public-site.css' %}">
+    <script type="application/ld+json">{{ local_business_schema|safe }}</script>
+</head>
+<body class="work-detail-page">
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="public-chrome is-scrolled" data-nav>
+        <div class="public-chrome__inner">
+            <a class="public-brandmark" href="/" aria-label="{{ site.brand_name }} home">
+                <img src="{{ logo_url }}" alt="{{ site.brand_name }} {{ site.brand_suffix }}">
+            </a>
+            <button class="public-menu-toggle" type="button" aria-expanded="false" aria-controls="public-nav">
+                Menu
+            </button>
+            <nav id="public-nav" class="public-nav" aria-label="Primary">
+                {% for label, href in section_links %}
+                <a href="{{ href }}">{{ label }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+    </header>
+
+    <main id="content">
+        <article class="work-detail">
+            <section class="work-detail__hero">
+                <figure class="work-detail__hero-media reveal">
+                    <img src="{{ project.display_image_url }}" alt="{{ project.image_alt }}" fetchpriority="high" decoding="async">
+                    {% include "public/includes/project_links.html" with link_variant="overlay" %}
+                </figure>
+                <div class="work-detail__intro reveal">
+                    <a class="text-link text-link--back" href="/work/">All Work</a>
+                    <p class="project-meta">{{ project.project_type|default:"Project" }}{% if project.location %} / {{ project.location }}{% endif %}</p>
+                    <h1>{{ project.title }}</h1>
+                    <p>{{ project.summary }}</p>
+                    <div class="project-actions project-actions--detail">
+                        <a class="cta cta-primary" href="{{ project_whatsapp_href|default:whatsapp_href }}" target="_blank" rel="noopener noreferrer">Discuss This Project</a>
+                        <a class="cta cta-secondary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
+                    </div>
+                    {% include "public/includes/project_links.html" %}
+                </div>
+            </section>
+
+            <section class="work-detail__story section">
+                <div class="section-inner work-detail__story-grid">
+                    <p class="section-kicker reveal">Project Story</p>
+                    <div class="reveal">
+                        <h2>{{ project.title }}</h2>
+                        <p>{{ project.description }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="work-detail__gallery section">
+                <div class="section-inner">
+                    <div class="section-head reveal">
+                        <p class="section-kicker">Gallery</p>
+                        <div>
+                            <h2>Images</h2>
+                            <p>Facade, interior, detail, and site moments from this work.</p>
+                        </div>
+                    </div>
+                    <div class="detail-gallery">
+                        {% for image in project.images %}
+                        <button class="detail-gallery__item reveal" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
+                            <img src="{{ image.display_url|default:image.url }}" alt="{{ image.alt }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async" fetchpriority="{% if forloop.first %}high{% else %}auto{% endif %}" sizes="(max-width: 760px) 100vw, 42vw">
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            {% if related_projects %}
+            <section class="work-detail__related section">
+                <div class="section-inner">
+                    <div class="section-head reveal">
+                        <p class="section-kicker">More Work</p>
+                        <div>
+                            <h2>Related projects</h2>
+                            <p>Explore more public work from the studio.</p>
+                        </div>
+                    </div>
+                    <div class="related-work">
+                        {% for related in related_projects %}
+                        <a class="related-work__item reveal" href="{{ related.detail_url }}">
+                            <img src="{{ related.display_image_url }}" alt="{{ related.image_alt }}" loading="lazy" decoding="async">
+                            <span>{{ related.project_type|default:"Project" }}{% if related.location %} / {{ related.location }}{% endif %}</span>
+                            <strong>{{ related.title }}</strong>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </article>
+
+        <section class="section section-contact" id="contact">
+            <div class="section-inner contact-band reveal">
+                <div class="contact-copy">
+                    <p class="section-kicker">Contact</p>
+                    <h2>{{ site.contact_heading }}</h2>
+                    <p>{{ site.contact_intro }}</p>
+                </div>
+                <div class="contact-actions">
+                    <a class="cta cta-primary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
+                    <a class="cta cta-secondary" href="{{ project_whatsapp_href|default:whatsapp_href }}" target="_blank" rel="noopener noreferrer">{{ site.hero_cta_whatsapp_label }}</a>
+                    {% if site.phone_display %}<p class="contact-detail">{{ site.phone_display }}</p>{% endif %}
+                    {% if site.email %}<p class="contact-detail"><a href="mailto:{{ site.email }}">{{ site.email }}</a></p>{% endif %}
+                    {% if site.address %}<p class="contact-detail">{{ site.address|linebreaksbr }}</p>{% endif %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    {% include "public/includes/lightbox.html" %}
+
+    <script src="{% static 'js/public-site.js' %}"></script>
+</body>
+</html>

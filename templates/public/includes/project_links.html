@@ -1,16 +1,16 @@
 {% load static %}
 {% if project.youtube_url or project.instagram_url %}
-<div class="project-links" aria-label="{{ project.title }} media links">
+<div class="project-links{% if link_variant == 'overlay' %} project-links--overlay{% endif %}" aria-label="{{ project.title }} media links">
     {% if project.youtube_url %}
     <a class="project-link project-link--youtube" href="{{ project.youtube_url }}" target="_blank" rel="noopener noreferrer" aria-label="Watch {{ project.title }} on YouTube">
         <img class="project-link__icon project-link__icon--youtube" src="{% static 'img/social/youtube_icon.svg' %}" alt="" aria-hidden="true">
-        <span>YouTube</span>
+        <span class="project-link__label">YouTube</span>
     </a>
     {% endif %}
     {% if project.instagram_url %}
     <a class="project-link project-link--instagram" href="{{ project.instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="View {{ project.title }} on Instagram">
         <img class="project-link__icon project-link__icon--instagram" src="{% static 'img/social/instagram_icon.svg' %}" alt="" aria-hidden="true">
-        <span>Instagram</span>
+        <span class="project-link__label">Instagram</span>
     </a>
     {% endif %}
 </div>

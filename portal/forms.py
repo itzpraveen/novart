@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import re
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django import forms
 from django.forms import inlineformset_factory
@@ -1043,7 +1044,27 @@ class PublicProcessStepForm(forms.ModelForm):
         }
 
 
-class PublicProjectHighlightForm(forms.ModelForm):
+class PublicProjectMediaLinkMixin:
+    youtube_hosts = {'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be'}
+    instagram_hosts = {'instagram.com', 'www.instagram.com', 'm.instagram.com'}
+
+    def _clean_platform_url(self, field_name, allowed_hosts, platform_label):
+        url = self.cleaned_data.get(field_name)
+        if not url:
+            return ''
+        host = (urlparse(url).hostname or '').lower()
+        if host not in allowed_hosts:
+            raise forms.ValidationError(f'Enter a valid {platform_label} URL.')
+        return url
+
+    def clean_youtube_url(self):
+        return self._clean_platform_url('youtube_url', self.youtube_hosts, 'YouTube')
+
+    def clean_instagram_url(self):
+        return self._clean_platform_url('instagram_url', self.instagram_hosts, 'Instagram')
+
+
+class PublicProjectHighlightForm(PublicProjectMediaLinkMixin, forms.ModelForm):
     class Meta:
         model = PublicProjectHighlight
         fields = [
@@ -1065,6 +1086,18 @@ class PublicProjectHighlightForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+            'youtube_url': forms.URLInput(
+                attrs={
+                    'placeholder': 'https://www.youtube.com/watch?v=...',
+                    'data-media-link-input': 'youtube',
+                }
+            ),
+            'instagram_url': forms.URLInput(
+                attrs={
+                    'placeholder': 'https://www.instagram.com/reel/...',
+                    'data-media-link-input': 'instagram',
+                }
+            ),
             'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
             'image_secondary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
             'image_tertiary': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
@@ -1076,7 +1109,7 @@ class PublicProjectHighlightForm(forms.ModelForm):
         }
 
 
-class WebsiteProjectForm(forms.ModelForm):
+class WebsiteProjectForm(PublicProjectMediaLinkMixin, forms.ModelForm):
     class Meta:
         model = PublicProjectHighlight
         fields = [
@@ -1094,6 +1127,18 @@ class WebsiteProjectForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
+            'youtube_url': forms.URLInput(
+                attrs={
+                    'placeholder': 'https://www.youtube.com/watch?v=...',
+                    'data-media-link-input': 'youtube',
+                }
+            ),
+            'instagram_url': forms.URLInput(
+                attrs={
+                    'placeholder': 'https://www.instagram.com/reel/...',
+                    'data-media-link-input': 'instagram',
+                }
+            ),
             'image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
         labels = {

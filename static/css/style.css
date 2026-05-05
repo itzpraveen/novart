@@ -5470,6 +5470,45 @@ body.cb-form-open .bottom-nav {
     color: var(--text-light);
 }
 
+.media-link-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 1.65rem;
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-subtle);
+    color: var(--text-light);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+}
+
+.media-link-preview a {
+    color: var(--primary-color);
+    font-weight: var(--font-semibold);
+    text-decoration: none;
+}
+
+.media-link-preview a:hover,
+.media-link-preview a:focus-visible {
+    text-decoration: underline;
+}
+
+.media-link-preview.is-valid {
+    border-color: rgba(5, 150, 105, 0.28);
+    background: var(--success-light);
+    color: var(--success-color);
+}
+
+.media-link-preview.is-invalid {
+    border-color: rgba(220, 38, 38, 0.28);
+    background: var(--danger-light);
+    color: var(--danger-color);
+}
+
 /* Textarea */
 textarea.form-control {
     min-height: 100px;

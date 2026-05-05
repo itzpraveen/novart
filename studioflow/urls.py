@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.urls import include, path
 from django.views.decorators.http import require_GET
 
-from portal.public_site import public_work, site_root
+from portal.public_site import public_work, public_work_detail, public_work_sitemap_paths, site_root
 
 
 def _public_canonical_url(path: str = '/') -> str:
@@ -63,6 +63,18 @@ def robots_txt(request):
 
 @require_GET
 def sitemap_xml(request):
+    work_detail_urls = [
+        "\n".join(
+            [
+                "  <url>",
+                f"    <loc>{_public_canonical_url(path)}</loc>",
+                "    <changefreq>monthly</changefreq>",
+                "    <priority>0.7</priority>",
+                "  </url>",
+            ]
+        )
+        for path in public_work_sitemap_paths()
+    ]
     response = HttpResponse(
         "\n".join(
             [
@@ -78,6 +90,7 @@ def sitemap_xml(request):
                 "    <changefreq>weekly</changefreq>",
                 "    <priority>0.8</priority>",
                 "  </url>",
+                *work_detail_urls,
                 "</urlset>",
                 "",
             ]
@@ -94,6 +107,7 @@ urlpatterns = [
     path("manifest.json", manifest, name="manifest"),
     path("service-worker.js", service_worker, name="service_worker"),
     path("work/", public_work, name="public_work"),
+    path("work/<slug:slug>/", public_work_detail, name="public_work_detail"),
     path('admin/', admin.site.urls),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='portal/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),

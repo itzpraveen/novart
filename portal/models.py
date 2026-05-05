@@ -7,6 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db import models
+from django.utils.text import slugify
 from django.utils import timezone
 
 
@@ -1446,6 +1447,7 @@ class PublicProcessStep(TimeStampedModel):
 class PublicProjectHighlight(TimeStampedModel):
     site = models.ForeignKey(PublicSiteSettings, on_delete=models.CASCADE, related_name='project_highlights')
     title = models.CharField(max_length=150)
+    slug = models.SlugField(max_length=180, unique=True, blank=True)
     project_type = models.CharField(max_length=120, blank=True)
     location = models.CharField(max_length=120, blank=True)
     description = models.TextField()
@@ -1466,6 +1468,28 @@ class PublicProjectHighlight(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._build_unique_slug()
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                kwargs['update_fields'] = {*update_fields, 'slug'}
+        super().save(*args, **kwargs)
+
+    def _build_unique_slug(self) -> str:
+        base_slug = slugify(self.title) or 'work'
+        base_slug = base_slug[:170].strip('-') or 'work'
+        candidate = base_slug
+        counter = 2
+        queryset = type(self).objects.all()
+        if self.pk:
+            queryset = queryset.exclude(pk=self.pk)
+        while queryset.filter(slug=candidate).exists():
+            suffix = f"-{counter}"
+            candidate = f"{base_slug[:180 - len(suffix)].strip('-')}{suffix}"
+            counter += 1
+        return candidate
 
 
 class PublicProjectImage(TimeStampedModel):

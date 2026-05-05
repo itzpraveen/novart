@@ -48,12 +48,26 @@
         <section class="section section-work work-archive" id="work">
             <div class="section-inner">
                 <div class="work-archive__head reveal">
-                    <p class="section-kicker">All Work</p>
-                    <div>
+                    <div class="work-archive__copy">
+                        <p class="section-kicker">All Work</p>
                         <h1>All Work</h1>
                         <p>{{ site.work_intro }}</p>
+                        <p class="work-archive__count">{{ projects|length }} of {{ all_project_count }} public project{{ all_project_count|pluralize }}</p>
+                        {% if project_type_filters %}
+                        <nav class="work-filters" aria-label="Work filters">
+                            <a class="{% if not active_filter %}is-active{% endif %}" href="/work/">All</a>
+                            {% for filter in project_type_filters %}
+                            <a class="{% if active_filter == filter.key %}is-active{% endif %}" href="/work/?type={{ filter.key|urlencode }}">{{ filter.label }} <span>{{ filter.count }}</span></a>
+                            {% endfor %}
+                        </nav>
+                        {% endif %}
                     </div>
-                    <p class="work-archive__count">{{ projects|length }} public project{{ projects|length|pluralize }}</p>
+                    {% if featured_project %}
+                    <a class="work-archive__hero-media" href="{{ featured_project.detail_url }}" aria-label="View {{ featured_project.title }}">
+                        <img src="{{ featured_project.display_image_url }}" alt="{{ featured_project.image_alt }}" fetchpriority="high" decoding="async">
+                        <span>{{ featured_project.title }}</span>
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="work-list">
                     {% for project in projects %}
@@ -61,7 +75,7 @@
                         <figure class="project-media project-gallery project-gallery--{{ project.visible_images|length }} reveal">
                             {% for image in project.visible_images %}
                             <button class="project-gallery__button project-gallery__button--{{ forloop.counter }}{% if forloop.counter == 3 and project.hidden_image_count %} project-gallery__button--more{% endif %}" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
-                                <img class="project-gallery__image" src="{{ image.url }}" alt="{{ image.alt }}" loading="{% if forloop.parentloop.first and forloop.first %}eager{% else %}lazy{% endif %}">
+                                <img class="project-gallery__image" src="{{ image.display_url|default:image.url }}" alt="{{ image.alt }}" loading="{% if forloop.parentloop.first and forloop.first %}eager{% else %}lazy{% endif %}" decoding="async" fetchpriority="{% if forloop.parentloop.first and forloop.first %}high{% else %}auto{% endif %}" sizes="(max-width: 760px) 100vw, 58vw">
                                 {% if forloop.counter == 3 and project.hidden_image_count %}
                                 <span class="project-gallery__more-count">+{{ project.hidden_image_count }}</span>
                                 {% endif %}
@@ -71,12 +85,17 @@
                             <button class="project-gallery__hidden-button" type="button" data-lightbox-image data-lightbox-src="{{ image.url }}" data-lightbox-alt="{{ image.alt }}" aria-label="View {{ image.alt|default:project.title }} larger">
                             </button>
                             {% endfor %}
+                            {% include "public/includes/project_links.html" with link_variant="overlay" %}
                         </figure>
                         <div class="project-copy reveal">
-                            <p class="project-meta">{{ forloop.counter|stringformat:"02d" }} / {{ project.project_type }}{% if project.location %} / {{ project.location }}{% endif %}</p>
-                            <h2>{{ project.title }}</h2>
-                            <p>{{ project.description }}</p>
+                            <p class="project-meta">{{ forloop.counter|stringformat:"02d" }} / {{ project.project_type|default:"Project" }}{% if project.location %} / {{ project.location }}{% endif %}</p>
+                            <h2><a href="{{ project.detail_url }}">{{ project.title }}</a></h2>
+                            <p>{{ project.summary }}</p>
                             {% include "public/includes/project_links.html" %}
+                            <div class="project-actions">
+                                <a class="text-link text-link--compact" href="{{ project.detail_url }}">View project</a>
+                                <a class="project-cta" href="{{ project.cta_url|default:whatsapp_href }}" target="_blank" rel="noopener noreferrer">Start a similar project</a>
+                            </div>
                         </div>
                     </article>
                     {% endfor %}
