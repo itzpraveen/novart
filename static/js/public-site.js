@@ -2,12 +2,55 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('is-ready');
 
     setupNavigation();
+    setupSectionSpy();
     setupReveals();
     setupParallax();
     setupMobileFolio();
     setupImageLightbox();
     setupHeroStructure();
 });
+
+function setupSectionSpy() {
+    const links = [...document.querySelectorAll('.public-nav a')].filter((link) => {
+        const href = link.getAttribute('href') || '';
+        return href.startsWith('#') && href.length > 1;
+    });
+
+    if (!links.length) {
+        return;
+    }
+
+    const linkBySection = new Map();
+    links.forEach((link) => {
+        const section = document.getElementById(link.getAttribute('href').slice(1));
+        if (section) {
+            linkBySection.set(section, link);
+        }
+    });
+
+    const hero = document.getElementById('top');
+    if (hero && !linkBySection.has(hero)) {
+        linkBySection.set(hero, null);
+    }
+
+    if (!linkBySection.size) {
+        return;
+    }
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            const visible = entries.filter((entry) => entry.isIntersecting);
+            if (!visible.length) {
+                return;
+            }
+            const active = linkBySection.get(visible[0].target);
+            links.forEach((link) => link.classList.toggle('is-active', link === active));
+        },
+        { rootMargin: '-42% 0px -52% 0px' }
+    );
+
+    linkBySection.forEach((_, section) => observer.observe(section));
+}
 
 function setupNavigation() {
     const chrome = document.querySelector('[data-nav]');
@@ -341,40 +384,41 @@ async function setupHeroStructure() {
         canvas,
         alpha: true,
         antialias: true,
-        preserveDrawingBuffer: true,
         powerPreference: 'high-performance',
     });
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(1.15, 1.2, 8.4);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
+    const cameraBase = new THREE.Vector3(0, 2.05, 10.8);
+    const cameraTarget = new THREE.Vector3(1.05, 1.55, 0);
 
     const group = new THREE.Group();
-    group.position.set(1.35, -0.62, 0);
     scene.add(group);
 
-    const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0xf6f6f2,
-        transparent: true,
-        opacity: 0.24,
-        depthWrite: false,
-    });
-    const accentMaterial = new THREE.LineBasicMaterial({
-        color: 0xa95735,
-        transparent: true,
-        opacity: 0.48,
-        depthWrite: false,
+    const materials = {
+        guide: new THREE.LineBasicMaterial({ color: 0xf6f6f2, transparent: true, opacity: 0.13, depthWrite: false }),
+        ink: new THREE.LineBasicMaterial({ color: 0xf6f6f2, transparent: true, opacity: 0.55, depthWrite: false }),
+        clay: new THREE.LineBasicMaterial({ color: 0xd07a4b, transparent: true, opacity: 0.92, depthWrite: false }),
+    };
+
+    const strokes = buildDrawingStages(THREE).map((stage) => {
+        const geometry = new THREE.BufferGeometry().setFromPoints(stage.points);
+        geometry.setDrawRange(0, 0);
+        group.add(new THREE.LineSegments(geometry, materials[stage.material]));
+        return { ...stage, geometry, count: stage.points.length };
     });
 
-    addLineSegments(THREE, group, buildFloorGrid(THREE), lineMaterial);
-    addLineSegments(THREE, group, buildRoomFrame(THREE), lineMaterial);
-    addLineSegments(THREE, group, buildVerticalRhythm(THREE), accentMaterial);
-    addPointCloud(THREE, group);
+    const penTip = createPenTip(THREE, group);
+    const dust = createDust(THREE, group, window.innerWidth < 761 ? 70 : 130);
 
-    const pointer = { x: 0, y: 0 };
+    const pointer = { x: 0, y: 0, cx: 0, cy: 0 };
     let scrollProgress = 0;
+    let elapsed = 0;
+    let lastTime = null;
     let frameId = 0;
+    let running = false;
+    let inView = true;
 
     const updatePointer = (event) => {
         pointer.x = (event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2;
@@ -393,22 +437,91 @@ async function setupHeroStructure() {
         renderer.setSize(width, height, false);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
+
+        const aspect = width / height;
+        if (aspect < 0.9) {
+            group.position.set(0.15, -0.7, 0);
+            group.scale.setScalar(0.64);
+            cameraBase.set(0, 2.3, 12.9);
+            cameraTarget.set(0.1, 1.3, 0);
+        } else if (aspect < 1.4) {
+            group.position.set(1.15, -0.8, 0);
+            group.scale.setScalar(0.82);
+            cameraBase.set(0, 2.1, 11.6);
+            cameraTarget.set(0.7, 1.45, 0);
+        } else {
+            group.position.set(2.2, -0.86, 0);
+            group.scale.setScalar(0.86);
+            cameraBase.set(0, 2.05, 10.8);
+            cameraTarget.set(1.2, 1.5, 0);
+        }
     };
 
-    const render = (time = 0) => {
-        const seconds = time * 0.001;
-        group.rotation.x = -0.18 + pointer.y * 0.035;
-        group.rotation.y = -0.22 + Math.sin(seconds * 0.48) * 0.065 + pointer.x * 0.08;
-        group.position.x = 1.35 + pointer.x * 0.12;
-        group.position.y = -0.62 + scrollProgress * 0.36 + Math.sin(seconds * 0.3) * 0.06;
-        camera.position.z = 8.4 - scrollProgress * 0.28;
-        renderer.render(scene, camera);
+    const render = (time) => {
         frameId = window.requestAnimationFrame(render);
+
+        if (lastTime === null) {
+            lastTime = time;
+        }
+        const dt = Math.min((time - lastTime) / 1000, 0.05);
+        lastTime = time;
+        elapsed += dt;
+
+        pointer.cx += (pointer.x - pointer.cx) * 0.055;
+        pointer.cy += (pointer.y - pointer.cy) * 0.055;
+
+        let penPoint = null;
+        strokes.forEach((stroke) => {
+            const raw = (elapsed - stroke.start) / (stroke.end - stroke.start);
+            const eased = smoothstep(clamp(raw, 0, 1));
+            const target = Math.min(stroke.count, Math.floor((eased * stroke.count) / 2) * 2);
+            stroke.geometry.setDrawRange(0, target);
+            if (raw > 0 && raw < 1 && target > 0) {
+                penPoint = stroke.points[Math.max(target - 1, 0)];
+            }
+        });
+
+        if (penPoint) {
+            penTip.object.position.copy(penPoint);
+            penTip.material.opacity = 0.95;
+        } else {
+            penTip.material.opacity = Math.max(penTip.material.opacity - dt * 1.4, 0);
+        }
+
+        updateDust(dust, elapsed, dt);
+
+        const sway = Math.sin(elapsed * 0.22) * 0.045;
+        group.rotation.y = -0.52 + sway + pointer.cx * 0.07 + scrollProgress * 0.42;
+        group.rotation.x = pointer.cy * 0.028;
+
+        camera.position.set(
+            cameraBase.x + pointer.cx * 0.35,
+            cameraBase.y + scrollProgress * 3.1 - pointer.cy * 0.22,
+            cameraBase.z - scrollProgress * 1.5
+        );
+        camera.lookAt(cameraTarget);
+
+        renderer.render(scene, camera);
+    };
+
+    const start = () => {
+        if (!running) {
+            running = true;
+            lastTime = null;
+            frameId = window.requestAnimationFrame(render);
+        }
+    };
+
+    const stop = () => {
+        if (running) {
+            running = false;
+            window.cancelAnimationFrame(frameId);
+        }
     };
 
     resize();
     updateScrollProgress();
-    render();
+    start();
 
     window.addEventListener('pointermove', updatePointer, { passive: true });
     window.addEventListener('scroll', updateScrollProgress, { passive: true });
@@ -419,13 +532,240 @@ async function setupHeroStructure() {
         resizeObserver.observe(canvas);
     }
 
+    if ('IntersectionObserver' in window) {
+        const viewObserver = new IntersectionObserver(
+            (entries) => {
+                inView = entries[0] ? entries[0].isIntersecting : true;
+                if (inView && !document.hidden) {
+                    start();
+                } else {
+                    stop();
+                }
+            },
+            { rootMargin: '120px' }
+        );
+        viewObserver.observe(canvas);
+    }
+
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            window.cancelAnimationFrame(frameId);
+        if (!document.hidden && inView) {
+            start();
         } else {
-            render();
+            stop();
         }
     });
+}
+
+/*
+ * The hero drawing: a Kerala nalukettu pavilion sketching itself in
+ * construction order — guides, plinth, courtyard, columns, beams, then
+ * the two-tier hipped roof. Stage timings are seconds from first frame.
+ */
+function buildDrawingStages(THREE) {
+    const W = 3.3; // column grid half-width (x)
+    const D = 2.3; // column grid half-depth (z)
+    const PLM = 0.5; // plinth margin beyond columns
+    const PLY = 0.34; // plinth height
+    const LINTEL = 2.62; // column / eave height
+    const OV = 0.85; // roof overhang beyond columns
+    const TOP_Y = 3.66; // truncated lower-roof top
+    const TOP_W = 1.72;
+    const TOP_D = 0.88;
+    const CLERE_Y = 4.04; // clerestory top / upper eave
+    const UP_W = 2.3;
+    const UP_D = 1.42;
+    const RIDGE_Y = 5.0;
+    const RIDGE_HALF = 1.08;
+    const CY = 0.84; // courtyard half-size
+
+    const v = (x, y, z) => new THREE.Vector3(x, y, z);
+    const seg = (points, ax, ay, az, bx, by, bz) => {
+        points.push(v(ax, ay, az), v(bx, by, bz));
+    };
+    const rect = (points, y, hx, hz) => {
+        seg(points, -hx, y, hz, hx, y, hz);
+        seg(points, hx, y, hz, hx, y, -hz);
+        seg(points, hx, y, -hz, -hx, y, -hz);
+        seg(points, -hx, y, -hz, -hx, y, hz);
+    };
+
+    const guides = [];
+    seg(guides, -6.6, 0, D + PLM + 0.9, 6.6, 0, D + PLM + 0.9);
+    seg(guides, -(W + PLM), 0, D + PLM + 0.9, -(W + PLM), 0.22, D + PLM + 0.9);
+    seg(guides, W + PLM, 0, D + PLM + 0.9, W + PLM, 0.22, D + PLM + 0.9);
+    seg(guides, -5.6, 0, 0, -5.6, 5.6, 0);
+    seg(guides, -6.2, RIDGE_Y, 0, 6.2, RIDGE_Y, 0);
+
+    const plinth = [];
+    rect(plinth, 0, W + PLM, D + PLM);
+    rect(plinth, PLY, W + PLM, D + PLM);
+    [-1, 1].forEach((sx) => {
+        [-1, 1].forEach((sz) => {
+            seg(plinth, sx * (W + PLM), 0, sz * (D + PLM), sx * (W + PLM), PLY, sz * (D + PLM));
+        });
+    });
+    seg(plinth, -1, 0.17, D + PLM + 0.35, 1, 0.17, D + PLM + 0.35);
+    seg(plinth, -1, 0.17, D + PLM + 0.35, -1, 0.17, D + PLM);
+    seg(plinth, 1, 0.17, D + PLM + 0.35, 1, 0.17, D + PLM);
+    seg(plinth, -1, 0, D + PLM + 0.35, -1, 0.17, D + PLM + 0.35);
+    seg(plinth, 1, 0, D + PLM + 0.35, 1, 0.17, D + PLM + 0.35);
+
+    const floorGrid = [];
+    [-1.9, -0.95, 0, 0.95, 1.9].forEach((z) => {
+        seg(floorGrid, -(W + PLM), PLY + 0.01, z, W + PLM, PLY + 0.01, z);
+    });
+    [-2.85, -1.9, -0.95, 0, 0.95, 1.9, 2.85].forEach((x) => {
+        seg(floorGrid, x, PLY + 0.01, -(D + PLM), x, PLY + 0.01, D + PLM);
+    });
+
+    const courtyard = [];
+    rect(courtyard, PLY + 0.02, CY, CY);
+    rect(courtyard, 0.16, CY - 0.2, CY - 0.2);
+
+    const columns = [];
+    const columnFeet = [];
+    [-W, -1.1, 1.1, W].forEach((x) => {
+        columnFeet.push([x, D], [x, -D]);
+    });
+    columnFeet.push([-W, 0], [W, 0]);
+    [-1, 1].forEach((sx) => {
+        [-1, 1].forEach((sz) => {
+            columnFeet.push([sx * CY, sz * CY]);
+        });
+    });
+    columnFeet.forEach(([x, z]) => {
+        seg(columns, x, PLY, z, x, LINTEL, z);
+    });
+
+    const beams = [];
+    rect(beams, LINTEL, W, D);
+    rect(beams, LINTEL, CY, CY);
+    [-1, 1].forEach((sx) => {
+        seg(beams, sx * CY, LINTEL, CY, sx * 1.1, LINTEL, D);
+        seg(beams, sx * CY, LINTEL, -CY, sx * 1.1, LINTEL, -D);
+    });
+
+    const roofLower = [];
+    const EW = W + OV;
+    const ED = D + OV;
+    rect(roofLower, LINTEL, EW, ED);
+    [-1, 1].forEach((sx) => {
+        [-1, 1].forEach((sz) => {
+            seg(roofLower, sx * EW, LINTEL, sz * ED, sx * TOP_W, TOP_Y, sz * TOP_D);
+        });
+    });
+    for (let xe = -3.5; xe <= 3.51; xe += 0.7) {
+        const xt = (xe / EW) * TOP_W;
+        seg(roofLower, xe, LINTEL, ED, xt, TOP_Y, TOP_D);
+        seg(roofLower, xe, LINTEL, -ED, xt, TOP_Y, -TOP_D);
+    }
+    [-1.6, -0.8, 0, 0.8, 1.6].forEach((ze) => {
+        const zt = (ze / ED) * TOP_D;
+        seg(roofLower, EW, LINTEL, ze, TOP_W, TOP_Y, zt);
+        seg(roofLower, -EW, LINTEL, ze, -TOP_W, TOP_Y, zt);
+    });
+
+    const topBand = [];
+    rect(topBand, TOP_Y, TOP_W, TOP_D);
+    [-1, 1].forEach((sx) => {
+        [-1, 1].forEach((sz) => {
+            seg(topBand, sx * TOP_W, TOP_Y, sz * TOP_D, sx * TOP_W, CLERE_Y, sz * TOP_D);
+        });
+    });
+
+    const roofUpper = [];
+    rect(roofUpper, CLERE_Y, UP_W, UP_D);
+    [-1, 1].forEach((sx) => {
+        [-1, 1].forEach((sz) => {
+            seg(roofUpper, sx * UP_W, CLERE_Y, sz * UP_D, sx * RIDGE_HALF, RIDGE_Y, 0);
+        });
+    });
+    [-1.7, -0.85, 0, 0.85, 1.7].forEach((xe) => {
+        const xr = (xe / UP_W) * RIDGE_HALF;
+        seg(roofUpper, xe, CLERE_Y, UP_D, xr, RIDGE_Y, 0);
+        seg(roofUpper, xe, CLERE_Y, -UP_D, xr, RIDGE_Y, 0);
+    });
+
+    const ridge = [];
+    seg(ridge, -RIDGE_HALF, RIDGE_Y, 0, RIDGE_HALF, RIDGE_Y, 0);
+    seg(ridge, -RIDGE_HALF, RIDGE_Y, 0, -RIDGE_HALF, RIDGE_Y + 0.26, 0);
+    seg(ridge, RIDGE_HALF, RIDGE_Y, 0, RIDGE_HALF, RIDGE_Y + 0.26, 0);
+
+    return [
+        { material: 'guide', start: 0.0, end: 1.1, points: guides },
+        { material: 'ink', start: 0.55, end: 1.75, points: plinth },
+        { material: 'guide', start: 0.9, end: 1.9, points: floorGrid },
+        { material: 'clay', start: 1.5, end: 2.35, points: courtyard },
+        { material: 'ink', start: 1.9, end: 3.15, points: columns },
+        { material: 'ink', start: 2.7, end: 3.7, points: beams },
+        { material: 'ink', start: 3.2, end: 4.8, points: roofLower },
+        { material: 'clay', start: 4.35, end: 5.0, points: topBand },
+        { material: 'ink', start: 4.6, end: 5.75, points: roofUpper },
+        { material: 'clay', start: 5.5, end: 5.95, points: ridge },
+    ];
+}
+
+function createPenTip(THREE, group) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3));
+    const material = new THREE.PointsMaterial({
+        color: 0xe8a271,
+        size: 0.14,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+    });
+    const object = new THREE.Points(geometry, material);
+    group.add(object);
+    return { object, material };
+}
+
+function createDust(THREE, group, count) {
+    const positions = new Float32Array(count * 3);
+    const baseX = new Float32Array(count);
+    const speeds = new Float32Array(count);
+
+    for (let i = 0; i < count; i += 1) {
+        baseX[i] = -5 + Math.random() * 10.5;
+        positions[i * 3] = baseX[i];
+        positions[i * 3 + 1] = Math.random() * 5.8;
+        positions[i * 3 + 2] = -3.4 + Math.random() * 6.8;
+        speeds[i] = 0.07 + Math.random() * 0.2;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({
+        color: 0xe9cfae,
+        size: 0.05,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+    });
+    const object = new THREE.Points(geometry, material);
+    group.add(object);
+    return { object, geometry, material, positions, baseX, speeds, count };
+}
+
+function updateDust(dust, elapsed, dt) {
+    dust.material.opacity = 0.55 * clamp((elapsed - 4.9) / 1.8, 0, 1);
+    if (dust.material.opacity <= 0) {
+        return;
+    }
+
+    for (let i = 0; i < dust.count; i += 1) {
+        let y = dust.positions[i * 3 + 1] + dust.speeds[i] * dt;
+        if (y > 5.8) {
+            y = 0;
+        }
+        dust.positions[i * 3 + 1] = y;
+        dust.positions[i * 3] = dust.baseX[i] + Math.sin(elapsed * 0.5 + i * 1.7) * 0.14;
+    }
+    dust.geometry.attributes.position.needsUpdate = true;
+}
+
+function smoothstep(t) {
+    return t * t * (3 - 2 * t);
 }
 
 function hasWebGLSupport() {
@@ -435,99 +775,6 @@ function hasWebGLSupport() {
     } catch (error) {
         return false;
     }
-}
-
-function addLineSegments(THREE, group, points, material) {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const lines = new THREE.LineSegments(geometry, material);
-    group.add(lines);
-}
-
-function buildFloorGrid(THREE) {
-    const points = [];
-    const size = 4.2;
-
-    for (let index = -4; index <= 4; index += 1) {
-        const offset = index * 0.72;
-        points.push(new THREE.Vector3(-size, 0, offset), new THREE.Vector3(size, 0, offset));
-        points.push(new THREE.Vector3(offset, 0, -size), new THREE.Vector3(offset, 0, size));
-    }
-
-    return points;
-}
-
-function buildRoomFrame(THREE) {
-    const points = [];
-    const x = 4.2;
-    const y = 2.85;
-    const z = 3.1;
-    const corners = [
-        [-x, 0, -z],
-        [x, 0, -z],
-        [x, 0, z],
-        [-x, 0, z],
-        [-x, y, -z],
-        [x, y, -z],
-        [x, y, z],
-        [-x, y, z],
-    ].map(([cx, cy, cz]) => new THREE.Vector3(cx, cy, cz));
-
-    const edges = [
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0],
-        [4, 5],
-        [5, 6],
-        [6, 7],
-        [7, 4],
-        [0, 4],
-        [1, 5],
-        [2, 6],
-        [3, 7],
-    ];
-
-    edges.forEach(([start, end]) => {
-        points.push(corners[start], corners[end]);
-    });
-
-    return points;
-}
-
-function buildVerticalRhythm(THREE) {
-    const points = [];
-    const z = 3.1;
-
-    for (let index = -3; index <= 3; index += 1) {
-        const x = index * 1.12;
-        points.push(new THREE.Vector3(x, 0, -z), new THREE.Vector3(x, 2.85, -z));
-        points.push(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, 2.85, z));
-    }
-
-    return points;
-}
-
-function addPointCloud(THREE, group) {
-    const positions = [];
-
-    for (let x = -3; x <= 3; x += 1) {
-        for (let z = -3; z <= 3; z += 1) {
-            if ((x + z) % 2 === 0) {
-                positions.push(x * 0.9, 0.02, z * 0.9);
-            }
-        }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({
-        color: 0xf6f6f2,
-        size: 0.035,
-        transparent: true,
-        opacity: 0.52,
-        depthWrite: false,
-    });
-    group.add(new THREE.Points(geometry, material));
 }
 
 function clamp(value, min, max) {

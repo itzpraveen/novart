@@ -1,0 +1,33 @@
+<section class="section section-contact" id="contact">
+    <div class="section-inner contact-band reveal">
+        <svg class="contact-band__drawing" viewBox="0 0 520 320" fill="none" aria-hidden="true" focusable="false">
+            <path class="cbd cbd--guide" style="--i:0" pathLength="1" d="M20 292H500"/>
+            <path class="cbd cbd--ink" style="--i:1" pathLength="1" d="M88 292V272H432V292"/>
+            <path class="cbd cbd--clay" style="--i:2" pathLength="1" d="M244 292V282H276V292"/>
+            <path class="cbd cbd--ink" style="--i:3" pathLength="1" d="M112 272V180"/>
+            <path class="cbd cbd--ink" style="--i:3" pathLength="1" d="M186 272V180"/>
+            <path class="cbd cbd--ink" style="--i:4" pathLength="1" d="M260 272V180"/>
+            <path class="cbd cbd--ink" style="--i:4" pathLength="1" d="M334 272V180"/>
+            <path class="cbd cbd--ink" style="--i:5" pathLength="1" d="M408 272V180"/>
+            <path class="cbd cbd--ink" style="--i:6" pathLength="1" d="M96 180H424"/>
+            <path class="cbd cbd--ink" style="--i:7" pathLength="1" d="M64 180L216 96H304L456 180"/>
+            <path class="cbd cbd--ink" style="--i:8" pathLength="1" d="M216 96V76M304 96V76"/>
+            <path class="cbd cbd--ink" style="--i:9" pathLength="1" d="M186 76H334"/>
+            <path class="cbd cbd--ink" style="--i:10" pathLength="1" d="M186 76L240 34M334 76L280 34"/>
+            <path class="cbd cbd--clay" style="--i:11" pathLength="1" d="M240 34H280M240 34V26M280 34V26"/>
+            <path class="cbd cbd--guide" style="--i:12" pathLength="1" d="M88 300V312M88 306H432M432 300V312"/>
+        </svg>
+        <div class="contact-copy">
+            <p class="section-kicker">Contact</p>
+            <h2>{{ site.contact_heading }}</h2>
+            <p>{{ site.contact_intro }}</p>
+        </div>
+        <div class="contact-actions">
+            <a class="cta cta-primary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
+            <a class="cta cta-secondary" href="{{ contact_whatsapp|default:whatsapp_href }}" target="_blank" rel="noopener noreferrer">{{ site.hero_cta_whatsapp_label }}</a>
+            {% if site.phone_display %}<p class="contact-detail">{{ site.phone_display }}</p>{% endif %}
+            {% if site.email %}<p class="contact-detail"><a href="mailto:{{ site.email }}">{{ site.email }}</a></p>{% endif %}
+            {% if site.address %}<p class="contact-detail">{{ site.address|linebreaksbr }}</p>{% endif %}
+        </div>
+    </div>
+</section>

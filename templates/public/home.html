@@ -25,6 +25,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/public-site.css' %}">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js">
     <script type="application/ld+json">{{ local_business_schema|safe }}</script>
 </head>
 <body>
@@ -204,23 +205,10 @@
             </div>
         </section>
 
-        <section class="section section-contact" id="contact">
-            <div class="section-inner contact-band reveal">
-                <div class="contact-copy">
-                    <p class="section-kicker">Contact</p>
-                    <h2>{{ site.contact_heading }}</h2>
-                    <p>{{ site.contact_intro }}</p>
-                </div>
-                <div class="contact-actions">
-                    <a class="cta cta-primary" href="{{ phone_href }}">{{ site.hero_cta_phone_label }}</a>
-                    <a class="cta cta-secondary" href="{{ whatsapp_href }}" target="_blank" rel="noopener noreferrer">{{ site.hero_cta_whatsapp_label }}</a>
-                    {% if site.phone_display %}<p class="contact-detail">{{ site.phone_display }}</p>{% endif %}
-                    {% if site.email %}<p class="contact-detail"><a href="mailto:{{ site.email }}">{{ site.email }}</a></p>{% endif %}
-                    {% if site.address %}<p class="contact-detail">{{ site.address|linebreaksbr }}</p>{% endif %}
-                </div>
-            </div>
-        </section>
+        {% include "public/includes/contact_band.html" %}
     </main>
+
+    {% include "public/includes/footer.html" %}
 
     {% include "public/includes/lightbox.html" %}
 
