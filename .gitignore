@@ -10,8 +10,8 @@ venv/
 
 # Django artifacts
 db.sqlite3
-media/
-staticfiles/
+/media/
+/staticfiles/
 
 # IDEs / OS
 .DS_Store

@@ -2,6 +2,11 @@
 
 NovartERP is an internal operations tool for small Kerala-based architecture practices. It keeps client/lead data, live project tracking, field activity, documents, light-weight finance, and reminder automation in one reliable Django application.
 
+## Public Website (GitHub Pages)
+The public site at https://novartarchitects.com is served as static files from `site/` via GitHub Pages (`.github/workflows/pages.yml` deploys on every push to `main` that touches `site/`). It is a rendered snapshot of the Django public pages (`templates/public/`), including the uploaded project photos under `site/media/`. Edit the HTML in `site/` directly, or redeploy the Django app and re-export the pages if the site needs to be managed from the admin again.
+
+The Django ERP is not currently deployed; the code below is kept so it can be redeployed later.
+
 ## Stack & Rationale
 - **Backend/UI**: Django 5 with Django templates – batteries-included admin, mature auth/ORM, fast forms and filters, and simple VPS deployment.
 - **Database**: SQLite for local development; swap to PostgreSQL by changing `DATABASES` in `studioflow/settings.py`.
