@@ -13,6 +13,9 @@ db.sqlite3
 /media/
 /staticfiles/
 
+# Public website build output (python3 web/build.py)
+/site/
+
 # IDEs / OS
 .DS_Store
 .idea/

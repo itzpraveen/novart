@@ -3,9 +3,23 @@
 NovartERP is an internal operations tool for small Kerala-based architecture practices. It keeps client/lead data, live project tracking, field activity, documents, light-weight finance, and reminder automation in one reliable Django application.
 
 ## Public Website (GitHub Pages)
-The public site at https://novartarchitects.com is served as static files from `site/` via GitHub Pages (`.github/workflows/pages.yml` deploys on every push to `main` that touches `site/`). It is a rendered snapshot of the Django public pages (`templates/public/`), including the uploaded project photos under `site/media/`. Edit the HTML in `site/` directly, or redeploy the Django app and re-export the pages if the site needs to be managed from the admin again.
+The public site at https://novartarchitects.com is a static site built from `web/` and deployed by GitHub Pages (`.github/workflows/pages.yml` runs on every push to `main` that touches `web/`).
 
-The Django ERP is not currently deployed; the code below is kept so it can be redeployed later.
+- `web/content/site.json` – studio details, services, process steps, contact copy.
+- `web/content/projects.json` – projects in display order; each lists its photos from `web/media/` (mark a renovation's before photo with `"before": true`).
+- `web/static/` – CSS, JS, the Three.js sun-study hero (`js/sun-study.js`) and the vendored Three.js build.
+- `web/build.py` – renders the pages and resized WebP photos into `site/` (git-ignored).
+
+Preview locally:
+```bash
+pip install -r web/requirements.txt
+python3 web/build.py
+python3 -m http.server 8000 -d site
+```
+
+To add a project, put its photos in `web/media/`, add an entry to `projects.json`, and push to `main`. The hero posters (`web/static/img/sun-study-*.webp`) are screenshots of the 3D scene shown while it loads; re-capture them if the model changes.
+
+The Django public templates (`templates/public/`) are no longer what visitors see. The Django ERP is not currently deployed; the code below is kept so it can be redeployed later.
 
 ## Stack & Rationale
 - **Backend/UI**: Django 5 with Django templates – batteries-included admin, mature auth/ORM, fast forms and filters, and simple VPS deployment.

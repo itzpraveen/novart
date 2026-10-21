@@ -1,0 +1,47 @@
+{
+  "name": "Novart Architects",
+  "url": "https://novartarchitects.com",
+  "phone_display": "+91 88913 23362",
+  "phone": "+918891323362",
+  "whatsapp": "918891323362",
+  "whatsapp_message": "Hi Novart Architects, I'd like to talk about a project.",
+  "email": "novartarch@gmail.com",
+  "address": ["Near Salafi Masjid, Panikkarapuraya", "Edavannapara 673645", "Malappuram, Kerala"],
+  "map_url": "https://www.google.com/maps/search/?api=1&query=Novart+Architects+Edavannapara+Malappuram",
+  "latitude": 11.23,
+  "longitude": 75.98,
+  "areas": ["Edavannapara", "Malappuram", "Kondotty", "Areekode", "Kozhikode"],
+  "meta_title": "Novart Architects | Architects in Edavannapara, Malappuram",
+  "meta_description": "Novart Architects designs new homes, renovations and interiors in Edavannapara, Malappuram, Kondotty, Areekode, Kozhikode and nearby Kerala towns.",
+  "hero": {
+    "title": "Homes built for Kerala's sun and monsoon",
+    "text": "We design new homes, renovations and interiors across Malappuram and Kozhikode, and stay with you from the first site visit to handover.",
+    "poster": "/static/img/sun-study-poster.webp"
+  },
+  "services": [
+    {"title": "Architecture", "text": "New homes and workspaces planned around light, airflow and the way your family lives day to day."},
+    {"title": "Interiors", "text": "Materials, joinery and lighting designed together with the building, not added at the end."},
+    {"title": "Renovation", "text": "Older houses opened up, re-planned and refinished while keeping what still works."},
+    {"title": "Planning and approvals", "text": "Site studies, feasibility and permit drawings so you know what your plot allows before you build."},
+    {"title": "Project management", "text": "Contractors, schedules and site visits coordinated so the finished house matches the drawings."}
+  ],
+  "process": [
+    {"title": "Brief", "text": "We visit the site and learn your budget, your plot and how you want to live."},
+    {"title": "Shape", "text": "Plans, massing and material direction, reviewed with you in drawings and 3D."},
+    {"title": "Develop", "text": "Working drawings, structure, services and approvals, ready for construction."},
+    {"title": "Deliver", "text": "Regular site supervision until handover, so details are built as drawn."}
+  ],
+  "studio": {
+    "title": "Design that starts with the site",
+    "text": [
+      "Novart designs around climate, proportion, material durability and the everyday routines that make a building feel settled over time.",
+      "Deep eaves, cross-ventilation and shaded courtyards are not decoration in Kerala. They are how a house stays comfortable through April heat and June rain."
+    ],
+    "image": "WhatsApp_Image_2026-04-12_at_7.53.00_PM.jpeg",
+    "image_alt": "A desk in the Novart Architects studio in Edavannapara"
+  },
+  "contact": {
+    "title": "Tell us about your plot",
+    "text": "Send the location, plot size and a few photos on WhatsApp, or call the studio to arrange a site visit."
+  }
+}
